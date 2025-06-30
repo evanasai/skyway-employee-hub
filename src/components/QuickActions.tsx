@@ -11,43 +11,53 @@ import {
   HelpCircle
 } from 'lucide-react';
 
-const QuickActions = () => {
+interface QuickActionsProps {
+  onNavigate: (view: string) => void;
+}
+
+const QuickActions = ({ onNavigate }: QuickActionsProps) => {
   const actions = [
     {
       icon: ClipboardList,
       title: 'Submit Task',
       description: 'Upload work photos & notes',
-      color: 'bg-blue-100 text-blue-700'
+      color: 'bg-blue-100 text-blue-700',
+      action: () => onNavigate('task')
     },
     {
       icon: Calendar,
       title: 'Request Leave',
       description: 'Apply for time off',
-      color: 'bg-green-100 text-green-700'
+      color: 'bg-green-100 text-green-700',
+      action: () => onNavigate('leave')
     },
     {
       icon: CreditCard,
       title: 'Advance Request',
       description: 'Request salary advance',
-      color: 'bg-purple-100 text-purple-700'
+      color: 'bg-purple-100 text-purple-700',
+      action: () => onNavigate('advance')
     },
     {
       icon: Package,
       title: 'Asset Request',
       description: 'Request tools & equipment',
-      color: 'bg-orange-100 text-orange-700'
+      color: 'bg-orange-100 text-orange-700',
+      action: () => onNavigate('asset')
     },
     {
       icon: FileText,
       title: 'View Payslips',
       description: 'Download monthly payslips',
-      color: 'bg-indigo-100 text-indigo-700'
+      color: 'bg-indigo-100 text-indigo-700',
+      action: () => onNavigate('payslips')
     },
     {
       icon: HelpCircle,
       title: 'Support',
       description: 'Get help & support',
-      color: 'bg-teal-100 text-teal-700'
+      color: 'bg-teal-100 text-teal-700',
+      action: () => onNavigate('support')
     }
   ];
 
@@ -65,6 +75,7 @@ const QuickActions = () => {
                 key={index}
                 variant="outline"
                 className="h-24 flex flex-col items-center justify-center space-y-2 hover:shadow-md transition-shadow"
+                onClick={action.action}
               >
                 <div className={`p-2 rounded-lg ${action.color}`}>
                   <Icon className="h-5 w-5" />

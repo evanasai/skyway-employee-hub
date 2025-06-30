@@ -22,14 +22,19 @@ import StatusIndicator from './StatusIndicator';
 import CheckInButton from './CheckInButton';
 import QuickActions from './QuickActions';
 import TaskSubmissionForm from './TaskSubmissionForm';
+import LeaveRequestForm from './LeaveRequestForm';
+import AdvanceRequestForm from './AdvanceRequestForm';
+import AssetRequestForm from './AssetRequestForm';
+import PayslipsView from './PayslipsView';
+import SupportView from './SupportView';
 
 const Dashboard = () => {
   const { user, logout } = useAuth();
   const [checkInStatus, setCheckInStatus] = useState<'in' | 'out' | 'idle'>('out');
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [checkInTime, setCheckInTime] = useState<Date | null>(null);
-  const [totalWorkedTime, setTotalWorkedTime] = useState(0); // in seconds
-  const [showTaskForm, setShowTaskForm] = useState(false);
+  const [totalWorkedTime, setTotalWorkedTime] = useState(0);
+  const [currentView, setCurrentView] = useState<string>('dashboard');
 
   const handleCheckIn = () => {
     const now = new Date();
@@ -48,6 +53,14 @@ const Dashboard = () => {
     }
     setCheckInStatus('out');
     setCheckInTime(null);
+  };
+
+  const handleNavigate = (view: string) => {
+    setCurrentView(view);
+  };
+
+  const handleBackToDashboard = () => {
+    setCurrentView('dashboard');
   };
 
   const ProfileSidebar = () => (
@@ -81,7 +94,10 @@ const Dashboard = () => {
           <Calendar className="mr-3 h-5 w-5" />
           Attendance History
         </Button>
-        <Button variant="ghost" className="w-full justify-start h-12" onClick={() => setSidebarOpen(false)}>
+        <Button variant="ghost" className="w-full justify-start h-12" onClick={() => {
+          handleNavigate('payslips');
+          setSidebarOpen(false);
+        }}>
           <CreditCard className="mr-3 h-5 w-5" />
           Payslips
         </Button>
@@ -94,7 +110,7 @@ const Dashboard = () => {
           Documents
         </Button>
         <Button variant="ghost" className="w-full justify-start h-12" onClick={() => {
-          setShowTaskForm(true);
+          handleNavigate('task');
           setSidebarOpen(false);
         }}>
           <CheckSquare className="mr-3 h-5 w-5" />
@@ -123,14 +139,14 @@ const Dashboard = () => {
     </div>
   );
 
-  if (showTaskForm) {
+  if (currentView === 'task') {
     return (
       <div className="min-h-screen bg-background">
         <header className="bg-white shadow-sm border-b sticky top-0 z-10">
           <div className="flex justify-between items-center h-16 px-4">
             <Button 
               variant="ghost" 
-              onClick={() => setShowTaskForm(false)}
+              onClick={handleBackToDashboard}
               className="text-primary"
             >
               ← Back to Dashboard
@@ -144,6 +160,26 @@ const Dashboard = () => {
         <TaskSubmissionForm />
       </div>
     );
+  }
+
+  if (currentView === 'leave') {
+    return <LeaveRequestForm onBack={handleBackToDashboard} />;
+  }
+
+  if (currentView === 'advance') {
+    return <AdvanceRequestForm onBack={handleBackToDashboard} />;
+  }
+
+  if (currentView === 'asset') {
+    return <AssetRequestForm onBack={handleBackToDashboard} />;
+  }
+
+  if (currentView === 'payslips') {
+    return <PayslipsView onBack={handleBackToDashboard} />;
+  }
+
+  if (currentView === 'support') {
+    return <SupportView onBack={handleBackToDashboard} />;
   }
 
   return (
@@ -224,7 +260,7 @@ const Dashboard = () => {
             </CardHeader>
             <CardContent>
               <Button 
-                onClick={() => setShowTaskForm(true)}
+                onClick={() => handleNavigate('task')}
                 className="w-full"
                 size="lg"
               >
@@ -236,7 +272,7 @@ const Dashboard = () => {
         )}
 
         {/* Quick Actions */}
-        <QuickActions />
+        <QuickActions onNavigate={handleNavigate} />
 
         {/* Quick Stats - Mobile Optimized */}
         <Card>
