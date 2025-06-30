@@ -28,6 +28,39 @@ export interface AttendanceRecord {
   status: 'checked_in' | 'checked_out';
 }
 
+export interface TaskType {
+  id: string;
+  name: string;
+  description?: string;
+  isActive: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface TaskSubmission {
+  id: string;
+  employeeId: string;
+  employeeName: string;
+  taskType: string;
+  taskDescription: string;
+  location: {
+    latitude: number;
+    longitude: number;
+    address?: string;
+  };
+  startTime: Date;
+  endTime?: Date;
+  preWorkPhoto: string;
+  postWorkPhoto?: string;
+  comments?: string;
+  status: 'in_progress' | 'completed' | 'delayed' | 'approved' | 'rejected' | 'pending_review';
+  supervisorFeedback?: string;
+  reviewedBy?: string;
+  reviewedAt?: Date;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
 export interface Task {
   id: string;
   title: string;

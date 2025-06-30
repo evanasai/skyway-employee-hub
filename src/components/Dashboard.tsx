@@ -14,12 +14,14 @@ import {
   Package,
   Settings,
   Bell,
-  Menu
+  Menu,
+  CheckSquare
 } from 'lucide-react';
 import LiveClock from './LiveClock';
 import StatusIndicator from './StatusIndicator';
 import CheckInButton from './CheckInButton';
 import QuickActions from './QuickActions';
+import TaskSubmissionForm from './TaskSubmissionForm';
 
 const Dashboard = () => {
   const { user, logout } = useAuth();
@@ -27,6 +29,7 @@ const Dashboard = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [checkInTime, setCheckInTime] = useState<Date | null>(null);
   const [totalWorkedTime, setTotalWorkedTime] = useState(0); // in seconds
+  const [showTaskForm, setShowTaskForm] = useState(false);
 
   const handleCheckIn = () => {
     const now = new Date();
@@ -90,6 +93,13 @@ const Dashboard = () => {
           <FileText className="mr-3 h-5 w-5" />
           Documents
         </Button>
+        <Button variant="ghost" className="w-full justify-start h-12" onClick={() => {
+          setShowTaskForm(true);
+          setSidebarOpen(false);
+        }}>
+          <CheckSquare className="mr-3 h-5 w-5" />
+          Submit Task
+        </Button>
         <Button variant="ghost" className="w-full justify-start h-12" onClick={() => setSidebarOpen(false)}>
           <Settings className="mr-3 h-5 w-5" />
           Settings
@@ -112,6 +122,29 @@ const Dashboard = () => {
       </Button>
     </div>
   );
+
+  if (showTaskForm) {
+    return (
+      <div className="min-h-screen bg-background">
+        <header className="bg-white shadow-sm border-b sticky top-0 z-10">
+          <div className="flex justify-between items-center h-16 px-4">
+            <Button 
+              variant="ghost" 
+              onClick={() => setShowTaskForm(false)}
+              className="text-primary"
+            >
+              ← Back to Dashboard
+            </Button>
+            <div className="text-right">
+              <div className="text-sm font-medium">{user?.name}</div>
+              <div className="text-xs text-muted-foreground capitalize">{user?.role}</div>
+            </div>
+          </div>
+        </header>
+        <TaskSubmissionForm />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -182,6 +215,25 @@ const Dashboard = () => {
             </CardContent>
           </Card>
         </div>
+
+        {/* Quick Task Submission */}
+        {checkInStatus === 'in' && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">Quick Actions</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <Button 
+                onClick={() => setShowTaskForm(true)}
+                className="w-full"
+                size="lg"
+              >
+                <CheckSquare className="mr-2 h-5 w-5" />
+                Submit Task Report
+              </Button>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Quick Actions */}
         <QuickActions />
