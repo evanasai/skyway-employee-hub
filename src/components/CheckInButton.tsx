@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { MapPin, Camera, Loader2 } from 'lucide-react';
+import { MapPin, Camera, Loader2, XCircle } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 
 interface CheckInButtonProps {
