@@ -4,6 +4,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
+import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { 
   LogOut, 
   User, 
@@ -13,7 +14,8 @@ import {
   CreditCard,
   Package,
   Settings,
-  Bell
+  Bell,
+  Menu
 } from 'lucide-react';
 import LiveClock from './LiveClock';
 import StatusIndicator from './StatusIndicator';
@@ -23,6 +25,7 @@ import QuickActions from './QuickActions';
 const Dashboard = () => {
   const { user, logout } = useAuth();
   const [checkInStatus, setCheckInStatus] = useState<'in' | 'out' | 'idle'>('out');
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const handleCheckIn = () => {
     setCheckInStatus('in');
@@ -32,142 +35,164 @@ const Dashboard = () => {
     setCheckInStatus('out');
   };
 
+  const ProfileSidebar = () => (
+    <div className="flex flex-col h-full p-6 bg-white">
+      {/* Profile Header */}
+      <div className="text-center mb-6">
+        <div className="w-20 h-20 bg-primary rounded-full flex items-center justify-center mx-auto mb-3">
+          <User className="h-10 w-10 text-white" />
+        </div>
+        <h3 className="font-semibold text-lg">{user?.name}</h3>
+        <p className="text-sm text-muted-foreground">{user?.email}</p>
+        <p className="text-sm text-muted-foreground">{user?.phone}</p>
+        <div className="mt-2 px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-xs font-medium inline-block">
+          {user?.role}
+        </div>
+      </div>
+
+      <Separator className="mb-6" />
+
+      {/* Menu Items */}
+      <div className="flex-1 space-y-2">
+        <Button variant="ghost" className="w-full justify-start h-12" onClick={() => setSidebarOpen(false)}>
+          <User className="mr-3 h-5 w-5" />
+          My Account
+        </Button>
+        <Button variant="ghost" className="w-full justify-start h-12" onClick={() => setSidebarOpen(false)}>
+          <MapPin className="mr-3 h-5 w-5" />
+          Address Details
+        </Button>
+        <Button variant="ghost" className="w-full justify-start h-12" onClick={() => setSidebarOpen(false)}>
+          <Calendar className="mr-3 h-5 w-5" />
+          Attendance History
+        </Button>
+        <Button variant="ghost" className="w-full justify-start h-12" onClick={() => setSidebarOpen(false)}>
+          <CreditCard className="mr-3 h-5 w-5" />
+          Payslips
+        </Button>
+        <Button variant="ghost" className="w-full justify-start h-12" onClick={() => setSidebarOpen(false)}>
+          <Package className="mr-3 h-5 w-5" />
+          Assets Status
+        </Button>
+        <Button variant="ghost" className="w-full justify-start h-12" onClick={() => setSidebarOpen(false)}>
+          <FileText className="mr-3 h-5 w-5" />
+          Documents
+        </Button>
+        <Button variant="ghost" className="w-full justify-start h-12" onClick={() => setSidebarOpen(false)}>
+          <Settings className="mr-3 h-5 w-5" />
+          Settings
+        </Button>
+      </div>
+
+      <Separator className="my-4" />
+
+      {/* Logout Button */}
+      <Button 
+        variant="destructive" 
+        className="w-full justify-start h-12" 
+        onClick={() => {
+          setSidebarOpen(false);
+          logout();
+        }}
+      >
+        <LogOut className="mr-3 h-5 w-5" />
+        Logout
+      </Button>
+    </div>
+  );
+
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
-      <header className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <div className="flex items-center space-x-3">
-              <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center">
-                <div className="text-white font-bold text-sm">SW</div>
-              </div>
-              <div>
-                <h1 className="text-xl font-bold text-primary">Skyway Networks</h1>
-              </div>
-            </div>
-            
-            <div className="flex items-center space-x-4">
-              <Button variant="ghost" size="sm">
-                <Bell className="h-4 w-4" />
-              </Button>
-              <div className="flex items-center space-x-2">
-                <div className="text-right">
-                  <div className="text-sm font-medium">{user?.name}</div>
-                  <div className="text-xs text-muted-foreground capitalize">{user?.role}</div>
-                </div>
-                <Button variant="ghost" size="sm" onClick={logout}>
-                  <LogOut className="h-4 w-4" />
+      <header className="bg-white shadow-sm border-b sticky top-0 z-10">
+        <div className="flex justify-between items-center h-16 px-4">
+          <div className="flex items-center space-x-3">
+            {/* Hamburger Menu */}
+            <Sheet open={sidebarOpen} onOpenChange={setSidebarOpen}>
+              <SheetTrigger asChild>
+                <Button variant="ghost" size="sm" className="p-2">
+                  <Menu className="h-6 w-6" />
                 </Button>
-              </div>
+              </SheetTrigger>
+              <SheetContent side="left" className="p-0 w-80">
+                <ProfileSidebar />
+              </SheetContent>
+            </Sheet>
+
+            <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center">
+              <div className="text-white font-bold text-sm">SW</div>
+            </div>
+            <div>
+              <h1 className="text-xl font-bold text-primary">Skyway Networks</h1>
+            </div>
+          </div>
+          
+          <div className="flex items-center space-x-2">
+            <Button variant="ghost" size="sm">
+              <Bell className="h-4 w-4" />
+            </Button>
+            <div className="text-right hidden sm:block">
+              <div className="text-sm font-medium">{user?.name}</div>
+              <div className="text-xs text-muted-foreground capitalize">{user?.role}</div>
             </div>
           </div>
         </div>
       </header>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Left Column - Main Content */}
-          <div className="lg:col-span-2 space-y-6">
-            {/* Welcome Section */}
-            <Card className="gradient-bg text-white">
-              <CardHeader>
-                <CardTitle className="text-2xl">Welcome back, {user?.name}!</CardTitle>
-                <CardDescription className="text-blue-100">
-                  Employee ID: {user?.employeeId} | Department: {user?.department}
-                </CardDescription>
-              </CardHeader>
-            </Card>
+      <div className="px-4 py-6 space-y-6">
+        {/* Welcome Section */}
+        <Card className="gradient-bg text-white">
+          <CardHeader>
+            <CardTitle className="text-xl sm:text-2xl">Welcome back, {user?.name}!</CardTitle>
+            <CardDescription className="text-blue-100 text-sm">
+              Employee ID: {user?.employeeId} | Department: {user?.department}
+            </CardDescription>
+          </CardHeader>
+        </Card>
 
-            {/* Live Clock */}
-            <LiveClock />
+        {/* Live Clock */}
+        <LiveClock />
 
-            {/* Status & Check-in */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <StatusIndicator status={checkInStatus} />
-              <Card>
-                <CardContent className="p-6">
-                  <CheckInButton
-                    isCheckedIn={checkInStatus === 'in'}
-                    onCheckIn={handleCheckIn}
-                    onCheckOut={handleCheckOut}
-                  />
-                </CardContent>
-              </Card>
-            </div>
-
-            {/* Quick Actions */}
-            <QuickActions />
-          </div>
-
-          {/* Right Column - Sidebar */}
-          <div className="space-y-6">
-            {/* User Profile Card */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center space-x-2">
-                  <User className="h-5 w-5" />
-                  <span>My Profile</span>
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="text-center">
-                  <div className="w-16 h-16 bg-primary rounded-full flex items-center justify-center mx-auto mb-3">
-                    <User className="h-8 w-8 text-white" />
-                  </div>
-                  <h3 className="font-semibold">{user?.name}</h3>
-                  <p className="text-sm text-muted-foreground">{user?.email}</p>
-                  <p className="text-sm text-muted-foreground">{user?.phone}</p>
-                </div>
-                <Separator />
-                <div className="space-y-2">
-                  <Button variant="outline" className="w-full justify-start">
-                    <MapPin className="mr-2 h-4 w-4" />
-                    Address Details
-                  </Button>
-                  <Button variant="outline" className="w-full justify-start">
-                    <Calendar className="mr-2 h-4 w-4" />
-                    Attendance History
-                  </Button>
-                  <Button variant="outline" className="w-full justify-start">
-                    <FileText className="mr-2 h-4 w-4" />
-                    Documents
-                  </Button>
-                  <Button variant="outline" className="w-full justify-start">
-                    <Settings className="mr-2 h-4 w-4" />
-                    Settings
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Quick Stats */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg">This Month</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex justify-between items-center">
-                  <span className="text-sm text-muted-foreground">Days Present</span>
-                  <span className="font-semibold text-green-600">22/24</span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-sm text-muted-foreground">Tasks Completed</span>
-                  <span className="font-semibold text-blue-600">18</span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-sm text-muted-foreground">Pending Requests</span>
-                  <span className="font-semibold text-orange-600">2</span>
-                </div>
-                <Separator />
-                <div className="flex justify-between items-center">
-                  <span className="text-sm font-medium">Performance Score</span>
-                  <span className="font-bold text-primary">92%</span>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
+        {/* Status & Check-in */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <StatusIndicator status={checkInStatus} />
+          <Card>
+            <CardContent className="p-4">
+              <CheckInButton
+                isCheckedIn={checkInStatus === 'in'}
+                onCheckIn={handleCheckIn}
+                onCheckOut={handleCheckOut}
+              />
+            </CardContent>
+          </Card>
         </div>
+
+        {/* Quick Actions */}
+        <QuickActions />
+
+        {/* Quick Stats - Mobile Optimized */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg">This Month</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="text-center">
+                <div className="text-2xl font-bold text-green-600">22/24</div>
+                <div className="text-sm text-muted-foreground">Days Present</div>
+              </div>
+              <div className="text-center">
+                <div className="text-2xl font-bold text-blue-600">18</div>
+                <div className="text-sm text-muted-foreground">Tasks Done</div>
+              </div>
+            </div>
+            <Separator />
+            <div className="text-center">
+              <div className="text-2xl font-bold text-primary">92%</div>
+              <div className="text-sm text-muted-foreground">Performance Score</div>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );
