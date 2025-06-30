@@ -1,5 +1,4 @@
-
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -26,13 +25,26 @@ const Dashboard = () => {
   const { user, logout } = useAuth();
   const [checkInStatus, setCheckInStatus] = useState<'in' | 'out' | 'idle'>('out');
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [checkInTime, setCheckInTime] = useState<Date | null>(null);
+  const [totalWorkedTime, setTotalWorkedTime] = useState(0); // in seconds
 
   const handleCheckIn = () => {
+    const now = new Date();
     setCheckInStatus('in');
+    setCheckInTime(now);
+    console.log('Checked in at:', now);
   };
 
   const handleCheckOut = () => {
+    if (checkInTime) {
+      const now = new Date();
+      const workedSeconds = Math.floor((now.getTime() - checkInTime.getTime()) / 1000);
+      setTotalWorkedTime(prev => prev + workedSeconds);
+      console.log('Worked for:', workedSeconds, 'seconds');
+      console.log('Total worked time today:', totalWorkedTime + workedSeconds, 'seconds');
+    }
     setCheckInStatus('out');
+    setCheckInTime(null);
   };
 
   const ProfileSidebar = () => (
@@ -155,7 +167,11 @@ const Dashboard = () => {
 
         {/* Status & Check-in */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <StatusIndicator status={checkInStatus} />
+          <StatusIndicator 
+            status={checkInStatus} 
+            checkInTime={checkInTime}
+            totalWorkedTime={totalWorkedTime}
+          />
           <Card>
             <CardContent className="p-4">
               <CheckInButton
