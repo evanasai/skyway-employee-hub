@@ -1,5 +1,4 @@
-
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -10,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 import { 
   Users, 
   FileText, 
@@ -23,132 +23,86 @@ import {
   Trash2,
   LogOut,
   DollarSign,
-  Shield,
   Package,
   Download,
-  BarChart3
+  BarChart3,
+  Phone,
+  Mail
 } from 'lucide-react';
-
-// Mock data - replace with actual data fetching
-const mockTaskSubmissions = [
-  {
-    id: '1',
-    employeeName: 'John Doe',
-    taskType: 'Fiber Splicing',
-    location: 'Downtown Area',
-    startTime: new Date('2024-01-15T09:00:00'),
-    endTime: new Date('2024-01-15T11:30:00'),
-    status: 'pending_review',
-    createdAt: new Date('2024-01-15T11:30:00')
-  },
-  {
-    id: '2',
-    employeeName: 'Jane Smith',
-    taskType: 'ONT Installation',
-    location: 'Residential Complex',
-    startTime: new Date('2024-01-15T10:00:00'),
-    endTime: new Date('2024-01-15T12:00:00'),
-    status: 'approved',
-    createdAt: new Date('2024-01-15T12:00:00')
-  }
-];
-
-const mockTaskTypes = [
-  { id: '1', name: 'Fiber Splicing', description: 'Fiber optic cable splicing work', isActive: true },
-  { id: '2', name: 'ONT Installation', description: 'Optical Network Terminal installation', isActive: true },
-  { id: '3', name: 'Site Survey', description: 'Location survey and assessment', isActive: true }
-];
-
-const mockEmployees = [
-  {
-    id: '1',
-    employeeId: 'EMP001',
-    name: 'John Doe',
-    email: 'john@skyway.com',
-    department: 'Field Operations',
-    salary: 25000,
-    advances: 5000,
-    esi: 875,
-    pf: 1800,
-    emi: 2000,
-    status: 'active'
-  },
-  {
-    id: '2',
-    employeeId: 'EMP002',
-    name: 'Jane Smith',
-    email: 'jane@skyway.com',
-    department: 'Technical Support',
-    salary: 28000,
-    advances: 0,
-    esi: 980,
-    pf: 2016,
-    emi: 1500,
-    status: 'active'
-  }
-];
 
 const AdminDashboard = () => {
   const { user, logout } = useAuth();
-  const [activeTab, setActiveTab] = useState<'tasks' | 'task-types' | 'employees' | 'salary' | 'inventory' | 'reports'>('tasks');
-  const [selectedTask, setSelectedTask] = useState<any>(null);
-  const [taskTypes, setTaskTypes] = useState(mockTaskTypes);
-  const [employees, setEmployees] = useState(mockEmployees);
-  const [newTaskType, setNewTaskType] = useState({ name: '', description: '' });
-  const [isAddingTaskType, setIsAddingTaskType] = useState(false);
+  const [activeTab, setActiveTab] = useState<'tasks' | 'employees' | 'salary' | 'inventory' | 'reports' | 'asset-requests'>('tasks');
+  const [taskSubmissions, setTaskSubmissions] = useState([]);
+  const [employees, setEmployees] = useState([]);
+  const [assets, setAssets] = useState([]);
+  const [assetRequests, setAssetRequests] = useState([]);
   const [isAddingEmployee, setIsAddingEmployee] = useState(false);
   const [newEmployee, setNewEmployee] = useState({
-    employeeId: '',
+    employee_id: '',
     name: '',
     email: '',
+    phone: '',
     department: '',
-    salary: '',
-    esi: '',
-    pf: '',
-    emi: ''
+    role: 'employee',
+    salary: ''
   });
+
+  useEffect(() => {
+    fetchData();
+  }, [activeTab]);
+
+  const fetchData = async () => {
+    try {
+      if (activeTab === 'tasks') {
+        const { data } = await supabase
+          .from('task_submissions')
+          .select(`
+            *,
+            employees:employee_id (name, employee_id)
+          `)
+          .order('created_at', { ascending: false });
+        setTaskSubmissions(data || []);
+      }
+
+      if (activeTab === 'employees') {
+        const { data } = await supabase
+          .from('employees')
+          .select('*')
+          .order('created_at', { ascending: false });
+        setEmployees(data || []);
+      }
+
+      if (activeTab === 'inventory') {
+        const { data } = await supabase
+          .from('assets')
+          .select('*')
+          .order('created_at', { ascending: false });
+        setAssets(data || []);
+      }
+
+      if (activeTab === 'asset-requests') {
+        const { data } = await supabase
+          .from('asset_requests')
+          .select(`
+            *,
+            employees:employee_id (name, employee_id),
+            assets:asset_id (name, price)
+          `)
+          .order('request_date', { ascending: false });
+        setAssetRequests(data || []);
+      }
+    } catch (error) {
+      console.error('Error fetching data:', error);
+    }
+  };
 
   const handleLogout = () => {
     logout();
   };
 
-  const handleTaskReview = (taskId: string, status: 'approved' | 'rejected', feedback?: string) => {
-    console.log('Reviewing task:', taskId, status, feedback);
-    toast({
-      title: "Task Reviewed",
-      description: `Task has been ${status}`,
-    });
-  };
-
-  const handleAddTaskType = () => {
-    if (!newTaskType.name.trim()) {
-      toast({
-        title: "Error",
-        description: "Task type name is required",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    const taskType = {
-      id: Date.now().toString(),
-      name: newTaskType.name,
-      description: newTaskType.description,
-      isActive: true
-    };
-
-    setTaskTypes([...taskTypes, taskType]);
-    setNewTaskType({ name: '', description: '' });
-    setIsAddingTaskType(false);
-    
-    toast({
-      title: "Task Type Added",
-      description: "New task type has been created",
-    });
-  };
-
-  const handleAddEmployee = () => {
-    if (!newEmployee.name.trim() || !newEmployee.employeeId.trim()) {
+  const handleAddEmployee = async () => {
+    if (!newEmployee.name.trim() || !newEmployee.employee_id.trim()) {
       toast({
         title: "Error",
         description: "Employee name and ID are required",
@@ -157,53 +111,78 @@ const AdminDashboard = () => {
       return;
     }
 
-    const employee = {
-      id: Date.now().toString(),
-      ...newEmployee,
-      salary: Number(newEmployee.salary),
-      esi: Number(newEmployee.esi),
-      pf: Number(newEmployee.pf),
-      emi: Number(newEmployee.emi),
-      advances: 0,
-      status: 'active'
-    };
+    try {
+      const { error } = await supabase
+        .from('employees')
+        .insert({
+          employee_id: newEmployee.employee_id,
+          name: newEmployee.name,
+          email: newEmployee.email,
+          phone: newEmployee.phone,
+          department: newEmployee.department,
+          role: newEmployee.role,
+          salary: parseFloat(newEmployee.salary) || 0
+        });
 
-    setEmployees([...employees, employee]);
-    setNewEmployee({
-      employeeId: '',
-      name: '',
-      email: '',
-      department: '',
-      salary: '',
-      esi: '',
-      pf: '',
-      emi: ''
-    });
-    setIsAddingEmployee(false);
-    
-    toast({
-      title: "Employee Added",
-      description: "New employee has been created",
-    });
+      if (error) throw error;
+
+      setNewEmployee({ employee_id: '', name: '', email: '', phone: '', department: '', role: 'employee', salary: '' });
+      setIsAddingEmployee(false);
+      fetchData();
+      
+      toast({
+        title: "Employee Added",
+        description: "New employee has been created successfully",
+      });
+    } catch (error) {
+      console.error('Error adding employee:', error);
+      toast({
+        title: "Error",
+        description: "Failed to add employee",
+        variant: "destructive",
+      });
+    }
   };
 
-  const handleDeleteTaskType = (id: string) => {
-    setTaskTypes(taskTypes.filter(t => t.id !== id));
-    toast({
-      title: "Task Type Deleted",
-      description: "Task type has been removed",
-    });
-  };
+  const approveAssetRequest = async (requestId: string) => {
+    try {
+      const { error } = await supabase
+        .from('asset_requests')
+        .update({ 
+          status: 'approved',
+          approved_date: new Date().toISOString()
+        })
+        .eq('id', requestId);
 
-  const calculateNetSalary = (employee: any) => {
-    return employee.salary - employee.advances - employee.esi - employee.pf - employee.emi;
-  };
+      if (error) throw error;
 
-  const downloadReport = (type: string) => {
-    toast({
-      title: "Download Started",
-      description: `${type} report is being downloaded`,
-    });
+      // Add deduction to employee
+      const request = assetRequests.find(r => r.id === requestId);
+      if (request) {
+        await supabase
+          .from('employee_deductions')
+          .insert({
+            employee_id: request.employee_id,
+            deduction_type: request.payment_type === 'emi_plan' ? 'asset_emi' : 'asset_purchase',
+            amount: request.payment_type === 'emi_plan' ? request.monthly_emi : request.total_amount,
+            description: `${request.assets.name} - ${request.payment_type}`,
+            reference_id: requestId
+          });
+      }
+
+      fetchData();
+      toast({
+        title: "Request Approved",
+        description: "Asset request has been approved and deduction added",
+      });
+    } catch (error) {
+      console.error('Error approving request:', error);
+      toast({
+        title: "Error",
+        description: "Failed to approve request",
+        variant: "destructive",
+      });
+    }
   };
 
   const getStatusBadge = (status: string) => {
@@ -211,6 +190,7 @@ const AdminDashboard = () => {
       pending_review: { color: 'bg-yellow-100 text-yellow-800', icon: Clock },
       approved: { color: 'bg-green-100 text-green-800', icon: CheckCircle },
       rejected: { color: 'bg-red-100 text-red-800', icon: XCircle },
+      pending: { color: 'bg-blue-100 text-blue-800', icon: Clock },
       in_progress: { color: 'bg-blue-100 text-blue-800', icon: Clock },
       completed: { color: 'bg-purple-100 text-purple-800', icon: CheckCircle }
     };
@@ -234,7 +214,7 @@ const AdminDashboard = () => {
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-2xl font-bold text-gray-900">Admin Dashboard</h1>
-              <p className="text-gray-600">Manage tasks, employees, and system settings</p>
+              <p className="text-gray-600">Manage employees, tasks, and system settings</p>
             </div>
             <div className="flex items-center space-x-4">
               <span className="text-sm text-gray-600">Welcome, {user?.name}</span>
@@ -269,14 +249,6 @@ const AdminDashboard = () => {
               Task Management
             </Button>
             <Button
-              variant={activeTab === 'task-types' ? 'default' : 'ghost'}
-              className="w-full justify-start"
-              onClick={() => setActiveTab('task-types')}
-            >
-              <Settings className="mr-2 h-4 w-4" />
-              Task Types
-            </Button>
-            <Button
               variant={activeTab === 'employees' ? 'default' : 'ghost'}
               className="w-full justify-start"
               onClick={() => setActiveTab('employees')}
@@ -291,6 +263,14 @@ const AdminDashboard = () => {
             >
               <DollarSign className="mr-2 h-4 w-4" />
               Salary Management
+            </Button>
+            <Button
+              variant={activeTab === 'asset-requests' ? 'default' : 'ghost'}
+              className="w-full justify-start"
+              onClick={() => setActiveTab('asset-requests')}
+            >
+              <Package className="mr-2 h-4 w-4" />
+              Asset Requests
             </Button>
             <Button
               variant={activeTab === 'inventory' ? 'default' : 'ghost'}
@@ -313,11 +293,43 @@ const AdminDashboard = () => {
 
         {/* Main Content */}
         <main className="flex-1 p-6">
+          {/* Contact Information */}
+          <Card className="mb-6">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-center space-x-6">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => window.open('tel:+917842288660')}
+                >
+                  <Phone className="h-4 w-4 mr-2" />
+                  +91 7842288660
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => window.open('https://wa.me/917842288660')}
+                >
+                  <Phone className="h-4 w-4 mr-2" />
+                  WhatsApp
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => window.open('mailto:info@skywaynetworks.in')}
+                >
+                  <Mail className="h-4 w-4 mr-2" />
+                  info@skywaynetworks.in
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+
           {activeTab === 'tasks' && (
             <div className="space-y-6">
               <div className="flex items-center justify-between">
                 <h2 className="text-xl font-semibold">Task Submissions</h2>
-                <Button onClick={() => downloadReport('Tasks')}>
+                <Button onClick={() => toast({ title: "Download Started", description: "Tasks report is being downloaded" })}>
                   <Download className="mr-2 h-4 w-4" />
                   Download Report
                 </Button>
@@ -335,176 +347,23 @@ const AdminDashboard = () => {
                         <TableHead>Employee</TableHead>
                         <TableHead>Task Type</TableHead>
                         <TableHead>Location</TableHead>
-                        <TableHead>Duration</TableHead>
                         <TableHead>Status</TableHead>
                         <TableHead>Submitted</TableHead>
                         <TableHead>Actions</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {mockTaskSubmissions.map((task) => (
+                      {taskSubmissions.map((task: any) => (
                         <TableRow key={task.id}>
-                          <TableCell className="font-medium">{task.employeeName}</TableCell>
-                          <TableCell>{task.taskType}</TableCell>
-                          <TableCell>{task.location}</TableCell>
-                          <TableCell>
-                            {Math.round((task.endTime.getTime() - task.startTime.getTime()) / (1000 * 60))} min
-                          </TableCell>
+                          <TableCell className="font-medium">{task.employees?.name}</TableCell>
+                          <TableCell>{task.task_type}</TableCell>
+                          <TableCell>{task.location_address || 'Not specified'}</TableCell>
                           <TableCell>{getStatusBadge(task.status)}</TableCell>
-                          <TableCell>{task.createdAt.toLocaleDateString()}</TableCell>
+                          <TableCell>{new Date(task.created_at).toLocaleDateString()}</TableCell>
                           <TableCell>
-                            <div className="flex space-x-2">
-                              <Dialog>
-                                <DialogTrigger asChild>
-                                  <Button variant="outline" size="sm">
-                                    <Eye className="h-4 w-4" />
-                                  </Button>
-                                </DialogTrigger>
-                                <DialogContent className="max-w-2xl">
-                                  <DialogHeader>
-                                    <DialogTitle>Task Details</DialogTitle>
-                                    <DialogDescription>Review task submission and provide feedback</DialogDescription>
-                                  </DialogHeader>
-                                  <div className="space-y-4">
-                                    <div className="grid grid-cols-2 gap-4">
-                                      <div>
-                                        <Label>Employee</Label>
-                                        <p className="text-sm">{task.employeeName}</p>
-                                      </div>
-                                      <div>
-                                        <Label>Task Type</Label>
-                                        <p className="text-sm">{task.taskType}</p>
-                                      </div>
-                                      <div>
-                                        <Label>Start Time</Label>
-                                        <p className="text-sm">{task.startTime.toLocaleString()}</p>
-                                      </div>
-                                      <div>
-                                        <Label>End Time</Label>
-                                        <p className="text-sm">{task.endTime.toLocaleString()}</p>
-                                      </div>
-                                    </div>
-                                    
-                                    {task.status === 'pending_review' && (
-                                      <div className="flex space-x-2 pt-4">
-                                        <Button 
-                                          onClick={() => handleTaskReview(task.id, 'approved')}
-                                          className="bg-green-600 hover:bg-green-700"
-                                        >
-                                          <CheckCircle className="mr-2 h-4 w-4" />
-                                          Approve
-                                        </Button>
-                                        <Button 
-                                          onClick={() => handleTaskReview(task.id, 'rejected')}
-                                          variant="destructive"
-                                        >
-                                          <XCircle className="mr-2 h-4 w-4" />
-                                          Reject
-                                        </Button>
-                                      </div>
-                                    )}
-                                  </div>
-                                </DialogContent>
-                              </Dialog>
-                            </div>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </CardContent>
-              </Card>
-            </div>
-          )}
-
-          {activeTab === 'task-types' && (
-            <div className="space-y-6">
-              <div className="flex items-center justify-between">
-                <h2 className="text-xl font-semibold">Task Types Management</h2>
-                <Dialog open={isAddingTaskType} onOpenChange={setIsAddingTaskType}>
-                  <DialogTrigger asChild>
-                    <Button>
-                      <Plus className="mr-2 h-4 w-4" />
-                      Add Task Type
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent>
-                    <DialogHeader>
-                      <DialogTitle>Add New Task Type</DialogTitle>
-                      <DialogDescription>Create a new task type for employees to select</DialogDescription>
-                    </DialogHeader>
-                    <div className="space-y-4">
-                      <div>
-                        <Label htmlFor="name">Task Type Name *</Label>
-                        <Input
-                          id="name"
-                          value={newTaskType.name}
-                          onChange={(e) => setNewTaskType({...newTaskType, name: e.target.value})}
-                          placeholder="Enter task type name"
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="description">Description</Label>
-                        <Textarea
-                          id="description"
-                          value={newTaskType.description}
-                          onChange={(e) => setNewTaskType({...newTaskType, description: e.target.value})}
-                          placeholder="Enter task description"
-                        />
-                      </div>
-                      <div className="flex justify-end space-x-2">
-                        <Button variant="outline" onClick={() => setIsAddingTaskType(false)}>
-                          Cancel
-                        </Button>
-                        <Button onClick={handleAddTaskType}>
-                          Add Task Type
-                        </Button>
-                      </div>
-                    </div>
-                  </DialogContent>
-                </Dialog>
-              </div>
-
-              <Card>
-                <CardHeader>
-                  <CardTitle>Manage Task Types</CardTitle>
-                  <CardDescription>Configure available task types for employee selection</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Name</TableHead>
-                        <TableHead>Description</TableHead>
-                        <TableHead>Status</TableHead>
-                        <TableHead>Actions</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {taskTypes.map((taskType) => (
-                        <TableRow key={taskType.id}>
-                          <TableCell className="font-medium">{taskType.name}</TableCell>
-                          <TableCell>{taskType.description}</TableCell>
-                          <TableCell>
-                            <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                              taskType.isActive ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
-                            }`}>
-                              {taskType.isActive ? 'Active' : 'Inactive'}
-                            </span>
-                          </TableCell>
-                          <TableCell>
-                            <div className="flex space-x-2">
-                              <Button variant="outline" size="sm">
-                                <Edit className="h-4 w-4" />
-                              </Button>
-                              <Button 
-                                variant="outline" 
-                                size="sm"
-                                onClick={() => handleDeleteTaskType(taskType.id)}
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                            </div>
+                            <Button variant="outline" size="sm">
+                              <Eye className="h-4 w-4" />
+                            </Button>
                           </TableCell>
                         </TableRow>
                       ))}
@@ -520,7 +379,7 @@ const AdminDashboard = () => {
               <div className="flex items-center justify-between">
                 <h2 className="text-xl font-semibold">Employee Management</h2>
                 <div className="flex space-x-2">
-                  <Button onClick={() => downloadReport('Employees')}>
+                  <Button onClick={() => toast({ title: "Download Started", description: "Employee report is being downloaded" })}>
                     <Download className="mr-2 h-4 w-4" />
                     Download
                   </Button>
@@ -542,8 +401,8 @@ const AdminDashboard = () => {
                             <Label htmlFor="employeeId">Employee ID *</Label>
                             <Input
                               id="employeeId"
-                              value={newEmployee.employeeId}
-                              onChange={(e) => setNewEmployee({...newEmployee, employeeId: e.target.value})}
+                              value={newEmployee.employee_id}
+                              onChange={(e) => setNewEmployee({...newEmployee, employee_id: e.target.value})}
                               placeholder="EMP001"
                             />
                           </div>
@@ -563,7 +422,16 @@ const AdminDashboard = () => {
                               type="email"
                               value={newEmployee.email}
                               onChange={(e) => setNewEmployee({...newEmployee, email: e.target.value})}
-                              placeholder="john@skyway.com"
+                              placeholder="john@skywaynetworks.in"
+                            />
+                          </div>
+                          <div>
+                            <Label htmlFor="phone">Phone</Label>
+                            <Input
+                              id="phone"
+                              value={newEmployee.phone}
+                              onChange={(e) => setNewEmployee({...newEmployee, phone: e.target.value})}
+                              placeholder="+91 9876543210"
                             />
                           </div>
                           <div>
@@ -583,36 +451,6 @@ const AdminDashboard = () => {
                               value={newEmployee.salary}
                               onChange={(e) => setNewEmployee({...newEmployee, salary: e.target.value})}
                               placeholder="25000"
-                            />
-                          </div>
-                          <div>
-                            <Label htmlFor="esi">ESI</Label>
-                            <Input
-                              id="esi"
-                              type="number"
-                              value={newEmployee.esi}
-                              onChange={(e) => setNewEmployee({...newEmployee, esi: e.target.value})}
-                              placeholder="875"
-                            />
-                          </div>
-                          <div>
-                            <Label htmlFor="pf">PF</Label>
-                            <Input
-                              id="pf"
-                              type="number"
-                              value={newEmployee.pf}
-                              onChange={(e) => setNewEmployee({...newEmployee, pf: e.target.value})}
-                              placeholder="1800"
-                            />
-                          </div>
-                          <div>
-                            <Label htmlFor="emi">EMI</Label>
-                            <Input
-                              id="emi"
-                              type="number"
-                              value={newEmployee.emi}
-                              onChange={(e) => setNewEmployee({...newEmployee, emi: e.target.value})}
-                              placeholder="2000"
                             />
                           </div>
                         </div>
@@ -641,28 +479,40 @@ const AdminDashboard = () => {
                       <TableRow>
                         <TableHead>Employee ID</TableHead>
                         <TableHead>Name</TableHead>
+                        <TableHead>Email</TableHead>
+                        <TableHead>Phone</TableHead>
                         <TableHead>Department</TableHead>
-                        <TableHead>Base Salary</TableHead>
-                        <TableHead>Net Salary</TableHead>
-                        <TableHead>Status</TableHead>
+                        <TableHead>Salary</TableHead>
                         <TableHead>Actions</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {employees.map((employee) => (
+                      {employees.map((employee: any) => (
                         <TableRow key={employee.id}>
-                          <TableCell className="font-medium">{employee.employeeId}</TableCell>
+                          <TableCell className="font-medium">{employee.employee_id}</TableCell>
                           <TableCell>{employee.name}</TableCell>
-                          <TableCell>{employee.department}</TableCell>
-                          <TableCell>₹{employee.salary.toLocaleString()}</TableCell>
-                          <TableCell>₹{calculateNetSalary(employee).toLocaleString()}</TableCell>
                           <TableCell>
-                            <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                              employee.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
-                            }`}>
-                              {employee.status.toUpperCase()}
-                            </span>
+                            <Button
+                              variant="link"
+                              size="sm"
+                              className="p-0 h-auto"
+                              onClick={() => window.open(`mailto:${employee.email}`)}
+                            >
+                              {employee.email}
+                            </Button>
                           </TableCell>
+                          <TableCell>
+                            <Button
+                              variant="link"
+                              size="sm"
+                              className="p-0 h-auto"
+                              onClick={() => window.open(`tel:${employee.phone}`)}
+                            >
+                              {employee.phone}
+                            </Button>
+                          </TableCell>
+                          <TableCell>{employee.department}</TableCell>
+                          <TableCell>₹{employee.salary?.toLocaleString()}</TableCell>
                           <TableCell>
                             <div className="flex space-x-2">
                               <Button variant="outline" size="sm">
@@ -682,11 +532,79 @@ const AdminDashboard = () => {
             </div>
           )}
 
+          {activeTab === 'asset-requests' && (
+            <div className="space-y-6">
+              <div className="flex items-center justify-between">
+                <h2 className="text-xl font-semibold">Asset Requests</h2>
+                <Button onClick={() => toast({ title: "Download Started", description: "Asset requests report is being downloaded" })}>
+                  <Download className="mr-2 h-4 w-4" />
+                  Download Report
+                </Button>
+              </div>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle>Pending Asset Requests</CardTitle>
+                  <CardDescription>Review and approve employee asset requests</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Employee</TableHead>
+                        <TableHead>Asset</TableHead>
+                        <TableHead>Quantity</TableHead>
+                        <TableHead>Payment Type</TableHead>
+                        <TableHead>Amount</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead>Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {assetRequests.map((request: any) => (
+                        <TableRow key={request.id}>
+                          <TableCell className="font-medium">{request.employees?.name}</TableCell>
+                          <TableCell>{request.assets?.name}</TableCell>
+                          <TableCell>{request.quantity}</TableCell>
+                          <TableCell>
+                            {request.payment_type === 'emi_plan' ? `EMI (${request.emi_months}m)` : 'One-time'}
+                          </TableCell>
+                          <TableCell>
+                            ₹{request.payment_type === 'emi_plan' 
+                              ? request.monthly_emi.toLocaleString() + '/month'
+                              : request.total_amount.toLocaleString()}
+                          </TableCell>
+                          <TableCell>{getStatusBadge(request.status)}</TableCell>
+                          <TableCell>
+                            {request.status === 'pending' && (
+                              <div className="flex space-x-2">
+                                <Button 
+                                  size="sm"
+                                  onClick={() => approveAssetRequest(request.id)}
+                                  className="bg-green-600 hover:bg-green-700"
+                                >
+                                  <CheckCircle className="h-4 w-4" />
+                                </Button>
+                                <Button variant="destructive" size="sm">
+                                  <XCircle className="h-4 w-4" />
+                                </Button>
+                              </div>
+                            )}
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </CardContent>
+              </Card>
+            </div>
+          )}
+
           {activeTab === 'salary' && (
             <div className="space-y-6">
               <div className="flex items-center justify-between">
                 <h2 className="text-xl font-semibold">Salary Management</h2>
-                <Button onClick={() => downloadReport('Salary')}>
+                <Button onClick={() => toast({ title: "Download Started", description: "Salary report is being downloaded" })}>
                   <Download className="mr-2 h-4 w-4" />
                   Download Payroll
                 </Button>
@@ -712,15 +630,15 @@ const AdminDashboard = () => {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {employees.map((employee) => (
+                      {employees.map((employee: any) => (
                         <TableRow key={employee.id}>
                           <TableCell className="font-medium">{employee.name}</TableCell>
-                          <TableCell>₹{employee.salary.toLocaleString()}</TableCell>
-                          <TableCell>₹{employee.advances.toLocaleString()}</TableCell>
-                          <TableCell>₹{employee.esi.toLocaleString()}</TableCell>
-                          <TableCell>₹{employee.pf.toLocaleString()}</TableCell>
-                          <TableCell>₹{employee.emi.toLocaleString()}</TableCell>
-                          <TableCell className="font-semibold">₹{calculateNetSalary(employee).toLocaleString()}</TableCell>
+                          <TableCell>₹{employee.salary?.toLocaleString()}</TableCell>
+                          <TableCell>₹{employee.advances?.toLocaleString()}</TableCell>
+                          <TableCell>₹{employee.esi?.toLocaleString()}</TableCell>
+                          <TableCell>₹{employee.pf?.toLocaleString()}</TableCell>
+                          <TableCell>₹{employee.emi?.toLocaleString()}</TableCell>
+                          <TableCell className="font-semibold">₹{employee.salary - employee.advances - employee.esi - employee.pf - employee.emi}</TableCell>
                           <TableCell>
                             <div className="flex space-x-2">
                               <Button variant="outline" size="sm">
@@ -744,7 +662,7 @@ const AdminDashboard = () => {
             <div className="space-y-6">
               <div className="flex items-center justify-between">
                 <h2 className="text-xl font-semibold">Inventory Management</h2>
-                <Button onClick={() => downloadReport('Inventory')}>
+                <Button onClick={() => toast({ title: "Download Started", description: "Inventory report is being downloaded" })}>
                   <Download className="mr-2 h-4 w-4" />
                   Download Report
                 </Button>
