@@ -52,16 +52,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       // For now, we'll use a simple password check
       // In production, you'd want to hash passwords properly
       if (password === 'password123') {
-        const userWithLogin = {
+        const userWithLogin: User = {
           id: employee.id,
           employeeId: employee.employee_id,
           name: employee.name,
           email: employee.email,
-          role: employee.role,
+          role: employee.role as 'employee' | 'supervisor' | 'admin' | 'super_admin',
           department: employee.department,
           phone: employee.phone,
           isActive: employee.is_active,
-          checkInStatus: 'out',
+          checkInStatus: 'out' as 'in' | 'out' | 'idle',
           lastLogin: new Date()
         };
         
