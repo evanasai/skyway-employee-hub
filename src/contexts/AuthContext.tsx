@@ -1,5 +1,6 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { supabase } from '@/integrations/supabase/client';
 import { User } from '@/types';
 
 interface AuthContextType {
@@ -19,43 +20,6 @@ export const useAuth = () => {
   return context;
 };
 
-// Mock users for demo
-const mockUsers: User[] = [
-  {
-    id: '1',
-    employeeId: 'EMP001',
-    name: 'John Doe',
-    email: 'john@skyway.com',
-    role: 'employee',
-    department: 'Field Operations',
-    phone: '+91 9876543210',
-    isActive: true,
-    checkInStatus: 'out'
-  },
-  {
-    id: '2',
-    employeeId: 'SUP001',
-    name: 'Jane Smith',
-    email: 'jane@skyway.com',
-    role: 'supervisor',
-    department: 'Operations',
-    phone: '+91 9876543211',
-    isActive: true,
-    checkInStatus: 'in'
-  },
-  {
-    id: '3',
-    employeeId: 'ADM001',
-    name: 'Admin User',
-    email: 'admin@skyway.com',
-    role: 'admin',
-    department: 'Administration',
-    phone: '+91 9876543212',
-    isActive: true,
-    checkInStatus: 'idle'
-  }
-];
-
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -72,24 +36,48 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const login = async (employeeId: string, password: string): Promise<boolean> => {
     setIsLoading(true);
     
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    
-    const foundUser = mockUsers.find(u => u.employeeId === employeeId);
-    
-    if (foundUser && password === 'password123') {
-      const userWithLogin = {
-        ...foundUser,
-        lastLogin: new Date()
-      };
-      setUser(userWithLogin);
-      localStorage.setItem('skyway_user', JSON.stringify(userWithLogin));
+    try {
+      // Query the employees table directly for authentication
+      const { data: employee, error } = await supabase
+        .from('employees')
+        .select('*')
+        .eq('employee_id', employeeId)
+        .single();
+
+      if (error || !employee) {
+        setIsLoading(false);
+        return false;
+      }
+
+      // For now, we'll use a simple password check
+      // In production, you'd want to hash passwords properly
+      if (password === 'password123') {
+        const userWithLogin = {
+          id: employee.id,
+          employeeId: employee.employee_id,
+          name: employee.name,
+          email: employee.email,
+          role: employee.role,
+          department: employee.department,
+          phone: employee.phone,
+          isActive: employee.is_active,
+          checkInStatus: 'out',
+          lastLogin: new Date()
+        };
+        
+        setUser(userWithLogin);
+        localStorage.setItem('skyway_user', JSON.stringify(userWithLogin));
+        setIsLoading(false);
+        return true;
+      }
+      
       setIsLoading(false);
-      return true;
+      return false;
+    } catch (error) {
+      console.error('Login error:', error);
+      setIsLoading(false);
+      return false;
     }
-    
-    setIsLoading(false);
-    return false;
   };
 
   const logout = () => {

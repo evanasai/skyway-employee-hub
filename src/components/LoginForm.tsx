@@ -110,9 +110,11 @@ const LoginForm = () => {
             </form>
             
             <div className="mt-6 text-center text-sm text-muted-foreground">
-              <p>Demo Credentials:</p>
-              <p><strong>Employee:</strong> EMP001 / password123</p>
-              <p><strong>Admin:</strong> ADM001 / password123</p>
+              <p>Contact admin to create your account</p>
+              <p className="mt-2">
+                <strong>Phone:</strong> +91 7842288660<br />
+                <strong>Email:</strong> info@skywaynetworks.in
+              </p>
             </div>
           </CardContent>
         </Card>
