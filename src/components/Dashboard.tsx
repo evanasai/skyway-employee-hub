@@ -238,7 +238,10 @@ const Dashboard = () => {
               </div>
               <div className="text-right">
                 <LiveClock />
-                <StatusIndicator isCheckedIn={isCheckedIn} />
+                <StatusIndicator 
+                  status={isCheckedIn ? 'in' : 'out'} 
+                  checkInTime={currentAttendance?.check_in_time ? new Date(currentAttendance.check_in_time) : null}
+                />
               </div>
             </div>
           </CardHeader>
