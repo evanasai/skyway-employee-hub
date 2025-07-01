@@ -20,7 +20,13 @@ import {
   Eye,
   Edit,
   Plus,
-  Trash2
+  Trash2,
+  LogOut,
+  DollarSign,
+  Shield,
+  Package,
+  Download,
+  BarChart3
 } from 'lucide-react';
 
 // Mock data - replace with actual data fetching
@@ -53,13 +59,58 @@ const mockTaskTypes = [
   { id: '3', name: 'Site Survey', description: 'Location survey and assessment', isActive: true }
 ];
 
+const mockEmployees = [
+  {
+    id: '1',
+    employeeId: 'EMP001',
+    name: 'John Doe',
+    email: 'john@skyway.com',
+    department: 'Field Operations',
+    salary: 25000,
+    advances: 5000,
+    esi: 875,
+    pf: 1800,
+    emi: 2000,
+    status: 'active'
+  },
+  {
+    id: '2',
+    employeeId: 'EMP002',
+    name: 'Jane Smith',
+    email: 'jane@skyway.com',
+    department: 'Technical Support',
+    salary: 28000,
+    advances: 0,
+    esi: 980,
+    pf: 2016,
+    emi: 1500,
+    status: 'active'
+  }
+];
+
 const AdminDashboard = () => {
-  const { user } = useAuth();
-  const [activeTab, setActiveTab] = useState<'tasks' | 'task-types' | 'reports'>('tasks');
+  const { user, logout } = useAuth();
+  const [activeTab, setActiveTab] = useState<'tasks' | 'task-types' | 'employees' | 'salary' | 'inventory' | 'reports'>('tasks');
   const [selectedTask, setSelectedTask] = useState<any>(null);
   const [taskTypes, setTaskTypes] = useState(mockTaskTypes);
+  const [employees, setEmployees] = useState(mockEmployees);
   const [newTaskType, setNewTaskType] = useState({ name: '', description: '' });
   const [isAddingTaskType, setIsAddingTaskType] = useState(false);
+  const [isAddingEmployee, setIsAddingEmployee] = useState(false);
+  const [newEmployee, setNewEmployee] = useState({
+    employeeId: '',
+    name: '',
+    email: '',
+    department: '',
+    salary: '',
+    esi: '',
+    pf: '',
+    emi: ''
+  });
+
+  const handleLogout = () => {
+    logout();
+  };
 
   const handleTaskReview = (taskId: string, status: 'approved' | 'rejected', feedback?: string) => {
     console.log('Reviewing task:', taskId, status, feedback);
@@ -96,11 +147,62 @@ const AdminDashboard = () => {
     });
   };
 
+  const handleAddEmployee = () => {
+    if (!newEmployee.name.trim() || !newEmployee.employeeId.trim()) {
+      toast({
+        title: "Error",
+        description: "Employee name and ID are required",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const employee = {
+      id: Date.now().toString(),
+      ...newEmployee,
+      salary: Number(newEmployee.salary),
+      esi: Number(newEmployee.esi),
+      pf: Number(newEmployee.pf),
+      emi: Number(newEmployee.emi),
+      advances: 0,
+      status: 'active'
+    };
+
+    setEmployees([...employees, employee]);
+    setNewEmployee({
+      employeeId: '',
+      name: '',
+      email: '',
+      department: '',
+      salary: '',
+      esi: '',
+      pf: '',
+      emi: ''
+    });
+    setIsAddingEmployee(false);
+    
+    toast({
+      title: "Employee Added",
+      description: "New employee has been created",
+    });
+  };
+
   const handleDeleteTaskType = (id: string) => {
     setTaskTypes(taskTypes.filter(t => t.id !== id));
     toast({
       title: "Task Type Deleted",
       description: "Task type has been removed",
+    });
+  };
+
+  const calculateNetSalary = (employee: any) => {
+    return employee.salary - employee.advances - employee.esi - employee.pf - employee.emi;
+  };
+
+  const downloadReport = (type: string) => {
+    toast({
+      title: "Download Started",
+      description: `${type} report is being downloaded`,
     });
   };
 
@@ -141,6 +243,14 @@ const AdminDashboard = () => {
                   {user?.name?.charAt(0)}
                 </span>
               </div>
+              <Button
+                variant="outline"
+                onClick={handleLogout}
+                className="flex items-center space-x-2"
+              >
+                <LogOut className="h-4 w-4" />
+                <span>Logout</span>
+              </Button>
             </div>
           </div>
         </div>
@@ -167,12 +277,36 @@ const AdminDashboard = () => {
               Task Types
             </Button>
             <Button
+              variant={activeTab === 'employees' ? 'default' : 'ghost'}
+              className="w-full justify-start"
+              onClick={() => setActiveTab('employees')}
+            >
+              <Users className="mr-2 h-4 w-4" />
+              Employee Management
+            </Button>
+            <Button
+              variant={activeTab === 'salary' ? 'default' : 'ghost'}
+              className="w-full justify-start"
+              onClick={() => setActiveTab('salary')}
+            >
+              <DollarSign className="mr-2 h-4 w-4" />
+              Salary Management
+            </Button>
+            <Button
+              variant={activeTab === 'inventory' ? 'default' : 'ghost'}
+              className="w-full justify-start"
+              onClick={() => setActiveTab('inventory')}
+            >
+              <Package className="mr-2 h-4 w-4" />
+              Inventory
+            </Button>
+            <Button
               variant={activeTab === 'reports' ? 'default' : 'ghost'}
               className="w-full justify-start"
               onClick={() => setActiveTab('reports')}
             >
-              <Users className="mr-2 h-4 w-4" />
-              Reports
+              <BarChart3 className="mr-2 h-4 w-4" />
+              Reports & Analytics
             </Button>
           </nav>
         </aside>
@@ -183,6 +317,10 @@ const AdminDashboard = () => {
             <div className="space-y-6">
               <div className="flex items-center justify-between">
                 <h2 className="text-xl font-semibold">Task Submissions</h2>
+                <Button onClick={() => downloadReport('Tasks')}>
+                  <Download className="mr-2 h-4 w-4" />
+                  Download Report
+                </Button>
               </div>
 
               <Card>
@@ -377,18 +515,287 @@ const AdminDashboard = () => {
             </div>
           )}
 
+          {activeTab === 'employees' && (
+            <div className="space-y-6">
+              <div className="flex items-center justify-between">
+                <h2 className="text-xl font-semibold">Employee Management</h2>
+                <div className="flex space-x-2">
+                  <Button onClick={() => downloadReport('Employees')}>
+                    <Download className="mr-2 h-4 w-4" />
+                    Download
+                  </Button>
+                  <Dialog open={isAddingEmployee} onOpenChange={setIsAddingEmployee}>
+                    <DialogTrigger asChild>
+                      <Button>
+                        <Plus className="mr-2 h-4 w-4" />
+                        Add Employee
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent>
+                      <DialogHeader>
+                        <DialogTitle>Add New Employee</DialogTitle>
+                        <DialogDescription>Create a new employee record</DialogDescription>
+                      </DialogHeader>
+                      <div className="space-y-4">
+                        <div className="grid grid-cols-2 gap-4">
+                          <div>
+                            <Label htmlFor="employeeId">Employee ID *</Label>
+                            <Input
+                              id="employeeId"
+                              value={newEmployee.employeeId}
+                              onChange={(e) => setNewEmployee({...newEmployee, employeeId: e.target.value})}
+                              placeholder="EMP001"
+                            />
+                          </div>
+                          <div>
+                            <Label htmlFor="name">Full Name *</Label>
+                            <Input
+                              id="name"
+                              value={newEmployee.name}
+                              onChange={(e) => setNewEmployee({...newEmployee, name: e.target.value})}
+                              placeholder="John Doe"
+                            />
+                          </div>
+                          <div>
+                            <Label htmlFor="email">Email</Label>
+                            <Input
+                              id="email"
+                              type="email"
+                              value={newEmployee.email}
+                              onChange={(e) => setNewEmployee({...newEmployee, email: e.target.value})}
+                              placeholder="john@skyway.com"
+                            />
+                          </div>
+                          <div>
+                            <Label htmlFor="department">Department</Label>
+                            <Input
+                              id="department"
+                              value={newEmployee.department}
+                              onChange={(e) => setNewEmployee({...newEmployee, department: e.target.value})}
+                              placeholder="Field Operations"
+                            />
+                          </div>
+                          <div>
+                            <Label htmlFor="salary">Base Salary</Label>
+                            <Input
+                              id="salary"
+                              type="number"
+                              value={newEmployee.salary}
+                              onChange={(e) => setNewEmployee({...newEmployee, salary: e.target.value})}
+                              placeholder="25000"
+                            />
+                          </div>
+                          <div>
+                            <Label htmlFor="esi">ESI</Label>
+                            <Input
+                              id="esi"
+                              type="number"
+                              value={newEmployee.esi}
+                              onChange={(e) => setNewEmployee({...newEmployee, esi: e.target.value})}
+                              placeholder="875"
+                            />
+                          </div>
+                          <div>
+                            <Label htmlFor="pf">PF</Label>
+                            <Input
+                              id="pf"
+                              type="number"
+                              value={newEmployee.pf}
+                              onChange={(e) => setNewEmployee({...newEmployee, pf: e.target.value})}
+                              placeholder="1800"
+                            />
+                          </div>
+                          <div>
+                            <Label htmlFor="emi">EMI</Label>
+                            <Input
+                              id="emi"
+                              type="number"
+                              value={newEmployee.emi}
+                              onChange={(e) => setNewEmployee({...newEmployee, emi: e.target.value})}
+                              placeholder="2000"
+                            />
+                          </div>
+                        </div>
+                        <div className="flex justify-end space-x-2">
+                          <Button variant="outline" onClick={() => setIsAddingEmployee(false)}>
+                            Cancel
+                          </Button>
+                          <Button onClick={handleAddEmployee}>
+                            Add Employee
+                          </Button>
+                        </div>
+                      </div>
+                    </DialogContent>
+                  </Dialog>
+                </div>
+              </div>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle>Employee Database</CardTitle>
+                  <CardDescription>Manage employee records and details</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Employee ID</TableHead>
+                        <TableHead>Name</TableHead>
+                        <TableHead>Department</TableHead>
+                        <TableHead>Base Salary</TableHead>
+                        <TableHead>Net Salary</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead>Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {employees.map((employee) => (
+                        <TableRow key={employee.id}>
+                          <TableCell className="font-medium">{employee.employeeId}</TableCell>
+                          <TableCell>{employee.name}</TableCell>
+                          <TableCell>{employee.department}</TableCell>
+                          <TableCell>₹{employee.salary.toLocaleString()}</TableCell>
+                          <TableCell>₹{calculateNetSalary(employee).toLocaleString()}</TableCell>
+                          <TableCell>
+                            <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                              employee.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
+                            }`}>
+                              {employee.status.toUpperCase()}
+                            </span>
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex space-x-2">
+                              <Button variant="outline" size="sm">
+                                <Edit className="h-4 w-4" />
+                              </Button>
+                              <Button variant="outline" size="sm">
+                                <Eye className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </CardContent>
+              </Card>
+            </div>
+          )}
+
+          {activeTab === 'salary' && (
+            <div className="space-y-6">
+              <div className="flex items-center justify-between">
+                <h2 className="text-xl font-semibold">Salary Management</h2>
+                <Button onClick={() => downloadReport('Salary')}>
+                  <Download className="mr-2 h-4 w-4" />
+                  Download Payroll
+                </Button>
+              </div>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle>Employee Salary Overview</CardTitle>
+                  <CardDescription>Manage salaries, advances, ESI, PF, and EMI</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Employee</TableHead>
+                        <TableHead>Base Salary</TableHead>
+                        <TableHead>Advances</TableHead>
+                        <TableHead>ESI</TableHead>
+                        <TableHead>PF</TableHead>
+                        <TableHead>EMI</TableHead>
+                        <TableHead>Net Salary</TableHead>
+                        <TableHead>Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {employees.map((employee) => (
+                        <TableRow key={employee.id}>
+                          <TableCell className="font-medium">{employee.name}</TableCell>
+                          <TableCell>₹{employee.salary.toLocaleString()}</TableCell>
+                          <TableCell>₹{employee.advances.toLocaleString()}</TableCell>
+                          <TableCell>₹{employee.esi.toLocaleString()}</TableCell>
+                          <TableCell>₹{employee.pf.toLocaleString()}</TableCell>
+                          <TableCell>₹{employee.emi.toLocaleString()}</TableCell>
+                          <TableCell className="font-semibold">₹{calculateNetSalary(employee).toLocaleString()}</TableCell>
+                          <TableCell>
+                            <div className="flex space-x-2">
+                              <Button variant="outline" size="sm">
+                                <Edit className="h-4 w-4" />
+                              </Button>
+                              <Button variant="outline" size="sm">
+                                <DollarSign className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </CardContent>
+              </Card>
+            </div>
+          )}
+
+          {activeTab === 'inventory' && (
+            <div className="space-y-6">
+              <div className="flex items-center justify-between">
+                <h2 className="text-xl font-semibold">Inventory Management</h2>
+                <Button onClick={() => downloadReport('Inventory')}>
+                  <Download className="mr-2 h-4 w-4" />
+                  Download Report
+                </Button>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-lg">Total Items</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-3xl font-bold text-blue-600">156</div>
+                    <p className="text-sm text-gray-600">In inventory</p>
+                  </CardContent>
+                </Card>
+                
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-lg">Low Stock</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-3xl font-bold text-yellow-600">8</div>
+                    <p className="text-sm text-gray-600">Need reorder</p>
+                  </CardContent>
+                </Card>
+                
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-lg">Assigned</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-3xl font-bold text-green-600">42</div>
+                    <p className="text-sm text-gray-600">To employees</p>
+                  </CardContent>
+                </Card>
+              </div>
+            </div>
+          )}
+
           {activeTab === 'reports' && (
             <div className="space-y-6">
               <h2 className="text-xl font-semibold">Reports & Analytics</h2>
               
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
                 <Card>
                   <CardHeader>
-                    <CardTitle className="text-lg">Total Tasks</CardTitle>
+                    <CardTitle className="text-lg">Daily Tasks</CardTitle>
                   </CardHeader>
                   <CardContent>
                     <div className="text-3xl font-bold text-blue-600">24</div>
-                    <p className="text-sm text-gray-600">This month</p>
+                    <p className="text-sm text-gray-600">Today</p>
                   </CardContent>
                 </Card>
                 
@@ -404,11 +811,67 @@ const AdminDashboard = () => {
                 
                 <Card>
                   <CardHeader>
+                    <CardTitle className="text-lg">Active Employees</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-3xl font-bold text-green-600">18</div>
+                    <p className="text-sm text-gray-600">Currently working</p>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader>
                     <CardTitle className="text-lg">Completion Rate</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <div className="text-3xl font-bold text-green-600">92%</div>
-                    <p className="text-sm text-gray-600">Average completion</p>
+                    <div className="text-3xl font-bold text-purple-600">92%</div>
+                    <p className="text-sm text-gray-600">This month</p>
+                  </CardContent>
+                </Card>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Task Summary by Type</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-3">
+                      <div className="flex justify-between">
+                        <span>Fiber Splicing</span>
+                        <span className="font-medium">8 tasks</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>ONT Installation</span>
+                        <span className="font-medium">12 tasks</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>Site Survey</span>
+                        <span className="font-medium">4 tasks</span>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Employee Status Summary</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-3">
+                      <div className="flex justify-between">
+                        <span>Checked In</span>
+                        <span className="font-medium text-green-600">12 employees</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>On Break</span>
+                        <span className="font-medium text-yellow-600">3 employees</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>Checked Out</span>
+                        <span className="font-medium text-gray-600">3 employees</span>
+                      </div>
+                    </div>
                   </CardContent>
                 </Card>
               </div>
