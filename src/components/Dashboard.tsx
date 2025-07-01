@@ -228,21 +228,28 @@ const Dashboard = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
       <div className="max-w-4xl mx-auto space-y-6">
-        {/* Header */}
+        {/* Header - Mobile Optimized */}
         <Card className="gradient-bg text-white">
           <CardHeader>
-            <div className="flex items-center justify-between">
-              <div>
+            <div className="flex flex-col space-y-4 md:flex-row md:items-center md:justify-between md:space-y-0">
+              {/* Name and Welcome Message */}
+              <div className="text-center md:text-left">
                 <CardTitle className="text-2xl font-bold">Welcome back, {user?.name}!</CardTitle>
                 <p className="text-blue-100">Employee ID: {user?.employeeId}</p>
               </div>
-              <div className="text-right">
+              
+              {/* Time and Date - Centered on mobile */}
+              <div className="flex justify-center md:justify-end">
                 <LiveClock />
-                <StatusIndicator 
-                  status={isCheckedIn ? 'in' : 'out'} 
-                  checkInTime={currentAttendance?.check_in_time ? new Date(currentAttendance.check_in_time) : null}
-                />
               </div>
+            </div>
+            
+            {/* Status Indicator - Full width on mobile */}
+            <div className="mt-4">
+              <StatusIndicator 
+                status={isCheckedIn ? 'in' : 'out'} 
+                checkInTime={currentAttendance?.check_in_time ? new Date(currentAttendance.check_in_time) : null}
+              />
             </div>
           </CardHeader>
         </Card>
