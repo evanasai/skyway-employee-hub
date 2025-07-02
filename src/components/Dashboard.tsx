@@ -14,6 +14,8 @@ import PayslipsView from './PayslipsView';
 import SupportView from './SupportView';
 import AdminDashboard from './AdminDashboard';
 import EmployeeSidebar from './EmployeeSidebar';
+import MonthlyPerformance from './MonthlyPerformance';
+import MyDocuments from './MyDocuments';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
@@ -227,6 +229,14 @@ const Dashboard = () => {
     return <SupportView onBack={() => setCurrentView('dashboard')} />;
   }
 
+  if (currentView === 'performance') {
+    return <MonthlyPerformance onBack={() => setCurrentView('dashboard')} />;
+  }
+
+  if (currentView === 'documents') {
+    return <MyDocuments onBack={() => setCurrentView('dashboard')} />;
+  }
+
   return (
     <SidebarProvider>
       <div className="flex min-h-screen w-full">
@@ -310,7 +320,7 @@ const Dashboard = () => {
               {/* Quick Actions */}
               <QuickActions onNavigate={handleNavigate} />
 
-              {/* Contact Information - Moved after Quick Actions */}
+              {/* Contact Information - After Quick Actions */}
               <Card>
                 <CardHeader>
                   <CardTitle>Need Help? Contact Us</CardTitle>
