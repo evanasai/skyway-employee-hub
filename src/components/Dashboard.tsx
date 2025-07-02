@@ -231,25 +231,25 @@ const Dashboard = () => {
         {/* Header - Mobile Optimized */}
         <Card className="gradient-bg text-white">
           <CardHeader>
-            <div className="flex flex-col space-y-4 md:flex-row md:items-center md:justify-between md:space-y-0">
-              {/* Name and Welcome Message */}
+            <div className="space-y-4">
+              {/* Name and Welcome Message - Top */}
               <div className="text-center md:text-left">
                 <CardTitle className="text-2xl font-bold">Welcome back, {user?.name}!</CardTitle>
                 <p className="text-blue-100">Employee ID: {user?.employeeId}</p>
               </div>
               
-              {/* Time and Date - Centered on mobile */}
-              <div className="flex justify-center md:justify-end">
+              {/* Time and Date - Center */}
+              <div className="flex justify-center">
                 <LiveClock />
               </div>
-            </div>
-            
-            {/* Status Indicator - Full width on mobile */}
-            <div className="mt-4">
-              <StatusIndicator 
-                status={isCheckedIn ? 'in' : 'out'} 
-                checkInTime={currentAttendance?.check_in_time ? new Date(currentAttendance.check_in_time) : null}
-              />
+              
+              {/* Status Indicator - Bottom */}
+              <div>
+                <StatusIndicator 
+                  status={isCheckedIn ? 'in' : 'out'} 
+                  checkInTime={currentAttendance?.check_in_time ? new Date(currentAttendance.check_in_time) : null}
+                />
+              </div>
             </div>
           </CardHeader>
         </Card>
