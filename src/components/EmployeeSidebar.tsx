@@ -1,0 +1,116 @@
+
+import React from 'react';
+import { Button } from '@/components/ui/button';
+import { useAuth } from '@/contexts/AuthContext';
+import {
+  Sidebar,
+  SidebarContent,
+  SidebarHeader,
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
+  SidebarProvider,
+  SidebarTrigger,
+} from '@/components/ui/sidebar';
+import {
+  Home,
+  ClipboardList,
+  Calendar,
+  CreditCard,
+  Package,
+  FileText,
+  HelpCircle,
+  LogOut
+} from 'lucide-react';
+
+interface EmployeeSidebarProps {
+  currentView: string;
+  onNavigate: (view: string) => void;
+}
+
+const EmployeeSidebar = ({ currentView, onNavigate }: EmployeeSidebarProps) => {
+  const { logout } = useAuth();
+
+  const menuItems = [
+    {
+      title: 'Dashboard',
+      icon: Home,
+      view: 'dashboard'
+    },
+    {
+      title: 'Submit Task',
+      icon: ClipboardList,
+      view: 'task'
+    },
+    {
+      title: 'Request Leave',
+      icon: Calendar,
+      view: 'leave'
+    },
+    {
+      title: 'Advance Request',
+      icon: CreditCard,
+      view: 'advance'
+    },
+    {
+      title: 'Asset Request',
+      icon: Package,
+      view: 'asset'
+    },
+    {
+      title: 'Payslips',
+      icon: FileText,
+      view: 'payslips'
+    },
+    {
+      title: 'Support',
+      icon: HelpCircle,
+      view: 'support'
+    }
+  ];
+
+  return (
+    <Sidebar>
+      <SidebarHeader>
+        <div className="flex items-center space-x-2 p-4">
+          <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
+            <span className="text-white font-bold text-sm">SW</span>
+          </div>
+          <span className="font-semibold">Skyway Networks</span>
+        </div>
+      </SidebarHeader>
+      
+      <SidebarContent>
+        <SidebarMenu>
+          {menuItems.map((item) => {
+            const Icon = item.icon;
+            return (
+              <SidebarMenuItem key={item.view}>
+                <SidebarMenuButton
+                  onClick={() => onNavigate(item.view)}
+                  isActive={currentView === item.view}
+                  className="w-full justify-start"
+                >
+                  <Icon className="h-5 w-5 mr-3" />
+                  {item.title}
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            );
+          })}
+          
+          <SidebarMenuItem>
+            <SidebarMenuButton
+              onClick={logout}
+              className="w-full justify-start text-red-600 hover:text-red-700 hover:bg-red-50"
+            >
+              <LogOut className="h-5 w-5 mr-3" />
+              Logout
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+        </SidebarMenu>
+      </SidebarContent>
+    </Sidebar>
+  );
+};
+
+export default EmployeeSidebar;

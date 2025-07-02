@@ -13,10 +13,12 @@ import AssetRequestForm from './AssetRequestForm';
 import PayslipsView from './PayslipsView';
 import SupportView from './SupportView';
 import AdminDashboard from './AdminDashboard';
+import EmployeeSidebar from './EmployeeSidebar';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { Calendar, Users, CheckCircle, Clock, Phone, Mail } from 'lucide-react';
+import { SidebarProvider, SidebarInset, SidebarTrigger } from '@/components/ui/sidebar';
 
 const Dashboard = () => {
   const { user, logout } = useAuth();
@@ -226,112 +228,127 @@ const Dashboard = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
-      <div className="max-w-4xl mx-auto space-y-6">
-        {/* Header - Mobile Optimized */}
-        <Card className="gradient-bg text-white">
-          <CardHeader>
-            <div className="space-y-4">
-              {/* Name and Welcome Message - Top */}
-              <div className="text-center md:text-left">
-                <CardTitle className="text-2xl font-bold">Welcome back, {user?.name}!</CardTitle>
-                <p className="text-blue-100">Employee ID: {user?.employeeId}</p>
-              </div>
-              
-              {/* Time and Date - Center */}
-              <div className="flex justify-center">
-                <LiveClock />
-              </div>
-              
-              {/* Status Indicator - Bottom */}
-              <div>
-                <StatusIndicator 
-                  status={isCheckedIn ? 'in' : 'out'} 
-                  checkInTime={currentAttendance?.check_in_time ? new Date(currentAttendance.check_in_time) : null}
-                />
-              </div>
+    <SidebarProvider>
+      <div className="flex min-h-screen w-full">
+        <EmployeeSidebar currentView={currentView} onNavigate={handleNavigate} />
+        
+        <SidebarInset className="flex-1">
+          <header className="flex h-16 shrink-0 items-center gap-2 border-b px-4">
+            <SidebarTrigger className="-ml-1" />
+            <div className="flex items-center space-x-2">
+              <span className="font-semibold">Employee Dashboard</span>
             </div>
-          </CardHeader>
-        </Card>
+          </header>
+          
+          <div className="flex-1 p-4 bg-gradient-to-br from-blue-50 to-indigo-100">
+            <div className="max-w-4xl mx-auto space-y-6">
+              {/* Header - Mobile Optimized */}
+              <Card className="gradient-bg text-white">
+                <CardHeader>
+                  <div className="space-y-4">
+                    {/* Name and Welcome Message - Top */}
+                    <div className="text-center md:text-left">
+                      <CardTitle className="text-2xl font-bold">Welcome back, {user?.name}!</CardTitle>
+                      <p className="text-blue-100">Employee ID: {user?.employeeId}</p>
+                    </div>
+                    
+                    {/* Time and Date - Center */}
+                    <div className="flex justify-center">
+                      <LiveClock />
+                    </div>
+                    
+                    {/* Status Indicator - Bottom */}
+                    <div>
+                      <StatusIndicator 
+                        status={isCheckedIn ? 'in' : 'out'} 
+                        checkInTime={currentAttendance?.check_in_time ? new Date(currentAttendance.check_in_time) : null}
+                      />
+                    </div>
+                  </div>
+                </CardHeader>
+              </Card>
 
-        {/* Check-in/Check-out Button */}
-        <CheckInButton
-          isCheckedIn={isCheckedIn}
-          onCheckIn={handleCheckIn}
-          onCheckOut={handleCheckOut}
-        />
+              {/* Check-in/Check-out Button */}
+              <CheckInButton
+                isCheckedIn={isCheckedIn}
+                onCheckIn={handleCheckIn}
+                onCheckOut={handleCheckOut}
+              />
 
-        {/* Monthly Stats */}
-        {isCheckedIn && (
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center space-x-2">
-                <Calendar className="h-5 w-5" />
-                <span>This Month's Performance</span>
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-blue-600">{monthlyStats.totalTasks}</div>
-                  <div className="text-sm text-gray-600">Total Tasks</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-green-600">{monthlyStats.completedTasks}</div>
-                  <div className="text-sm text-gray-600">Completed</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-yellow-600">{monthlyStats.pendingTasks}</div>
-                  <div className="text-sm text-gray-600">Pending</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-purple-600">{monthlyStats.approvedTasks}</div>
-                  <div className="text-sm text-gray-600">Approved</div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        )}
+              {/* Monthly Stats */}
+              {isCheckedIn && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center space-x-2">
+                      <Calendar className="h-5 w-5" />
+                      <span>This Month's Performance</span>
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                      <div className="text-center">
+                        <div className="text-2xl font-bold text-blue-600">{monthlyStats.totalTasks}</div>
+                        <div className="text-sm text-gray-600">Total Tasks</div>
+                      </div>
+                      <div className="text-center">
+                        <div className="text-2xl font-bold text-green-600">{monthlyStats.completedTasks}</div>
+                        <div className="text-sm text-gray-600">Completed</div>
+                      </div>
+                      <div className="text-center">
+                        <div className="text-2xl font-bold text-yellow-600">{monthlyStats.pendingTasks}</div>
+                        <div className="text-sm text-gray-600">Pending</div>
+                      </div>
+                      <div className="text-center">
+                        <div className="text-2xl font-bold text-purple-600">{monthlyStats.approvedTasks}</div>
+                        <div className="text-sm text-gray-600">Approved</div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
 
-        {/* Contact Information */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Need Help? Contact Us</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex flex-col sm:flex-row gap-4">
-              <Button
-                variant="outline"
-                className="flex items-center space-x-2"
-                onClick={() => window.open('tel:+917842288660')}
-              >
-                <Phone className="h-4 w-4" />
-                <span>+91 7842288660</span>
-              </Button>
-              <Button
-                variant="outline"
-                className="flex items-center space-x-2"
-                onClick={() => window.open('https://wa.me/917842288660')}
-              >
-                <Phone className="h-4 w-4" />
-                <span>WhatsApp</span>
-              </Button>
-              <Button
-                variant="outline"
-                className="flex items-center space-x-2"
-                onClick={() => window.open('mailto:info@skywaynetworks.in')}
-              >
-                <Mail className="h-4 w-4" />
-                <span>info@skywaynetworks.in</span>
-              </Button>
+              {/* Quick Actions */}
+              <QuickActions onNavigate={handleNavigate} />
+
+              {/* Contact Information - Moved after Quick Actions */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>Need Help? Contact Us</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex flex-col sm:flex-row gap-4">
+                    <Button
+                      variant="outline"
+                      className="flex items-center space-x-2"
+                      onClick={() => window.open('tel:+917842288660')}
+                    >
+                      <Phone className="h-4 w-4" />
+                      <span>+91 7842288660</span>
+                    </Button>
+                    <Button
+                      variant="outline"
+                      className="flex items-center space-x-2"
+                      onClick={() => window.open('https://wa.me/917842288660')}
+                    >
+                      <Phone className="h-4 w-4" />
+                      <span>WhatsApp</span>
+                    </Button>
+                    <Button
+                      variant="outline"
+                      className="flex items-center space-x-2"
+                      onClick={() => window.open('mailto:info@skywaynetworks.in')}
+                    >
+                      <Mail className="h-4 w-4" />
+                      <span>info@skywaynetworks.in</span>
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
             </div>
-          </CardContent>
-        </Card>
-
-        {/* Quick Actions - Moved to bottom */}
-        <QuickActions onNavigate={handleNavigate} />
+          </div>
+        </SidebarInset>
       </div>
-    </div>
+    </SidebarProvider>
   );
 };
 
