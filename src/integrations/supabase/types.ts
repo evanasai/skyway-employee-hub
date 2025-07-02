@@ -273,6 +273,7 @@ export type Database = {
           is_active: boolean | null
           joining_date: string | null
           name: string
+          password: number | null
           phone: string
           role: string
           salary: number | null
@@ -287,6 +288,7 @@ export type Database = {
           is_active?: boolean | null
           joining_date?: string | null
           name: string
+          password?: number | null
           phone: string
           role: string
           salary?: number | null
@@ -301,6 +303,7 @@ export type Database = {
           is_active?: boolean | null
           joining_date?: string | null
           name?: string
+          password?: number | null
           phone?: string
           role?: string
           salary?: number | null

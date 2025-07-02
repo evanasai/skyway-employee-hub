@@ -27,7 +27,8 @@ import {
   Download,
   BarChart3,
   Phone,
-  Mail
+  Mail,
+  Key
 } from 'lucide-react';
 
 const AdminDashboard = () => {
@@ -38,6 +39,9 @@ const AdminDashboard = () => {
   const [assets, setAssets] = useState([]);
   const [assetRequests, setAssetRequests] = useState([]);
   const [isAddingEmployee, setIsAddingEmployee] = useState(false);
+  const [isSettingPassword, setIsSettingPassword] = useState(false);
+  const [selectedEmployee, setSelectedEmployee] = useState<any>(null);
+  const [newPassword, setNewPassword] = useState('');
   const [newEmployee, setNewEmployee] = useState({
     employee_id: '',
     name: '',
@@ -45,7 +49,8 @@ const AdminDashboard = () => {
     phone: '',
     department: '',
     role: 'employee',
-    salary: ''
+    salary: '',
+    password: ''
   });
 
   useEffect(() => {
@@ -102,10 +107,10 @@ const AdminDashboard = () => {
   };
 
   const handleAddEmployee = async () => {
-    if (!newEmployee.name.trim() || !newEmployee.employee_id.trim()) {
+    if (!newEmployee.name.trim() || !newEmployee.employee_id.trim() || !newEmployee.password.trim()) {
       toast({
         title: "Error",
-        description: "Employee name and ID are required",
+        description: "Employee name, ID, and password are required",
         variant: "destructive",
       });
       return;
@@ -121,24 +126,62 @@ const AdminDashboard = () => {
           phone: newEmployee.phone,
           department: newEmployee.department,
           role: newEmployee.role,
-          salary: parseFloat(newEmployee.salary) || 0
+          salary: parseFloat(newEmployee.salary) || 0,
+          password: parseInt(newEmployee.password)
         });
 
       if (error) throw error;
 
-      setNewEmployee({ employee_id: '', name: '', email: '', phone: '', department: '', role: 'employee', salary: '' });
+      setNewEmployee({ employee_id: '', name: '', email: '', phone: '', department: '', role: 'employee', salary: '', password: '' });
       setIsAddingEmployee(false);
       fetchData();
       
       toast({
         title: "Employee Added",
-        description: "New employee has been created successfully",
+        description: "New employee has been created with login credentials",
       });
     } catch (error) {
       console.error('Error adding employee:', error);
       toast({
         title: "Error",
         description: "Failed to add employee",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleSetPassword = async () => {
+    if (!newPassword.trim()) {
+      toast({
+        title: "Error",
+        description: "Password is required",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from('employees')
+        .update({ password: parseInt(newPassword) })
+        .eq('id', selectedEmployee.id);
+
+      if (error) throw error;
+
+      setIsSettingPassword(false);
+      setSelectedEmployee(null);
+      setNewPassword('');
+      fetchData();
+      
+      toast({
+        title: "Password Updated",
+        description: "Employee login password has been updated",
+      });
+    } catch (error) {
+      console.error('Error updating password:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update password",
         variant: "destructive",
       });
     }
@@ -393,7 +436,7 @@ const AdminDashboard = () => {
                     <DialogContent>
                       <DialogHeader>
                         <DialogTitle>Add New Employee</DialogTitle>
-                        <DialogDescription>Create a new employee record</DialogDescription>
+                        <DialogDescription>Create a new employee record with login credentials</DialogDescription>
                       </DialogHeader>
                       <div className="space-y-4">
                         <div className="grid grid-cols-2 gap-4">
@@ -444,6 +487,19 @@ const AdminDashboard = () => {
                             />
                           </div>
                           <div>
+                            <Label htmlFor="role">Role</Label>
+                            <Select value={newEmployee.role} onValueChange={(value) => setNewEmployee({...newEmployee, role: value})}>
+                              <SelectTrigger>
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="employee">Employee</SelectItem>
+                                <SelectItem value="supervisor">Supervisor</SelectItem>
+                                <SelectItem value="admin">Admin</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          <div>
                             <Label htmlFor="salary">Base Salary</Label>
                             <Input
                               id="salary"
@@ -451,6 +507,16 @@ const AdminDashboard = () => {
                               value={newEmployee.salary}
                               onChange={(e) => setNewEmployee({...newEmployee, salary: e.target.value})}
                               placeholder="25000"
+                            />
+                          </div>
+                          <div>
+                            <Label htmlFor="password">Login Password *</Label>
+                            <Input
+                              id="password"
+                              type="number"
+                              value={newEmployee.password}
+                              onChange={(e) => setNewEmployee({...newEmployee, password: e.target.value})}
+                              placeholder="123456"
                             />
                           </div>
                         </div>
@@ -468,10 +534,46 @@ const AdminDashboard = () => {
                 </div>
               </div>
 
+              {/* Password Update Dialog */}
+              <Dialog open={isSettingPassword} onOpenChange={setIsSettingPassword}>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Update Login Password</DialogTitle>
+                    <DialogDescription>
+                      Set new login password for {selectedEmployee?.name}
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="space-y-4">
+                    <div>
+                      <Label htmlFor="newPassword">New Password</Label>
+                      <Input
+                        id="newPassword"
+                        type="number"
+                        value={newPassword}
+                        onChange={(e) => setNewPassword(e.target.value)}
+                        placeholder="Enter new password"
+                      />
+                    </div>
+                    <div className="flex justify-end space-x-2">
+                      <Button variant="outline" onClick={() => {
+                        setIsSettingPassword(false);
+                        setSelectedEmployee(null);
+                        setNewPassword('');
+                      }}>
+                        Cancel
+                      </Button>
+                      <Button onClick={handleSetPassword}>
+                        Update Password
+                      </Button>
+                    </div>
+                  </div>
+                </DialogContent>
+              </Dialog>
+
               <Card>
                 <CardHeader>
                   <CardTitle>Employee Database</CardTitle>
-                  <CardDescription>Manage employee records and details</CardDescription>
+                  <CardDescription>Manage employee records and login credentials</CardDescription>
                 </CardHeader>
                 <CardContent>
                   <Table>
@@ -482,6 +584,7 @@ const AdminDashboard = () => {
                         <TableHead>Email</TableHead>
                         <TableHead>Phone</TableHead>
                         <TableHead>Department</TableHead>
+                        <TableHead>Role</TableHead>
                         <TableHead>Salary</TableHead>
                         <TableHead>Actions</TableHead>
                       </TableRow>
@@ -512,9 +615,20 @@ const AdminDashboard = () => {
                             </Button>
                           </TableCell>
                           <TableCell>{employee.department}</TableCell>
+                          <TableCell>{employee.role}</TableCell>
                           <TableCell>₹{employee.salary?.toLocaleString()}</TableCell>
                           <TableCell>
                             <div className="flex space-x-2">
+                              <Button 
+                                variant="outline" 
+                                size="sm"
+                                onClick={() => {
+                                  setSelectedEmployee(employee);
+                                  setIsSettingPassword(true);
+                                }}
+                              >
+                                <Key className="h-4 w-4" />
+                              </Button>
                               <Button variant="outline" size="sm">
                                 <Edit className="h-4 w-4" />
                               </Button>
