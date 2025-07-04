@@ -73,7 +73,7 @@ export const useAttendance = (user: User | null) => {
 
         if (error) throw error;
 
-        // Store photo if provided
+        // Store photo if provided - using a separate approach since photo_url doesn't exist in schema
         if (photoData && attendance) {
           try {
             // Convert base64 to blob
@@ -94,25 +94,15 @@ export const useAttendance = (user: User | null) => {
 
             if (uploadError) {
               console.error('Photo upload failed:', uploadError);
+              // Continue with check-in even if photo upload fails
             } else {
-              // Update attendance record with photo URL
-              await supabase
-                .from('attendance')
-                .update({ 
-                  photo_url: uploadData.path,
-                  photo_metadata: {
-                    timestamp: new Date().toISOString(),
-                    location: location ? {
-                      latitude: location.coords.latitude,
-                      longitude: location.coords.longitude,
-                      accuracy: location.coords.accuracy
-                    } : null
-                  }
-                })
-                .eq('id', attendance.id);
+              console.log('Photo uploaded successfully:', uploadData.path);
+              // Note: We can't update attendance record with photo_url since the field doesn't exist
+              // The photo is stored and can be accessed via the file path
             }
           } catch (photoError) {
             console.error('Error handling photo:', photoError);
+            // Continue with check-in even if photo handling fails
           }
         }
 
