@@ -34,7 +34,7 @@ const Dashboard = () => {
   const isMobile = useIsMobile();
   
   // Custom hooks for data management
-  const { isCheckedIn, currentAttendance, handleCheckIn, handleCheckOut } = useAttendance(user);
+  const { isCheckedIn, currentAttendance, currentZone, handleCheckIn, handleCheckOut } = useAttendance(user);
   const { monthlyStats } = useMonthlyStats(user);
 
   const handleNavigate = (view: string) => {
@@ -76,7 +76,7 @@ const Dashboard = () => {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
         <MobileBackButton />
-        <TaskSubmissionForm onBack={handleBackToDashboard} />
+        <TaskSubmissionForm />
       </div>
     );
   }
@@ -85,7 +85,7 @@ const Dashboard = () => {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
         <MobileBackButton />
-        <LeaveRequestForm onBack={handleBackToDashboard} />
+        <LeaveRequestForm />
       </div>
     );
   }
@@ -94,7 +94,7 @@ const Dashboard = () => {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
         <MobileBackButton />
-        <AdvanceRequestForm onBack={handleBackToDashboard} />
+        <AdvanceRequestForm />
       </div>
     );
   }
@@ -103,7 +103,7 @@ const Dashboard = () => {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
         <MobileBackButton />
-        <AssetRequestForm onBack={handleBackToDashboard} />
+        <AssetRequestForm />
       </div>
     );
   }
@@ -112,7 +112,7 @@ const Dashboard = () => {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
         <MobileBackButton />
-        <PayslipsView onBack={handleBackToDashboard} />
+        <PayslipsView />
       </div>
     );
   }
@@ -121,7 +121,7 @@ const Dashboard = () => {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
         <MobileBackButton />
-        <SupportView onBack={handleBackToDashboard} />
+        <SupportView />
       </div>
     );
   }
@@ -130,7 +130,7 @@ const Dashboard = () => {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
         <MobileBackButton />
-        <MonthlyPerformance onBack={handleBackToDashboard} />
+        <MonthlyPerformance />
       </div>
     );
   }
@@ -139,7 +139,7 @@ const Dashboard = () => {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
         <MobileBackButton />
-        <MyDocuments onBack={handleBackToDashboard} />
+        <MyDocuments />
       </div>
     );
   }
@@ -164,7 +164,8 @@ const Dashboard = () => {
               <EmployeeDashboardHeader 
                 user={user!} 
                 isCheckedIn={isCheckedIn} 
-                currentAttendance={currentAttendance} 
+                currentAttendance={currentAttendance}
+                currentZone={currentZone}
               />
 
               {/* Check-in/Check-out Button */}

@@ -9,9 +9,10 @@ interface EmployeeDashboardHeaderProps {
   user: User;
   isCheckedIn: boolean;
   currentAttendance: any;
+  currentZone?: string | null;
 }
 
-const EmployeeDashboardHeader = ({ user, isCheckedIn, currentAttendance }: EmployeeDashboardHeaderProps) => {
+const EmployeeDashboardHeader = ({ user, isCheckedIn, currentAttendance, currentZone }: EmployeeDashboardHeaderProps) => {
   return (
     <Card className="gradient-bg text-white">
       <CardHeader>
@@ -20,6 +21,9 @@ const EmployeeDashboardHeader = ({ user, isCheckedIn, currentAttendance }: Emplo
           <div className="text-center md:text-left">
             <CardTitle className="text-2xl font-bold">Welcome back, {user?.name}!</CardTitle>
             <p className="text-blue-100">Employee ID: {user?.employeeId}</p>
+            {currentZone && (
+              <p className="text-blue-100 text-sm">📍 Current Zone: {currentZone}</p>
+            )}
           </div>
           
           {/* Time and Date - Center */}

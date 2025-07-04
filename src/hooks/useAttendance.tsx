@@ -7,6 +7,7 @@ import { User } from '@/types';
 export const useAttendance = (user: User | null) => {
   const [isCheckedIn, setIsCheckedIn] = useState(false);
   const [currentAttendance, setCurrentAttendance] = useState<any>(null);
+  const [currentZone, setCurrentZone] = useState<string | null>(null);
 
   useEffect(() => {
     if (user) {
@@ -45,8 +46,81 @@ export const useAttendance = (user: User | null) => {
     }
   };
 
+  const isPointInPolygon = (point: { lat: number; lng: number }, polygon: { lat: number; lng: number }[]): boolean => {
+    const x = point.lat;
+    const y = point.lng;
+    let inside = false;
+
+    for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
+      const xi = polygon[i].lat;
+      const yi = polygon[i].lng;
+      const xj = polygon[j].lat;
+      const yj = polygon[j].lng;
+
+      if (((yi > y) !== (yj > y)) && (x < (xj - xi) * (y - yi) / (yj - yi) + xi)) {
+        inside = !inside;
+      }
+    }
+
+    return inside;
+  };
+
+  const checkZoneValidation = async (location: GeolocationPosition): Promise<{ isValid: boolean; zoneName?: string }> => {
+    try {
+      const { data: zones } = await supabase
+        .from('zones')
+        .select('*')
+        .eq('is_active', true);
+
+      if (!zones || zones.length === 0) {
+        // If no zones are configured, allow check-in anywhere
+        return { isValid: true };
+      }
+
+      const currentPoint = {
+        lat: location.coords.latitude,
+        lng: location.coords.longitude
+      };
+
+      for (const zone of zones) {
+        if (isPointInPolygon(currentPoint, zone.coordinates)) {
+          return { isValid: true, zoneName: zone.name };
+        }
+      }
+
+      return { isValid: false };
+    } catch (error) {
+      console.error('Error checking zone validation:', error);
+      return { isValid: true }; // Allow check-in if zone check fails
+    }
+  };
+
   const handleCheckIn = async (photoData?: string, location?: GeolocationPosition | null) => {
     if (!user) return;
+
+    if (!location) {
+      toast({
+        title: "Location Required",
+        description: "Location access is required for check-in",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    // Check zone validation
+    const zoneValidation = await checkZoneValidation(location);
+    if (!zoneValidation.isValid) {
+      toast({
+        title: "Outside Authorized Zone",
+        description: "You can only check in from authorized work zones",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (zoneValidation.zoneName) {
+      setCurrentZone(zoneValidation.zoneName);
+    }
 
     try {
       const { data: employee } = await supabase
@@ -59,9 +133,9 @@ export const useAttendance = (user: User | null) => {
         const attendanceData = {
           employee_id: employee.id,
           check_in_time: new Date().toISOString(),
-          location_lat: location?.coords.latitude || 12.9716,
-          location_lng: location?.coords.longitude || 77.5946,
-          location_address: location ? 'GPS Location' : 'Bangalore Office',
+          location_lat: location.coords.latitude,
+          location_lng: location.coords.longitude,
+          location_address: zoneValidation.zoneName || 'GPS Location',
           status: 'checked_in'
         };
 
@@ -73,7 +147,7 @@ export const useAttendance = (user: User | null) => {
 
         if (error) throw error;
 
-        // Store photo if provided - using a separate approach since photo_url doesn't exist in schema
+        // Store photo if provided
         if (photoData && attendance) {
           try {
             // Convert base64 to blob
@@ -94,15 +168,11 @@ export const useAttendance = (user: User | null) => {
 
             if (uploadError) {
               console.error('Photo upload failed:', uploadError);
-              // Continue with check-in even if photo upload fails
             } else {
               console.log('Photo uploaded successfully:', uploadData.path);
-              // Note: We can't update attendance record with photo_url since the field doesn't exist
-              // The photo is stored and can be accessed via the file path
             }
           } catch (photoError) {
             console.error('Error handling photo:', photoError);
-            // Continue with check-in even if photo handling fails
           }
         }
 
@@ -131,6 +201,7 @@ export const useAttendance = (user: User | null) => {
 
       setIsCheckedIn(false);
       setCurrentAttendance(null);
+      setCurrentZone(null);
     } catch (error) {
       console.error('Error checking out:', error);
       toast({
@@ -144,6 +215,7 @@ export const useAttendance = (user: User | null) => {
   return {
     isCheckedIn,
     currentAttendance,
+    currentZone,
     handleCheckIn,
     handleCheckOut,
     checkAttendanceStatus

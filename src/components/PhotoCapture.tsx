@@ -135,9 +135,9 @@ const PhotoCapture: React.FC<PhotoCaptureProps> = ({ onPhotoCapture, onCancel, i
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 bg-black flex flex-col">
+    <div className="fixed inset-0 z-50 bg-black flex flex-col overflow-hidden">
       {/* Header */}
-      <div className="flex items-center justify-between p-4 bg-black text-white">
+      <div className="flex items-center justify-between p-4 bg-black text-white shrink-0">
         <h2 className="text-lg font-semibold">Take Check-in Photo</h2>
         <Button
           variant="ghost"
@@ -150,18 +150,19 @@ const PhotoCapture: React.FC<PhotoCaptureProps> = ({ onPhotoCapture, onCancel, i
       </div>
 
       {/* Camera View */}
-      <div className="flex-1 relative flex items-center justify-center bg-black">
+      <div className="flex-1 relative flex items-center justify-center bg-black min-h-0">
         <video
           ref={videoRef}
           autoPlay
           playsInline
           muted
-          className="max-w-full max-h-full object-cover"
+          className="w-full h-full object-cover"
+          style={{ maxHeight: 'calc(100vh - 200px)' }}
         />
         <canvas ref={canvasRef} className="hidden" />
         
         {/* Location Status */}
-        <div className="absolute top-4 left-4 right-4">
+        <div className="absolute top-4 left-4 right-4 z-10">
           <Card className="bg-black/50 text-white border-gray-600">
             <CardContent className="p-3">
               <div className="text-sm">
@@ -180,7 +181,7 @@ const PhotoCapture: React.FC<PhotoCaptureProps> = ({ onPhotoCapture, onCancel, i
       </div>
 
       {/* Controls */}
-      <div className="p-4 bg-black flex items-center justify-center space-x-6">
+      <div className="p-4 bg-black flex items-center justify-center space-x-6 shrink-0 safe-area-bottom">
         <Button
           variant="outline"
           size="lg"
