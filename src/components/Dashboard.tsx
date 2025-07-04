@@ -3,6 +3,8 @@ import React, { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from '@/hooks/use-toast';
 import { SidebarProvider, SidebarInset, SidebarTrigger } from '@/components/ui/sidebar';
+import { Button } from '@/components/ui/button';
+import { ArrowLeft } from 'lucide-react';
 
 // Component imports
 import EmployeeSidebar from './EmployeeSidebar';
@@ -24,10 +26,12 @@ import MyDocuments from './MyDocuments';
 // Custom hooks
 import { useAttendance } from '@/hooks/useAttendance';
 import { useMonthlyStats } from '@/hooks/useMonthlyStats';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 const Dashboard = () => {
   const { user } = useAuth();
   const [currentView, setCurrentView] = useState<string>('dashboard');
+  const isMobile = useIsMobile();
   
   // Custom hooks for data management
   const { isCheckedIn, currentAttendance, handleCheckIn, handleCheckOut } = useAttendance(user);
@@ -54,37 +58,90 @@ const Dashboard = () => {
     return <AdminDashboard />;
   }
 
+  // Mobile back button component
+  const MobileBackButton = () => (
+    <Button
+      variant="ghost"
+      size="sm"
+      onClick={handleBackToDashboard}
+      className="mb-4 md:hidden"
+    >
+      <ArrowLeft className="h-4 w-4 mr-2" />
+      Back to Dashboard
+    </Button>
+  );
+
   // Render different views based on currentView
   if (currentView === 'task') {
-    return <TaskSubmissionForm onBack={handleBackToDashboard} />;
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
+        <MobileBackButton />
+        <TaskSubmissionForm onBack={handleBackToDashboard} />
+      </div>
+    );
   }
 
   if (currentView === 'leave') {
-    return <LeaveRequestForm onBack={handleBackToDashboard} />;
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
+        <MobileBackButton />
+        <LeaveRequestForm onBack={handleBackToDashboard} />
+      </div>
+    );
   }
 
   if (currentView === 'advance') {
-    return <AdvanceRequestForm onBack={handleBackToDashboard} />;
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
+        <MobileBackButton />
+        <AdvanceRequestForm onBack={handleBackToDashboard} />
+      </div>
+    );
   }
 
   if (currentView === 'asset') {
-    return <AssetRequestForm onBack={handleBackToDashboard} />;
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
+        <MobileBackButton />
+        <AssetRequestForm onBack={handleBackToDashboard} />
+      </div>
+    );
   }
 
   if (currentView === 'payslips') {
-    return <PayslipsView onBack={handleBackToDashboard} />;
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
+        <MobileBackButton />
+        <PayslipsView onBack={handleBackToDashboard} />
+      </div>
+    );
   }
 
   if (currentView === 'support') {
-    return <SupportView onBack={handleBackToDashboard} />;
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
+        <MobileBackButton />
+        <SupportView onBack={handleBackToDashboard} />
+      </div>
+    );
   }
 
   if (currentView === 'performance') {
-    return <MonthlyPerformance onBack={handleBackToDashboard} />;
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
+        <MobileBackButton />
+        <MonthlyPerformance onBack={handleBackToDashboard} />
+      </div>
+    );
   }
 
   if (currentView === 'documents') {
-    return <MyDocuments onBack={handleBackToDashboard} />;
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
+        <MobileBackButton />
+        <MyDocuments onBack={handleBackToDashboard} />
+      </div>
+    );
   }
 
   // Main dashboard view
