@@ -45,6 +45,10 @@ const Dashboard = () => {
     setCurrentView(view);
   };
 
+  const handleBackToDashboard = () => {
+    setCurrentView('dashboard');
+  };
+
   // Show admin dashboard for admin/super_admin roles
   if (user?.role === 'admin' || user?.role === 'super_admin') {
     return <AdminDashboard />;
@@ -52,35 +56,35 @@ const Dashboard = () => {
 
   // Render different views based on currentView
   if (currentView === 'task') {
-    return <TaskSubmissionForm onBack={() => setCurrentView('dashboard')} />;
+    return <TaskSubmissionForm onBack={handleBackToDashboard} />;
   }
 
   if (currentView === 'leave') {
-    return <LeaveRequestForm onBack={() => setCurrentView('dashboard')} />;
+    return <LeaveRequestForm onBack={handleBackToDashboard} />;
   }
 
   if (currentView === 'advance') {
-    return <AdvanceRequestForm onBack={() => setCurrentView('dashboard')} />;
+    return <AdvanceRequestForm onBack={handleBackToDashboard} />;
   }
 
   if (currentView === 'asset') {
-    return <AssetRequestForm onBack={() => setCurrentView('dashboard')} />;
+    return <AssetRequestForm onBack={handleBackToDashboard} />;
   }
 
   if (currentView === 'payslips') {
-    return <PayslipsView onBack={() => setCurrentView('dashboard')} />;
+    return <PayslipsView onBack={handleBackToDashboard} />;
   }
 
   if (currentView === 'support') {
-    return <SupportView onBack={() => setCurrentView('dashboard')} />;
+    return <SupportView onBack={handleBackToDashboard} />;
   }
 
   if (currentView === 'performance') {
-    return <MonthlyPerformance onBack={() => setCurrentView('dashboard')} />;
+    return <MonthlyPerformance onBack={handleBackToDashboard} />;
   }
 
   if (currentView === 'documents') {
-    return <MyDocuments onBack={() => setCurrentView('dashboard')} />;
+    return <MyDocuments onBack={handleBackToDashboard} />;
   }
 
   // Main dashboard view

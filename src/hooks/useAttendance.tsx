@@ -45,7 +45,7 @@ export const useAttendance = (user: User | null) => {
     }
   };
 
-  const handleCheckIn = async () => {
+  const handleCheckIn = async (photoData?: string, location?: GeolocationPosition | null) => {
     if (!user) return;
 
     try {
@@ -56,41 +56,72 @@ export const useAttendance = (user: User | null) => {
         .single();
 
       if (employee) {
-        const mockLocation = {
-          lat: 12.9716,
-          lng: 77.5946,
-          address: 'Bangalore Office'
+        const attendanceData = {
+          employee_id: employee.id,
+          check_in_time: new Date().toISOString(),
+          location_lat: location?.coords.latitude || 12.9716,
+          location_lng: location?.coords.longitude || 77.5946,
+          location_address: location ? 'GPS Location' : 'Bangalore Office',
+          status: 'checked_in'
         };
 
         const { data: attendance, error } = await supabase
           .from('attendance')
-          .insert({
-            employee_id: employee.id,
-            check_in_time: new Date().toISOString(),
-            location_lat: mockLocation.lat,
-            location_lng: mockLocation.lng,
-            location_address: mockLocation.address,
-            status: 'checked_in'
-          })
+          .insert(attendanceData)
           .select()
           .single();
 
         if (error) throw error;
 
+        // Store photo if provided
+        if (photoData && attendance) {
+          try {
+            // Convert base64 to blob
+            const base64Data = photoData.split(',')[1];
+            const byteCharacters = atob(base64Data);
+            const byteNumbers = new Array(byteCharacters.length);
+            for (let i = 0; i < byteCharacters.length; i++) {
+              byteNumbers[i] = byteCharacters.charCodeAt(i);
+            }
+            const byteArray = new Uint8Array(byteNumbers);
+            const blob = new Blob([byteArray], { type: 'image/jpeg' });
+
+            const fileName = `checkin_${employee.employee_id}_${Date.now()}.jpg`;
+            
+            const { data: uploadData, error: uploadError } = await supabase.storage
+              .from('attendance-photos')
+              .upload(fileName, blob);
+
+            if (uploadError) {
+              console.error('Photo upload failed:', uploadError);
+            } else {
+              // Update attendance record with photo URL
+              await supabase
+                .from('attendance')
+                .update({ 
+                  photo_url: uploadData.path,
+                  photo_metadata: {
+                    timestamp: new Date().toISOString(),
+                    location: location ? {
+                      latitude: location.coords.latitude,
+                      longitude: location.coords.longitude,
+                      accuracy: location.coords.accuracy
+                    } : null
+                  }
+                })
+                .eq('id', attendance.id);
+            }
+          } catch (photoError) {
+            console.error('Error handling photo:', photoError);
+          }
+        }
+
         setIsCheckedIn(true);
         setCurrentAttendance(attendance);
-        toast({
-          title: "Checked In Successfully",
-          description: "Have a productive day!",
-        });
       }
     } catch (error) {
       console.error('Error checking in:', error);
-      toast({
-        title: "Check-in Failed",
-        description: "Please try again",
-        variant: "destructive"
-      });
+      throw error;
     }
   };
 
@@ -110,10 +141,6 @@ export const useAttendance = (user: User | null) => {
 
       setIsCheckedIn(false);
       setCurrentAttendance(null);
-      toast({
-        title: "Checked Out Successfully",
-        description: "Have a great day!",
-      });
     } catch (error) {
       console.error('Error checking out:', error);
       toast({
