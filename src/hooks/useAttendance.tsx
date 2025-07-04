@@ -3,7 +3,17 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { User } from '@/types';
-import { Zone } from '@/types/database';
+
+// Type guard to check if coordinates are valid
+const isValidCoordinates = (coordinates: any): coordinates is { lat: number; lng: number }[] => {
+  return Array.isArray(coordinates) && 
+    coordinates.every(coord => 
+      typeof coord === 'object' && 
+      coord !== null && 
+      typeof coord.lat === 'number' && 
+      typeof coord.lng === 'number'
+    );
+};
 
 export const useAttendance = (user: User | null) => {
   const [isCheckedIn, setIsCheckedIn] = useState(false);
@@ -89,8 +99,9 @@ export const useAttendance = (user: User | null) => {
       };
 
       for (const zone of zones) {
-        const coordinates = Array.isArray(zone.coordinates) ? zone.coordinates : [];
-        if (isPointInPolygon(currentPoint, coordinates)) {
+        // Safely handle coordinates with type checking
+        const coordinates = isValidCoordinates(zone.coordinates) ? zone.coordinates : [];
+        if (coordinates.length > 0 && isPointInPolygon(currentPoint, coordinates)) {
           return { isValid: true, zoneName: zone.name };
         }
       }

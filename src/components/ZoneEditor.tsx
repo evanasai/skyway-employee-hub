@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -11,6 +12,17 @@ import { Zone } from '@/types/database';
 interface ZoneEditorProps {
   onBack?: () => void;
 }
+
+// Type guard to check if coordinates are valid
+const isValidCoordinates = (coordinates: any): coordinates is { lat: number; lng: number }[] => {
+  return Array.isArray(coordinates) && 
+    coordinates.every(coord => 
+      typeof coord === 'object' && 
+      coord !== null && 
+      typeof coord.lat === 'number' && 
+      typeof coord.lng === 'number'
+    );
+};
 
 const ZoneEditor: React.FC<ZoneEditorProps> = ({ onBack }) => {
   const [zones, setZones] = useState<Zone[]>([]);
@@ -32,7 +44,14 @@ const ZoneEditor: React.FC<ZoneEditorProps> = ({ onBack }) => {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setZones(data || []);
+      
+      // Convert database data to our Zone type with proper coordinate handling
+      const zonesWithValidCoordinates: Zone[] = (data || []).map(zone => ({
+        ...zone,
+        coordinates: isValidCoordinates(zone.coordinates) ? zone.coordinates : []
+      }));
+      
+      setZones(zonesWithValidCoordinates);
     } catch (error) {
       console.error('Error fetching zones:', error);
       toast({
