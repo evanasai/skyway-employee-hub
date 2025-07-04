@@ -85,7 +85,7 @@ const Dashboard = () => {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
         <MobileBackButton />
-        <LeaveRequestForm />
+        <LeaveRequestForm onBack={handleBackToDashboard} />
       </div>
     );
   }
@@ -94,7 +94,7 @@ const Dashboard = () => {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
         <MobileBackButton />
-        <AdvanceRequestForm />
+        <AdvanceRequestForm onBack={handleBackToDashboard} />
       </div>
     );
   }
@@ -103,7 +103,7 @@ const Dashboard = () => {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
         <MobileBackButton />
-        <AssetRequestForm />
+        <AssetRequestForm onBack={handleBackToDashboard} />
       </div>
     );
   }
@@ -112,7 +112,7 @@ const Dashboard = () => {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
         <MobileBackButton />
-        <PayslipsView />
+        <PayslipsView onBack={handleBackToDashboard} />
       </div>
     );
   }
@@ -121,7 +121,7 @@ const Dashboard = () => {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
         <MobileBackButton />
-        <SupportView />
+        <SupportView onBack={handleBackToDashboard} />
       </div>
     );
   }
@@ -130,7 +130,7 @@ const Dashboard = () => {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
         <MobileBackButton />
-        <MonthlyPerformance />
+        <MonthlyPerformance onBack={handleBackToDashboard} />
       </div>
     );
   }
@@ -139,7 +139,7 @@ const Dashboard = () => {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
         <MobileBackButton />
-        <MyDocuments />
+        <MyDocuments onBack={handleBackToDashboard} />
       </div>
     );
   }

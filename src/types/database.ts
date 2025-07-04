@@ -89,3 +89,12 @@ export interface EmployeeDeduction {
   reference_id?: string;
   created_at: string;
 }
+
+export interface Zone {
+  id: string;
+  name: string;
+  coordinates: { lat: number; lng: number }[];
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}

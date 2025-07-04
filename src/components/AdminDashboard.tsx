@@ -10,6 +10,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import ZoneEditor from './ZoneEditor';
 import { 
   Users, 
   FileText, 
@@ -33,7 +34,7 @@ import {
 
 const AdminDashboard = () => {
   const { user, logout } = useAuth();
-  const [activeTab, setActiveTab] = useState<'tasks' | 'employees' | 'salary' | 'inventory' | 'reports' | 'asset-requests'>('tasks');
+  const [activeTab, setActiveTab] = useState<'tasks' | 'employees' | 'salary' | 'inventory' | 'reports' | 'asset-requests' | 'zones'>('tasks');
   const [taskSubmissions, setTaskSubmissions] = useState([]);
   const [employees, setEmployees] = useState([]);
   const [assets, setAssets] = useState([]);
@@ -324,6 +325,14 @@ const AdminDashboard = () => {
               Inventory
             </Button>
             <Button
+              variant={activeTab === 'zones' ? 'default' : 'ghost'}
+              className="w-full justify-start"
+              onClick={() => setActiveTab('zones')}
+            >
+              <Settings className="mr-2 h-4 w-4" />
+              Zone Management
+            </Button>
+            <Button
               variant={activeTab === 'reports' ? 'default' : 'ghost'}
               className="w-full justify-start"
               onClick={() => setActiveTab('reports')}
@@ -367,6 +376,16 @@ const AdminDashboard = () => {
               </div>
             </CardContent>
           </Card>
+
+          {/* Zone Management Tab */}
+          {activeTab === 'zones' && (
+            <div className="space-y-6">
+              <div className="flex items-center justify-between">
+                <h2 className="text-xl font-semibold">Zone Management</h2>
+              </div>
+              <ZoneEditor />
+            </div>
+          )}
 
           {activeTab === 'tasks' && (
             <div className="space-y-6">

@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { User } from '@/types';
+import { Zone } from '@/types/database';
 
 export const useAttendance = (user: User | null) => {
   const [isCheckedIn, setIsCheckedIn] = useState(false);
@@ -67,10 +68,15 @@ export const useAttendance = (user: User | null) => {
 
   const checkZoneValidation = async (location: GeolocationPosition): Promise<{ isValid: boolean; zoneName?: string }> => {
     try {
-      const { data: zones } = await supabase
+      const { data: zones, error } = await supabase
         .from('zones')
         .select('*')
         .eq('is_active', true);
+
+      if (error) {
+        console.error('Error fetching zones:', error);
+        return { isValid: true }; // Allow check-in if zone check fails
+      }
 
       if (!zones || zones.length === 0) {
         // If no zones are configured, allow check-in anywhere
@@ -83,7 +89,8 @@ export const useAttendance = (user: User | null) => {
       };
 
       for (const zone of zones) {
-        if (isPointInPolygon(currentPoint, zone.coordinates)) {
+        const coordinates = Array.isArray(zone.coordinates) ? zone.coordinates : [];
+        if (isPointInPolygon(currentPoint, coordinates)) {
           return { isValid: true, zoneName: zone.name };
         }
       }
