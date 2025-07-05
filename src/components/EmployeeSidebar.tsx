@@ -22,7 +22,8 @@ import {
   HelpCircle,
   LogOut,
   TrendingUp,
-  FolderOpen
+  FolderOpen,
+  User
 } from 'lucide-react';
 
 interface EmployeeSidebarProps {
@@ -58,6 +59,11 @@ const EmployeeSidebar = ({ currentView, onNavigate }: EmployeeSidebarProps) => {
       title: 'Asset Request',
       icon: Package,
       view: 'asset'
+    },
+    {
+      title: 'My Profile',
+      icon: User,
+      view: 'profile'
     },
     {
       title: 'Monthly Performance',

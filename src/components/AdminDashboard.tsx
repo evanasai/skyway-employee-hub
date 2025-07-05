@@ -10,7 +10,9 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import ZoneEditor from './ZoneEditor';
+import MapZoneEditor from './MapZoneEditor';
+import InventoryManagement from './InventoryManagement';
+import ReportDownloader from './ReportDownloader';
 import { 
   Users, 
   FileText, 
@@ -29,12 +31,13 @@ import {
   BarChart3,
   Phone,
   Mail,
-  Key
+  Key,
+  MapPin
 } from 'lucide-react';
 
 const AdminDashboard = () => {
   const { user, logout } = useAuth();
-  const [activeTab, setActiveTab] = useState<'tasks' | 'employees' | 'salary' | 'inventory' | 'reports' | 'asset-requests' | 'zones'>('tasks');
+  const [activeTab, setActiveTab] = useState<'tasks' | 'employees' | 'salary' | 'inventory' | 'reports' | 'asset-requests' | 'zones' | 'custom-reports'>('tasks');
   const [taskSubmissions, setTaskSubmissions] = useState([]);
   const [employees, setEmployees] = useState([]);
   const [assets, setAssets] = useState([]);
@@ -329,8 +332,16 @@ const AdminDashboard = () => {
               className="w-full justify-start"
               onClick={() => setActiveTab('zones')}
             >
-              <Settings className="mr-2 h-4 w-4" />
+              <MapPin className="mr-2 h-4 w-4" />
               Zone Management
+            </Button>
+            <Button
+              variant={activeTab === 'custom-reports' ? 'default' : 'ghost'}
+              className="w-full justify-start"
+              onClick={() => setActiveTab('custom-reports')}
+            >
+              <Download className="mr-2 h-4 w-4" />
+              Custom Reports
             </Button>
             <Button
               variant={activeTab === 'reports' ? 'default' : 'ghost'}
@@ -377,14 +388,24 @@ const AdminDashboard = () => {
             </CardContent>
           </Card>
 
-          {/* Zone Management Tab */}
+          {/* Enhanced Zone Management Tab */}
           {activeTab === 'zones' && (
             <div className="space-y-6">
               <div className="flex items-center justify-between">
-                <h2 className="text-xl font-semibold">Zone Management</h2>
+                <h2 className="text-xl font-semibold">Enhanced Zone Management</h2>
               </div>
-              <ZoneEditor />
+              <MapZoneEditor />
             </div>
+          )}
+
+          {/* Enhanced Inventory Management Tab */}
+          {activeTab === 'inventory' && (
+            <InventoryManagement />
+          )}
+
+          {/* Custom Reports Tab */}
+          {activeTab === 'custom-reports' && (
+            <ReportDownloader />
           )}
 
           {activeTab === 'tasks' && (
@@ -788,50 +809,6 @@ const AdminDashboard = () => {
                   </Table>
                 </CardContent>
               </Card>
-            </div>
-          )}
-
-          {activeTab === 'inventory' && (
-            <div className="space-y-6">
-              <div className="flex items-center justify-between">
-                <h2 className="text-xl font-semibold">Inventory Management</h2>
-                <Button onClick={() => toast({ title: "Download Started", description: "Inventory report is being downloaded" })}>
-                  <Download className="mr-2 h-4 w-4" />
-                  Download Report
-                </Button>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-lg">Total Items</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-3xl font-bold text-blue-600">156</div>
-                    <p className="text-sm text-gray-600">In inventory</p>
-                  </CardContent>
-                </Card>
-                
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-lg">Low Stock</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-3xl font-bold text-yellow-600">8</div>
-                    <p className="text-sm text-gray-600">Need reorder</p>
-                  </CardContent>
-                </Card>
-                
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-lg">Assigned</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-3xl font-bold text-green-600">42</div>
-                    <p className="text-sm text-gray-600">To employees</p>
-                  </CardContent>
-                </Card>
-              </div>
             </div>
           )}
 

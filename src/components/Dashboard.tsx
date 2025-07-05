@@ -22,6 +22,7 @@ import SupportView from './SupportView';
 import AdminDashboard from './AdminDashboard';
 import MonthlyPerformance from './MonthlyPerformance';
 import MyDocuments from './MyDocuments';
+import EmployeeProfile from './EmployeeProfile';
 
 // Custom hooks
 import { useAttendance } from '@/hooks/useAttendance';
@@ -105,6 +106,12 @@ const Dashboard = () => {
         <MobileBackButton />
         <AssetRequestForm onBack={handleBackToDashboard} />
       </div>
+    );
+  }
+
+  if (currentView === 'profile') {
+    return (
+      <EmployeeProfile onBack={handleBackToDashboard} />
     );
   }
 
