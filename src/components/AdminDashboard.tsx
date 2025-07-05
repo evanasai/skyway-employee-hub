@@ -405,7 +405,7 @@ const AdminDashboard = () => {
 
           {/* Custom Reports Tab */}
           {activeTab === 'custom-reports' && (
-            <ReportDownloader />
+            <ReportDownloader onBack={() => setActiveTab('tasks')} />
           )}
 
           {activeTab === 'tasks' && (
