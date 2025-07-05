@@ -41,26 +41,6 @@ const EmployeeSidebar = ({ currentView, onNavigate }: EmployeeSidebarProps) => {
       view: 'dashboard'
     },
     {
-      title: 'Submit Task',
-      icon: ClipboardList,
-      view: 'task'
-    },
-    {
-      title: 'Request Leave',
-      icon: Calendar,
-      view: 'leave'
-    },
-    {
-      title: 'Advance Request',
-      icon: CreditCard,
-      view: 'advance'
-    },
-    {
-      title: 'Asset Request',
-      icon: Package,
-      view: 'asset'
-    },
-    {
       title: 'My Profile',
       icon: User,
       view: 'profile'
@@ -71,14 +51,34 @@ const EmployeeSidebar = ({ currentView, onNavigate }: EmployeeSidebarProps) => {
       view: 'performance'
     },
     {
+      title: 'Payslips',
+      icon: FileText,
+      view: 'payslips'
+    },
+    {
       title: 'My Documents',
       icon: FolderOpen,
       view: 'documents'
     },
     {
-      title: 'Payslips',
-      icon: FileText,
-      view: 'payslips'
+      title: 'Request Leave',
+      icon: Calendar,
+      view: 'leave'
+    },
+    {
+      title: 'Submit Task',
+      icon: ClipboardList,
+      view: 'task'
+    },
+    {
+      title: 'Advance Request',
+      icon: CreditCard,
+      view: 'advance'
+    },
+    {
+      title: 'Asset Request',
+      icon: Package,
+      view: 'asset'
     },
     {
       title: 'Support',
