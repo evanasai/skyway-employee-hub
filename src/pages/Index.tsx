@@ -4,6 +4,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import LoginForm from '@/components/LoginForm';
 import Dashboard from '@/components/Dashboard';
 import AdminDashboard from '@/components/AdminDashboard';
+import SupervisorDashboard from '@/components/SupervisorDashboard';
 
 const Index = () => {
   const { user } = useAuth();
@@ -17,7 +18,12 @@ const Index = () => {
     return <AdminDashboard />;
   }
 
-  // Show regular Dashboard for employees and supervisors
+  // Show SupervisorDashboard for supervisor role
+  if (user.role === 'supervisor') {
+    return <SupervisorDashboard />;
+  }
+
+  // Show regular Dashboard for employees
   return <Dashboard />;
 };
 

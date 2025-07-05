@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { User } from '@/types';
@@ -49,9 +48,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return false;
       }
 
-      // For now, we'll use a simple password check
-      // In production, you'd want to hash passwords properly
-      if (password === 'password123') {
+      // Check password - now using the numeric password field from the database
+      if (employee.password && parseInt(password) === employee.password) {
         const userWithLogin: User = {
           id: employee.id,
           employeeId: employee.employee_id,
