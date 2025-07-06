@@ -29,34 +29,31 @@ export const parseCoordinates = (coordinates: Json): Coordinate[] => {
   if (!coordinates) return [];
   
   try {
-    // If coordinates is already an array
-    if (Array.isArray(coordinates)) {
-      return coordinates.filter((coord): coord is Coordinate => 
-        typeof coord === 'object' && 
-        coord !== null && 
-        'lat' in coord &&
-        'lng' in coord &&
-        typeof (coord as any).lat === 'number' && 
-        typeof (coord as any).lng === 'number'
-      ).map(coord => coord as Coordinate);
-    }
+    let parsed: any;
     
     // If coordinates is a JSON string, parse it
     if (typeof coordinates === 'string') {
-      const parsed = JSON.parse(coordinates);
-      if (Array.isArray(parsed)) {
-        return parsed.filter((coord): coord is Coordinate => 
-          typeof coord === 'object' && 
-          coord !== null && 
-          'lat' in coord &&
-          'lng' in coord &&
-          typeof coord.lat === 'number' && 
-          typeof coord.lng === 'number'
-        );
-      }
+      parsed = JSON.parse(coordinates);
+    } else {
+      parsed = coordinates;
     }
     
-    return [];
+    // Check if parsed is an array
+    if (!Array.isArray(parsed)) {
+      return [];
+    }
+    
+    // Filter and validate coordinates
+    return parsed.filter((coord: any) => {
+      return coord && 
+        typeof coord === 'object' &&
+        typeof coord.lat === 'number' && 
+        typeof coord.lng === 'number';
+    }).map((coord: any) => ({
+      lat: coord.lat,
+      lng: coord.lng
+    }));
+    
   } catch (error) {
     console.error('Error parsing coordinates:', error);
     return [];
