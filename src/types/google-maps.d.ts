@@ -2,42 +2,36 @@
 declare namespace google {
   namespace maps {
     class Map {
-      constructor(mapDiv: Element | null, opts?: MapOptions);
+      constructor(mapDiv: HTMLElement, opts?: MapOptions);
+      addListener(eventName: string, handler: Function): void;
       setCenter(latlng: LatLng | LatLngLiteral): void;
       setZoom(zoom: number): void;
-      addListener(eventName: string, handler: Function): MapsEventListener;
     }
 
     interface MapOptions {
       center?: LatLng | LatLngLiteral;
       zoom?: number;
+      mapTypeId?: string;
+      zoomControl?: boolean;
       mapTypeControl?: boolean;
+      scaleControl?: boolean;
       streetViewControl?: boolean;
+      rotateControl?: boolean;
       fullscreenControl?: boolean;
-    }
-
-    class LatLng {
-      constructor(lat: number, lng: number);
-      lat(): number;
-      lng(): number;
-    }
-
-    interface LatLngLiteral {
-      lat: number;
-      lng: number;
     }
 
     class Marker {
       constructor(opts?: MarkerOptions);
+      addListener(eventName: string, handler: Function): void;
       setMap(map: Map | null): void;
-      addListener(eventName: string, handler: Function): MapsEventListener;
+      getPosition(): LatLng | undefined;
     }
 
     interface MarkerOptions {
       position?: LatLng | LatLngLiteral;
       map?: Map;
-      title?: string;
       draggable?: boolean;
+      title?: string;
       icon?: string | Icon;
     }
 
@@ -52,49 +46,64 @@ declare namespace google {
 
     class Polygon {
       constructor(opts?: PolygonOptions);
+      addListener(eventName: string, handler: Function): void;
       setMap(map: Map | null): void;
-      addListener(eventName: string, handler: Function): MapsEventListener;
     }
 
     interface PolygonOptions {
-      paths?: LatLng[] | LatLngLiteral[];
+      paths?: LatLng[] | LatLng[][] | LatLngLiteral[] | LatLngLiteral[][];
+      fillColor?: string;
+      fillOpacity?: number;
       strokeColor?: string;
       strokeOpacity?: number;
       strokeWeight?: number;
-      fillColor?: string;
-      fillOpacity?: number;
+      editable?: boolean;
+      map?: Map;
     }
 
     class InfoWindow {
       constructor(opts?: InfoWindowOptions);
       setContent(content: string): void;
       setPosition(position: LatLng | LatLngLiteral): void;
-      open(map?: Map): void;
+      open(map: Map): void;
     }
 
     interface InfoWindowOptions {
       content?: string;
     }
 
+    class LatLng {
+      constructor(lat: number, lng: number);
+      lat(): number;
+      lng(): number;
+    }
+
+    interface LatLngLiteral {
+      lat: number;
+      lng: number;
+    }
+
+    class LatLngBounds {
+      constructor();
+      extend(point: LatLng | LatLngLiteral): void;
+      getCenter(): LatLng;
+    }
+
     interface MapMouseEvent {
       latLng?: LatLng;
     }
 
-    interface PolyMouseEvent {
-      latLng?: LatLng;
-    }
-
-    interface MapsEventListener {}
-
     namespace places {
       class Autocomplete {
         constructor(inputField: HTMLInputElement, opts?: AutocompleteOptions);
-        bindTo(key: string, target: Map): void;
-        addListener(eventName: string, handler: Function): MapsEventListener;
+        bindTo(key: string, target: any): void;
+        addListener(eventName: string, handler: Function): void;
         getPlace(): PlaceResult;
       }
 
-      interface AutocompleteOptions {}
+      interface AutocompleteOptions {
+        bounds?: LatLngBounds;
+      }
 
       interface PlaceResult {
         geometry?: {
