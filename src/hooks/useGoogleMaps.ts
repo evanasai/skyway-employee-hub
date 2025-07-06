@@ -1,238 +1,132 @@
 
-import { useRef, useCallback } from 'react';
+import { useState, useCallback } from 'react';
 import { Loader } from '@googlemaps/js-api-loader';
-import { Coordinate, Zone } from '@/types/zone';
 
-export const useGoogleMaps = (apiKey: string) => {
-  const mapRef = useRef<HTMLDivElement>(null);
-  const mapInstanceRef = useRef<google.maps.Map | null>(null);
-  const markersRef = useRef<google.maps.Marker[]>([]);
-  const polygonRef = useRef<google.maps.Polygon | null>(null);
-  const autocompleteRef = useRef<google.maps.places.Autocomplete | null>(null);
-  const existingPolygonsRef = useRef<google.maps.Polygon[]>([]);
+export interface GoogleMapsHookReturn {
+  isLoaded: boolean;
+  loadError: string | null;
+  loadGoogleMaps: () => Promise<void>;
+  maps: typeof google.maps | null;
+}
 
-  const initializeMap = useCallback(async (
-    center: Coordinate | null,
-    onMapClick: (lat: number, lng: number) => void,
-    searchInputRef: React.RefObject<HTMLInputElement>
-  ) => {
-    if (!mapRef.current) return;
+export const useGoogleMaps = (): GoogleMapsHookReturn => {
+  const [isLoaded, setIsLoaded] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [maps, setMaps] = useState<typeof google.maps | null>(null);
+
+  const loadGoogleMaps = useCallback(async () => {
+    if (isLoaded || loadError) return;
 
     try {
       const loader = new Loader({
-        apiKey,
-        version: 'weekly',
-        libraries: ['places']
+        apiKey: "AIzaSyBjsINSWCoxGl1vh2PE0sKgY8UpUy-0S0M",
+        version: "weekly",
+        libraries: ["places", "geometry"]
       });
 
       await loader.load();
-
-      const defaultCenter = center || { lat: 17.3850, lng: 78.4867 }; // Hyderabad center
-
-      const map = new google.maps.Map(mapRef.current, {
-        center: defaultCenter,
-        zoom: 12,
-        mapTypeControl: true,
-        streetViewControl: true,
-        fullscreenControl: true,
-        zoomControl: true,
-        scaleControl: true,
-        gestureHandling: 'cooperative'
-      });
-
-      mapInstanceRef.current = map;
-
-      // Add click listener for adding points
-      map.addListener('click', (event: google.maps.MapMouseEvent) => {
-        if (event.latLng) {
-          onMapClick(event.latLng.lat(), event.latLng.lng());
-        }
-      });
-
-      // Initialize autocomplete for search
-      if (searchInputRef.current) {
-        const autocomplete = new google.maps.places.Autocomplete(searchInputRef.current);
-        autocomplete.bindTo('bounds', map);
-        autocompleteRef.current = autocomplete;
-
-        autocomplete.addListener('place_changed', () => {
-          const place = autocomplete.getPlace();
-          if (place.geometry?.location) {
-            map.setCenter(place.geometry.location);
-            map.setZoom(15);
-          }
-        });
-      }
-
-      // Add user location marker if available
-      if (center) {
-        new google.maps.Marker({
-          position: center,
-          map: map,
-          title: 'Your Location',
-          icon: {
-            path: google.maps.SymbolPath.CIRCLE,
-            scale: 8,
-            fillColor: '#4285F4',
-            fillOpacity: 1,
-            strokeColor: '#ffffff',
-            strokeWeight: 2,
-          },
-        });
-      }
-
-      return map;
+      setMaps(google.maps);
+      setIsLoaded(true);
     } catch (error) {
       console.error('Error loading Google Maps:', error);
-      throw error;
+      setLoadError(error instanceof Error ? error.message : 'Failed to load Google Maps');
     }
-  }, [apiKey]);
-
-  const clearMapElements = useCallback(() => {
-    // Clear editing markers
-    markersRef.current.forEach(marker => marker.setMap(null));
-    markersRef.current = [];
-    
-    // Clear editing polygon
-    if (polygonRef.current) {
-      polygonRef.current.setMap(null);
-      polygonRef.current = null;
-    }
-  }, []);
-
-  const clearAllElements = useCallback(() => {
-    clearMapElements();
-    
-    // Clear existing zone polygons
-    existingPolygonsRef.current.forEach(polygon => polygon.setMap(null));
-    existingPolygonsRef.current = [];
-  }, [clearMapElements]);
-
-  const updatePolygon = useCallback((points: Coordinate[]) => {
-    if (polygonRef.current) {
-      polygonRef.current.setMap(null);
-    }
-
-    if (points.length >= 3 && mapInstanceRef.current) {
-      polygonRef.current = new google.maps.Polygon({
-        paths: points,
-        strokeColor: '#FF0000',
-        strokeOpacity: 0.8,
-        strokeWeight: 3,
-        fillColor: '#FF0000',
-        fillOpacity: 0.35,
-        editable: false,
-        draggable: false
-      });
-      polygonRef.current.setMap(mapInstanceRef.current);
-    }
-  }, []);
-
-  const addMarker = useCallback((
-    point: Coordinate, 
-    index: number, 
-    onDragEnd: (index: number, lat: number, lng: number) => void, 
-    onRemove: (index: number) => void
-  ) => {
-    if (!mapInstanceRef.current) return;
-
-    const marker = new google.maps.Marker({
-      position: point,
-      map: mapInstanceRef.current,
-      title: `Point ${index + 1} - Click to remove, drag to move`,
-      draggable: true,
-      icon: {
-        path: google.maps.SymbolPath.CIRCLE,
-        scale: 10,
-        fillColor: '#FF0000',
-        fillOpacity: 1,
-        strokeColor: '#ffffff',
-        strokeWeight: 2,
-      },
-    });
-
-    // Handle drag end
-    marker.addListener('dragend', (event: google.maps.MapMouseEvent) => {
-      if (event.latLng) {
-        onDragEnd(index, event.latLng.lat(), event.latLng.lng());
-      }
-    });
-
-    // Handle click to remove
-    marker.addListener('click', () => {
-      onRemove(index);
-    });
-
-    markersRef.current.push(marker);
-    return marker;
-  }, []);
-
-  const loadExistingZones = useCallback((zones: Zone[]) => {
-    if (!mapInstanceRef.current) return;
-
-    // Clear existing zone polygons first
-    existingPolygonsRef.current.forEach(polygon => polygon.setMap(null));
-    existingPolygonsRef.current = [];
-
-    zones.forEach((zone, zoneIndex) => {
-      const coordinates = zone.coordinates;
-
-      if (coordinates.length >= 3) {
-        const colors = [
-          '#00FF00', '#0000FF', '#FFFF00', '#FF00FF', '#00FFFF',
-          '#FFA500', '#800080', '#FFC0CB', '#A52A2A', '#808080'
-        ];
-        const color = colors[zoneIndex % colors.length];
-
-        const polygon = new google.maps.Polygon({
-          paths: coordinates,
-          strokeColor: color,
-          strokeOpacity: 0.8,
-          strokeWeight: 2,
-          fillColor: color,
-          fillOpacity: zone.is_active ? 0.2 : 0.1,
-          editable: false,
-          draggable: false
-        });
-        
-        polygon.setMap(mapInstanceRef.current);
-        existingPolygonsRef.current.push(polygon);
-
-        // Add info window
-        const infoWindow = new google.maps.InfoWindow({
-          content: `
-            <div style="padding: 8px;">
-              <h3 style="margin: 0 0 4px 0; font-weight: bold;">${zone.name}</h3>
-              <p style="margin: 0; font-size: 12px; color: #666;">
-                Status: ${zone.is_active ? 'Active' : 'Inactive'}<br/>
-                Points: ${zone.coordinates.length}<br/>
-                Created: ${new Date(zone.created_at).toLocaleDateString()}
-              </p>
-            </div>
-          `
-        });
-
-        polygon.addListener('click', (event: google.maps.PolyMouseEvent) => {
-          if (event.latLng) {
-            infoWindow.setPosition(event.latLng);
-            infoWindow.open(mapInstanceRef.current);
-          }
-        });
-      }
-    });
-  }, []);
+  }, [isLoaded, loadError]);
 
   return {
-    mapRef,
-    mapInstanceRef,
-    markersRef,
-    polygonRef,
-    autocompleteRef,
-    initializeMap,
-    clearMapElements,
-    clearAllElements,
-    updatePolygon,
-    addMarker,
-    loadExistingZones
+    isLoaded,
+    loadError,
+    loadGoogleMaps,
+    maps
   };
+};
+
+export const createMapInstance = (
+  container: HTMLElement,
+  maps: typeof google.maps,
+  center: { lat: number; lng: number } = { lat: 17.4065, lng: 78.4772 }
+) => {
+  return new maps.Map(container, {
+    zoom: 12,
+    center,
+    mapTypeId: maps.MapTypeId.ROADMAP,
+    zoomControl: true,
+    mapTypeControl: true,
+    scaleControl: true,
+    streetViewControl: true,
+    rotateControl: true,
+    fullscreenControl: true
+  });
+};
+
+export const createMarker = (
+  maps: typeof google.maps,
+  map: google.maps.Map,
+  position: { lat: number; lng: number },
+  options?: {
+    draggable?: boolean;
+    title?: string;
+    icon?: string | google.maps.Icon | google.maps.Symbol;
+  }
+) => {
+  const defaultIcon = {
+    url: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 24 24' fill='%23FF0000'%3E%3Ccircle cx='12' cy='12' r='8'/%3E%3C/svg%3E",
+    scaledSize: new maps.Size(20, 20)
+  };
+
+  return new maps.Marker({
+    position,
+    map,
+    draggable: options?.draggable || false,
+    title: options?.title || '',
+    icon: options?.icon || defaultIcon
+  });
+};
+
+export const createPolygon = (
+  maps: typeof google.maps,
+  map: google.maps.Map,
+  paths: { lat: number; lng: number }[],
+  options?: {
+    fillColor?: string;
+    fillOpacity?: number;
+    strokeColor?: string;
+    strokeOpacity?: number;
+    strokeWeight?: number;
+    editable?: boolean;
+  }
+) => {
+  return new maps.Polygon({
+    paths,
+    map,
+    fillColor: options?.fillColor || '#FF0000',
+    fillOpacity: options?.fillOpacity || 0.35,
+    strokeColor: options?.strokeColor || '#FF0000',
+    strokeOpacity: options?.strokeOpacity || 0.8,
+    strokeWeight: options?.strokeWeight || 2,
+    editable: options?.editable || false
+  });
+};
+
+export const createInfoWindow = (
+  maps: typeof google.maps,
+  content: string
+) => {
+  return new maps.InfoWindow({
+    content
+  });
+};
+
+export const addMarkerClickListener = (
+  marker: google.maps.Marker,
+  callback: () => void
+) => {
+  marker.addListener('click', callback);
+};
+
+export const addMapClickListener = (
+  map: google.maps.Map,
+  callback: (event: google.maps.MapMouseEvent) => void
+) => {
+  map.addListener('click', callback);
 };

@@ -6,8 +6,9 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { Trash2, Edit, Plus, Save, X } from 'lucide-react';
+import { Trash2, Edit, Plus, Save, X, MapPin, Users } from 'lucide-react';
 import { Zone, ZoneFromDB, parseCoordinates } from '@/types/zone';
+import EmployeeZoneAssignment from './EmployeeZoneAssignment';
 
 interface Employee {
   id: string;
@@ -28,6 +29,7 @@ const EnhancedEmployeeManagement = () => {
   const [zones, setZones] = useState<Zone[]>([]);
   const [isCreating, setIsCreating] = useState(false);
   const [editingEmployee, setEditingEmployee] = useState<Employee | null>(null);
+  const [showZoneAssignment, setShowZoneAssignment] = useState(false);
   const [formData, setFormData] = useState({
     employee_id: '',
     name: '',
@@ -250,6 +252,10 @@ const EnhancedEmployeeManagement = () => {
     });
   };
 
+  if (showZoneAssignment) {
+    return <EmployeeZoneAssignment onBack={() => setShowZoneAssignment(false)} />;
+  }
+
   return (
     <div className="space-y-6">
       <Card>
@@ -352,35 +358,6 @@ const EnhancedEmployeeManagement = () => {
                 </div>
               </div>
 
-              <div>
-                <Label>Assigned Zones</Label>
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-2 mt-2">
-                  {zones.map((zone) => (
-                    <label key={zone.id} className="flex items-center space-x-2">
-                      <input
-                        type="checkbox"
-                        checked={formData.assigned_zones.includes(zone.id)}
-                        onChange={(e) => {
-                          if (e.target.checked) {
-                            setFormData({
-                              ...formData,
-                              assigned_zones: [...formData.assigned_zones, zone.id]
-                            });
-                          } else {
-                            setFormData({
-                              ...formData,
-                              assigned_zones: formData.assigned_zones.filter(id => id !== zone.id)
-                            });
-                          }
-                        }}
-                        className="rounded"
-                      />
-                      <span className="text-sm">{zone.name}</span>
-                    </label>
-                  ))}
-                </div>
-              </div>
-
               <div className="flex space-x-2">
                 <Button onClick={editingEmployee ? updateEmployee : createEmployee}>
                   <Save className="h-4 w-4 mr-2" />
@@ -395,10 +372,16 @@ const EnhancedEmployeeManagement = () => {
           )}
 
           {!isCreating && !editingEmployee && (
-            <Button onClick={() => setIsCreating(true)}>
-              <Plus className="h-4 w-4 mr-2" />
-              Add New Employee
-            </Button>
+            <div className="flex space-x-2">
+              <Button onClick={() => setIsCreating(true)}>
+                <Plus className="h-4 w-4 mr-2" />
+                Add New Employee
+              </Button>
+              <Button variant="outline" onClick={() => setShowZoneAssignment(true)}>
+                <MapPin className="h-4 w-4 mr-2" />
+                Assign Zones
+              </Button>
+            </div>
           )}
 
           <div className="space-y-4">
