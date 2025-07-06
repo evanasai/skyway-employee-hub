@@ -37,6 +37,7 @@ const TaskManagement = () => {
       // Transform the data to match our interface
       const transformedTasks: TaskSubmission[] = (data || []).map(task => ({
         ...task,
+        status: task.status || 'pending_review', // Ensure status has a default value
         employees: task.employees && !Array.isArray(task.employees) ? {
           name: task.employees.name,
           employee_id: task.employees.employee_id

@@ -39,7 +39,7 @@ export interface TaskSubmission {
   pre_work_photo?: string;
   post_work_photo?: string;
   comments?: string;
-  status: 'in_progress' | 'completed' | 'approved' | 'rejected' | 'pending_review' | 'submitted';
+  status: string; // Changed from union type to string to match database
   supervisor_feedback?: string;
   reviewed_by?: string;
   reviewed_at?: string;

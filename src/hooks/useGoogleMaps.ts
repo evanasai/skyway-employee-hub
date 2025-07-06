@@ -1,7 +1,6 @@
-
 import { useRef, useCallback } from 'react';
 import { Loader } from '@googlemaps/js-api-loader';
-import { Coordinate } from '@/types/zone';
+import { Coordinate, Zone } from '@/types/zone';
 
 export const useGoogleMaps = (apiKey: string) => {
   const mapRef = useRef<HTMLDivElement>(null);

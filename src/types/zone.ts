@@ -34,9 +34,11 @@ export const parseCoordinates = (coordinates: Json): Coordinate[] => {
       return coordinates.filter((coord): coord is Coordinate => 
         typeof coord === 'object' && 
         coord !== null && 
-        typeof coord.lat === 'number' && 
-        typeof coord.lng === 'number'
-      );
+        'lat' in coord &&
+        'lng' in coord &&
+        typeof (coord as any).lat === 'number' && 
+        typeof (coord as any).lng === 'number'
+      ).map(coord => coord as Coordinate);
     }
     
     // If coordinates is a JSON string, parse it
@@ -46,6 +48,8 @@ export const parseCoordinates = (coordinates: Json): Coordinate[] => {
         return parsed.filter((coord): coord is Coordinate => 
           typeof coord === 'object' && 
           coord !== null && 
+          'lat' in coord &&
+          'lng' in coord &&
           typeof coord.lat === 'number' && 
           typeof coord.lng === 'number'
         );
@@ -61,5 +65,5 @@ export const parseCoordinates = (coordinates: Json): Coordinate[] => {
 
 // Helper function to convert coordinates to JSON for database storage
 export const coordinatesToJson = (coordinates: Coordinate[]): Json => {
-  return coordinates as Json;
+  return coordinates as unknown as Json;
 };
