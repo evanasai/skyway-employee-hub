@@ -1,9 +1,10 @@
+
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
-import EmployeeManagement from '@/components/EmployeeManagement';
-import TaskManagement from '@/components/TaskManagement';
-import ReportDownloader from '@/components/ReportDownloader';
+import EnhancedEmployeeManagement from '@/components/EnhancedEmployeeManagement';
+import EnhancedTaskManagement from '@/components/EnhancedTaskManagement';
+import EnhancedReportDownloader from '@/components/EnhancedReportDownloader';
 import InventoryManagement from '@/components/InventoryManagement';
 import { BarChart3, Users, CheckSquare, FileText, Package, MapPin } from 'lucide-react';
 import { User } from '@/types';
@@ -19,9 +20,7 @@ const AdminDashboard = () => {
 
   useEffect(() => {
     if (!user || (user.role !== 'admin' && user.role !== 'super_admin')) {
-      // Redirect or handle unauthorized access
       console.warn('Unauthorized access to Admin Dashboard');
-      // Example: window.location.href = '/';
     }
   }, [user]);
 
@@ -30,39 +29,43 @@ const AdminDashboard = () => {
       case 'dashboard':
         return (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-            <div className="bg-white shadow-md rounded-lg p-4">
-              <h3 className="text-lg font-semibold text-gray-700">Total Employees</h3>
-              <p className="text-2xl font-bold text-gray-900">120</p>
+            <div className="bg-white shadow-md rounded-lg p-6">
+              <h3 className="text-lg font-semibold text-gray-700 mb-2">Total Employees</h3>
+              <p className="text-3xl font-bold text-blue-600">120</p>
+              <p className="text-sm text-gray-500 mt-1">Active employees</p>
             </div>
-            <div className="bg-white shadow-md rounded-lg p-4">
-              <h3 className="text-lg font-semibold text-gray-700">Active Tasks</h3>
-              <p className="text-2xl font-bold text-gray-900">35</p>
+            <div className="bg-white shadow-md rounded-lg p-6">
+              <h3 className="text-lg font-semibold text-gray-700 mb-2">Active Tasks</h3>
+              <p className="text-3xl font-bold text-green-600">35</p>
+              <p className="text-sm text-gray-500 mt-1">In progress</p>
             </div>
-            <div className="bg-white shadow-md rounded-lg p-4">
-              <h3 className="text-lg font-semibold text-gray-700">Pending Reports</h3>
-              <p className="text-2xl font-bold text-gray-900">5</p>
+            <div className="bg-white shadow-md rounded-lg p-6">
+              <h3 className="text-lg font-semibold text-gray-700 mb-2">Pending Reports</h3>
+              <p className="text-3xl font-bold text-yellow-600">5</p>
+              <p className="text-sm text-gray-500 mt-1">Awaiting review</p>
             </div>
-            <div className="bg-white shadow-md rounded-lg p-4">
-              <h3 className="text-lg font-semibold text-gray-700">Inventory Items</h3>
-              <p className="text-2xl font-bold text-gray-900">280</p>
+            <div className="bg-white shadow-md rounded-lg p-6">
+              <h3 className="text-lg font-semibold text-gray-700 mb-2">Total Zones</h3>
+              <p className="text-3xl font-bold text-purple-600">12</p>
+              <p className="text-sm text-gray-500 mt-1">Active zones</p>
             </div>
           </div>
         );
       
       case 'employees':
-        return <EmployeeManagement />;
+        return <EnhancedEmployeeManagement />;
       
       case 'tasks':
-        return <TaskManagement />;
+        return <EnhancedTaskManagement />;
       
       case 'reports':
-        return <ReportDownloader onBack={() => setActiveTab('tasks')} />;
+        return <EnhancedReportDownloader />;
       
       case 'inventory':
         return <InventoryManagement />;
       
       case 'zones':
-        return <GoogleMapsZoneEditor onBack={() => setActiveTab('dashboard')} />;
+        return <GoogleMapsZoneEditor />;
       
       default:
         return null;
@@ -103,13 +106,13 @@ const AdminDashboard = () => {
                 <button
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id)}
-                  className={`flex items-center space-x-2 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                  className={`flex items-center space-x-2 px-4 py-2 rounded-md text-sm font-medium transition-colors ${
                     activeTab === tab.id
-                      ? 'bg-blue-100 text-blue-700'
+                      ? 'bg-blue-100 text-blue-700 border border-blue-200'
                       : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
                   }`}
                 >
-                  <Icon className="h-4 w-4" />
+                  <Icon className="h-5 w-5" />
                   <span>{tab.label}</span>
                 </button>
               );
