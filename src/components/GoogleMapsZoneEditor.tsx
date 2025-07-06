@@ -67,23 +67,29 @@ const GoogleMapsZoneEditor: React.FC<GoogleMapsZoneEditorProps> = ({ onBack }) =
           });
         },
         (error) => {
-          console.log('Location access denied:', error);
-          setUserLocation({ lat: 28.6139, lng: 77.2090 });
+          console.log('Location access denied, defaulting to Hyderabad:', error);
+          // Default to Hyderabad city center
+          setUserLocation({ lat: 17.3850, lng: 78.4867 });
         }
       );
     } else {
-      setUserLocation({ lat: 28.6139, lng: 77.2090 });
+      // Default to Hyderabad city center
+      setUserLocation({ lat: 17.3850, lng: 78.4867 });
     }
   };
 
   const initializeGoogleMaps = async () => {
     try {
       await initializeMap(userLocation, handleMapClick, searchInputRef);
+      toast({
+        title: "Map Loaded",
+        description: "Google Maps has been successfully loaded",
+      });
     } catch (error) {
       console.error('Error loading Google Maps:', error);
       toast({
         title: "Map Loading Error",
-        description: "Please check your internet connection and Google Maps API key",
+        description: "Failed to load Google Maps. Please check your internet connection.",
         variant: "destructive"
       });
     }
@@ -93,13 +99,18 @@ const GoogleMapsZoneEditor: React.FC<GoogleMapsZoneEditorProps> = ({ onBack }) =
     console.log('Map clicked at:', lat, lng);
     
     if (!isCreating && !editingZone) {
+      toast({
+        title: "Create Zone First",
+        description: "Click 'Create New Zone' to start adding points",
+        variant: "destructive"
+      });
       return;
     }
 
     if (selectedPoints.length >= 10) {
       toast({
         title: "Maximum Points Reached",
-        description: "You can only select up to 10 points to form a zone",
+        description: "You can only select up to 10 points per zone",
         variant: "destructive"
       });
       return;
@@ -109,32 +120,40 @@ const GoogleMapsZoneEditor: React.FC<GoogleMapsZoneEditorProps> = ({ onBack }) =
   };
 
   const addPointToZone = (lat: number, lng: number) => {
-    const newPoint: Coordinate = { lat: parseFloat(lat.toFixed(6)), lng: parseFloat(lng.toFixed(6)) };
+    const newPoint: Coordinate = { 
+      lat: parseFloat(lat.toFixed(6)), 
+      lng: parseFloat(lng.toFixed(6)) 
+    };
+    
     const newPoints = [...selectedPoints, newPoint];
     setSelectedPoints(newPoints);
 
     console.log('Adding point:', newPoint);
     console.log('Total points:', newPoints.length);
 
-    // Add visual marker
+    // Add visual marker with proper callbacks
     addMarker(newPoint, newPoints.length - 1, updatePoint, removePoint);
     
-    // Update polygon if we have at least 3 points
+    // Update polygon visualization if we have at least 3 points
     if (newPoints.length >= 3) {
       updatePolygon(newPoints);
     }
 
     toast({
       title: `Point ${newPoints.length} Added`,
-      description: `Lat: ${newPoint.lat}, Lng: ${newPoint.lng}. ${Math.max(0, 3 - newPoints.length)} more points needed for valid zone.`,
+      description: `Coordinates: ${newPoint.lat}, ${newPoint.lng}`,
     });
   };
 
   const updatePoint = (index: number, lat: number, lng: number) => {
     const newPoints = [...selectedPoints];
-    newPoints[index] = { lat: parseFloat(lat.toFixed(6)), lng: parseFloat(lng.toFixed(6)) };
+    newPoints[index] = { 
+      lat: parseFloat(lat.toFixed(6)), 
+      lng: parseFloat(lng.toFixed(6)) 
+    };
     setSelectedPoints(newPoints);
     
+    // Update polygon if we have enough points
     if (newPoints.length >= 3) {
       updatePolygon(newPoints);
     }
@@ -152,10 +171,12 @@ const GoogleMapsZoneEditor: React.FC<GoogleMapsZoneEditorProps> = ({ onBack }) =
     // Clear all markers and re-add them with correct indices
     clearMapElements();
     
+    // Re-add all remaining points with updated indices
     newPoints.forEach((point, i) => {
       addMarker(point, i, updatePoint, removePoint);
     });
     
+    // Update polygon
     if (newPoints.length >= 3) {
       updatePolygon(newPoints);
     } else {
@@ -164,12 +185,11 @@ const GoogleMapsZoneEditor: React.FC<GoogleMapsZoneEditorProps> = ({ onBack }) =
 
     toast({
       title: "Point Removed",
-      description: `Point ${index + 1} has been removed. ${newPoints.length} points remaining.`,
+      description: `Point ${index + 1} removed. ${newPoints.length} points remaining.`,
     });
   };
 
   const startCreating = () => {
-    console.log('Starting zone creation');
     setIsCreating(true);
     setEditingZone(null);
     setNewZoneName('');
@@ -177,8 +197,8 @@ const GoogleMapsZoneEditor: React.FC<GoogleMapsZoneEditorProps> = ({ onBack }) =
     clearMapElements();
     
     toast({
-      title: "Zone Creation Mode",
-      description: "Click on the map to add boundary points. You need at least 3 points to create a zone.",
+      title: "Zone Creation Started",
+      description: "Click on the map to add boundary points (minimum 3 required)",
     });
   };
 
@@ -190,24 +210,26 @@ const GoogleMapsZoneEditor: React.FC<GoogleMapsZoneEditorProps> = ({ onBack }) =
     setIsCreating(false);
     clearMapElements();
     
+    // Add existing points as markers
     zone.coordinates.forEach((point, index) => {
       addMarker(point, index, updatePoint, removePoint);
     });
     
+    // Show existing polygon
     if (zone.coordinates.length >= 3) {
       updatePolygon(zone.coordinates);
     }
 
     toast({
       title: "Zone Editing Mode",
-      description: "Drag markers to move points, click markers to remove them, or click on map to add new points",
+      description: "You can now edit this zone. Drag markers to move, click to remove, or click map to add new points.",
     });
   };
 
   const handleSave = async () => {
     if (!newZoneName.trim()) {
       toast({
-        title: "Missing Zone Name",
+        title: "Zone Name Required",
         description: "Please enter a name for your zone",
         variant: "destructive"
       });
@@ -217,7 +239,7 @@ const GoogleMapsZoneEditor: React.FC<GoogleMapsZoneEditorProps> = ({ onBack }) =
     if (selectedPoints.length < 3) {
       toast({
         title: "Insufficient Points",
-        description: "You need at least 3 points to create a zone",
+        description: "You need at least 3 points to create a valid zone",
         variant: "destructive"
       });
       return;
@@ -234,6 +256,12 @@ const GoogleMapsZoneEditor: React.FC<GoogleMapsZoneEditorProps> = ({ onBack }) =
 
     if (success) {
       cancelEditing();
+      // Refresh zones display
+      setTimeout(() => {
+        if (zones.length > 0) {
+          loadExistingZones(zones);
+        }
+      }, 1000);
     }
   };
 
@@ -245,19 +273,33 @@ const GoogleMapsZoneEditor: React.FC<GoogleMapsZoneEditorProps> = ({ onBack }) =
     setSelectedPoints([]);
     clearMapElements();
     
-    // Reload existing zones display
-    if (zones.length > 0) {
-      loadExistingZones(zones);
-    }
+    // Reload existing zones display after a short delay
+    setTimeout(() => {
+      if (zones.length > 0) {
+        loadExistingZones(zones);
+      }
+    }, 500);
+  };
+
+  const handleDelete = async (zoneId: string) => {
+    await deleteZone(zoneId);
+    // Refresh the map display
+    setTimeout(() => {
+      clearMapElements();
+      if (zones.length > 0) {
+        loadExistingZones(zones);
+      }
+    }, 500);
   };
 
   return (
     <div className="max-w-7xl mx-auto space-y-6">
       <Card>
         <CardHeader>
-          <CardTitle>Zone Management</CardTitle>
+          <CardTitle>Zone Management System</CardTitle>
           <CardDescription>
-            Create and manage geofenced zones. Click "Create New Zone" to start, then click on the map to add boundary points.
+            Create, edit, and manage geofenced zones for employee assignments. 
+            {zones.length > 0 && ` Currently managing ${zones.length} zones.`}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
@@ -278,46 +320,65 @@ const GoogleMapsZoneEditor: React.FC<GoogleMapsZoneEditorProps> = ({ onBack }) =
             onCancel={cancelEditing}
           />
 
-          {/* Map Container */}
-          <div className="w-full h-96 border-2 border-gray-300 rounded-lg overflow-hidden relative">
+          {/* Enhanced Map Container */}
+          <div className="w-full h-96 border-2 border-gray-300 rounded-lg overflow-hidden relative bg-gray-100">
             <div ref={mapRef} className="w-full h-full" />
+            
+            {/* Status Overlay */}
             {(isCreating || editingZone) && (
-              <div className="absolute top-2 left-2 bg-white px-3 py-2 rounded shadow-md text-sm z-10">
-                <p className="font-medium text-blue-600">
-                  {editingZone ? 'Zone Editing Mode' : 'Zone Creation Mode'}
-                </p>
-                <p className="text-gray-600">Click on map to add points ({selectedPoints.length}/10)</p>
-                <p className="text-xs text-gray-500">Drag markers to move • Click markers to remove</p>
-                {selectedPoints.length > 0 && (
-                  <p className="text-xs text-green-600">
-                    Latest: {selectedPoints[selectedPoints.length - 1]?.lat.toFixed(4)}, {selectedPoints[selectedPoints.length - 1]?.lng.toFixed(4)}
+              <div className="absolute top-3 left-3 bg-white px-4 py-3 rounded-lg shadow-lg text-sm z-10 border">
+                <div className="flex items-center space-x-2">
+                  <div className="w-3 h-3 bg-blue-500 rounded-full animate-pulse"></div>
+                  <p className="font-medium text-blue-700">
+                    {editingZone ? `Editing: ${editingZone.name}` : 'Creating New Zone'}
                   </p>
-                )}
+                </div>
+                <p className="text-gray-600 mt-1">
+                  Points: {selectedPoints.length}/10 
+                  {selectedPoints.length < 3 && ` (${3 - selectedPoints.length} more needed)`}
+                </p>
+                <p className="text-xs text-gray-500 mt-1">
+                  Click map to add • Drag markers to move • Click markers to remove
+                </p>
               </div>
             )}
-            {selectedPoints.length > 0 && selectedPoints.length < 3 && (isCreating || editingZone) && (
-              <div className="absolute bottom-2 left-2 bg-yellow-100 px-3 py-2 rounded shadow-md text-sm z-10">
-                <p className="text-yellow-800">
-                  Need {3 - selectedPoints.length} more points to create a valid zone
+
+            {/* Instruction Overlay for non-editing mode */}
+            {!isCreating && !editingZone && (
+              <div className="absolute top-3 left-3 bg-green-50 px-4 py-3 rounded-lg shadow-lg text-sm z-10 border border-green-200">
+                <p className="font-medium text-green-700">Zone Display Mode</p>
+                <p className="text-green-600 text-xs mt-1">
+                  {zones.length} zones loaded • Click "Create New Zone" to add more
                 </p>
+              </div>
+            )}
+
+            {/* Loading Overlay */}
+            {!mapInstanceRef.current && (
+              <div className="absolute inset-0 flex items-center justify-center bg-gray-100 z-20">
+                <div className="text-center">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto mb-2"></div>
+                  <p className="text-gray-600">Loading Google Maps...</p>
+                </div>
               </div>
             )}
           </div>
 
-          {/* Controls */}
+          {/* Create Zone Button */}
           {!isCreating && !editingZone && (
             <div className="flex justify-center">
-              <Button onClick={startCreating} size="lg" className="bg-blue-600 hover:bg-blue-700">
+              <Button onClick={startCreating} size="lg" className="bg-blue-600 hover:bg-blue-700 text-white">
                 <Plus className="h-5 w-5 mr-2" />
                 Create New Zone
               </Button>
             </div>
           )}
 
+          {/* Zones List */}
           <ZonesList
             zones={zones}
             onEdit={startEditing}
-            onDelete={deleteZone}
+            onDelete={handleDelete}
           />
         </CardContent>
       </Card>

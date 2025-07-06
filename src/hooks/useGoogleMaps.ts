@@ -1,3 +1,4 @@
+
 import { useRef, useCallback } from 'react';
 import { Loader } from '@googlemaps/js-api-loader';
 import { Coordinate, Zone } from '@/types/zone';
@@ -8,9 +9,10 @@ export const useGoogleMaps = (apiKey: string) => {
   const markersRef = useRef<google.maps.Marker[]>([]);
   const polygonRef = useRef<google.maps.Polygon | null>(null);
   const autocompleteRef = useRef<google.maps.places.Autocomplete | null>(null);
+  const existingPolygonsRef = useRef<google.maps.Polygon[]>([]);
 
   const initializeMap = useCallback(async (
-    userLocation: Coordinate | null,
+    center: Coordinate | null,
     onMapClick: (lat: number, lng: number) => void,
     searchInputRef: React.RefObject<HTMLInputElement>
   ) => {
@@ -25,14 +27,17 @@ export const useGoogleMaps = (apiKey: string) => {
 
       await loader.load();
 
-      const defaultLocation = userLocation || { lat: 28.6139, lng: 77.2090 };
+      const defaultCenter = center || { lat: 17.3850, lng: 78.4867 }; // Hyderabad center
 
       const map = new google.maps.Map(mapRef.current, {
-        center: defaultLocation,
-        zoom: 15,
+        center: defaultCenter,
+        zoom: 12,
         mapTypeControl: true,
         streetViewControl: true,
         fullscreenControl: true,
+        zoomControl: true,
+        scaleControl: true,
+        gestureHandling: 'cooperative'
       });
 
       mapInstanceRef.current = map;
@@ -54,25 +59,24 @@ export const useGoogleMaps = (apiKey: string) => {
           const place = autocomplete.getPlace();
           if (place.geometry?.location) {
             map.setCenter(place.geometry.location);
-            map.setZoom(17);
+            map.setZoom(15);
           }
         });
       }
 
-      // Add user location marker
-      if (userLocation) {
+      // Add user location marker if available
+      if (center) {
         new google.maps.Marker({
-          position: userLocation,
+          position: center,
           map: map,
           title: 'Your Location',
           icon: {
-            url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(`
-              <svg fill="blue" height="24" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg">
-                <circle cx="12" cy="12" r="8"/>
-                <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/>
-              </svg>
-            `),
-            scaledSize: new google.maps.Size(24, 24),
+            path: google.maps.SymbolPath.CIRCLE,
+            scale: 8,
+            fillColor: '#4285F4',
+            fillOpacity: 1,
+            strokeColor: '#ffffff',
+            strokeWeight: 2,
           },
         });
       }
@@ -85,16 +89,24 @@ export const useGoogleMaps = (apiKey: string) => {
   }, [apiKey]);
 
   const clearMapElements = useCallback(() => {
-    // Clear markers
+    // Clear editing markers
     markersRef.current.forEach(marker => marker.setMap(null));
     markersRef.current = [];
     
-    // Clear polygon
+    // Clear editing polygon
     if (polygonRef.current) {
       polygonRef.current.setMap(null);
       polygonRef.current = null;
     }
   }, []);
+
+  const clearAllElements = useCallback(() => {
+    clearMapElements();
+    
+    // Clear existing zone polygons
+    existingPolygonsRef.current.forEach(polygon => polygon.setMap(null));
+    existingPolygonsRef.current = [];
+  }, [clearMapElements]);
 
   const updatePolygon = useCallback((points: Coordinate[]) => {
     if (polygonRef.current) {
@@ -108,28 +120,45 @@ export const useGoogleMaps = (apiKey: string) => {
         strokeOpacity: 0.8,
         strokeWeight: 3,
         fillColor: '#FF0000',
-        fillOpacity: 0.2,
+        fillOpacity: 0.35,
+        editable: false,
+        draggable: false
       });
       polygonRef.current.setMap(mapInstanceRef.current);
     }
   }, []);
 
-  const addMarker = useCallback((point: Coordinate, index: number, onDragEnd: (index: number, lat: number, lng: number) => void, onRemove: (index: number) => void) => {
+  const addMarker = useCallback((
+    point: Coordinate, 
+    index: number, 
+    onDragEnd: (index: number, lat: number, lng: number) => void, 
+    onRemove: (index: number) => void
+  ) => {
     if (!mapInstanceRef.current) return;
 
     const marker = new google.maps.Marker({
       position: point,
       map: mapInstanceRef.current,
-      title: `Point ${index + 1}`,
+      title: `Point ${index + 1} - Click to remove, drag to move`,
       draggable: true,
+      icon: {
+        path: google.maps.SymbolPath.CIRCLE,
+        scale: 10,
+        fillColor: '#FF0000',
+        fillOpacity: 1,
+        strokeColor: '#ffffff',
+        strokeWeight: 2,
+      },
     });
 
+    // Handle drag end
     marker.addListener('dragend', (event: google.maps.MapMouseEvent) => {
       if (event.latLng) {
         onDragEnd(index, event.latLng.lat(), event.latLng.lng());
       }
     });
 
+    // Handle click to remove
     marker.addListener('click', () => {
       onRemove(index);
     });
@@ -141,22 +170,46 @@ export const useGoogleMaps = (apiKey: string) => {
   const loadExistingZones = useCallback((zones: Zone[]) => {
     if (!mapInstanceRef.current) return;
 
-    zones.forEach(zone => {
+    // Clear existing zone polygons first
+    existingPolygonsRef.current.forEach(polygon => polygon.setMap(null));
+    existingPolygonsRef.current = [];
+
+    zones.forEach((zone, zoneIndex) => {
       const coordinates = zone.coordinates;
 
       if (coordinates.length >= 3) {
+        const colors = [
+          '#00FF00', '#0000FF', '#FFFF00', '#FF00FF', '#00FFFF',
+          '#FFA500', '#800080', '#FFC0CB', '#A52A2A', '#808080'
+        ];
+        const color = colors[zoneIndex % colors.length];
+
         const polygon = new google.maps.Polygon({
           paths: coordinates,
-          strokeColor: zone.is_active ? '#00FF00' : '#CCCCCC',
+          strokeColor: color,
           strokeOpacity: 0.8,
           strokeWeight: 2,
-          fillColor: zone.is_active ? '#00FF00' : '#CCCCCC',
-          fillOpacity: 0.1,
+          fillColor: color,
+          fillOpacity: zone.is_active ? 0.2 : 0.1,
+          editable: false,
+          draggable: false
         });
+        
         polygon.setMap(mapInstanceRef.current);
+        existingPolygonsRef.current.push(polygon);
 
+        // Add info window
         const infoWindow = new google.maps.InfoWindow({
-          content: `<div><strong>${zone.name}</strong><br/>Status: ${zone.is_active ? 'Active' : 'Inactive'}</div>`
+          content: `
+            <div style="padding: 8px;">
+              <h3 style="margin: 0 0 4px 0; font-weight: bold;">${zone.name}</h3>
+              <p style="margin: 0; font-size: 12px; color: #666;">
+                Status: ${zone.is_active ? 'Active' : 'Inactive'}<br/>
+                Points: ${zone.coordinates.length}<br/>
+                Created: ${new Date(zone.created_at).toLocaleDateString()}
+              </p>
+            </div>
+          `
         });
 
         polygon.addListener('click', (event: google.maps.PolyMouseEvent) => {
@@ -177,6 +230,7 @@ export const useGoogleMaps = (apiKey: string) => {
     autocompleteRef,
     initializeMap,
     clearMapElements,
+    clearAllElements,
     updatePolygon,
     addMarker,
     loadExistingZones
