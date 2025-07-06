@@ -20,8 +20,6 @@ const GoogleMapsZoneEditor: React.FC<GoogleMapsZoneEditorProps> = ({ onBack }) =
   const [newZoneName, setNewZoneName] = useState('');
   const [selectedPoints, setSelectedPoints] = useState<{ lat: number; lng: number }[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
-  const [googleApiKey, setGoogleApiKey] = useState('');
-  const [showApiKeyInput, setShowApiKeyInput] = useState(true);
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
   
   const mapRef = useRef<HTMLDivElement>(null);
@@ -31,16 +29,14 @@ const GoogleMapsZoneEditor: React.FC<GoogleMapsZoneEditorProps> = ({ onBack }) =
   const autocompleteRef = useRef<google.maps.places.Autocomplete | null>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
 
+  // Using the provided Google Maps API key
+  const GOOGLE_MAPS_API_KEY = 'AIzaSyBAie22cBjs6pcoxMyYvbT03GGcwJ1O9fw';
+
   useEffect(() => {
     fetchZones();
     getCurrentLocation();
+    initializeMap();
   }, []);
-
-  useEffect(() => {
-    if (googleApiKey && mapRef.current) {
-      initializeMap();
-    }
-  }, [googleApiKey]);
 
   const getCurrentLocation = () => {
     if (navigator.geolocation) {
@@ -63,19 +59,21 @@ const GoogleMapsZoneEditor: React.FC<GoogleMapsZoneEditorProps> = ({ onBack }) =
   };
 
   const initializeMap = async () => {
-    if (!googleApiKey || !mapRef.current || !userLocation) return;
+    if (!mapRef.current) return;
 
     try {
       const loader = new Loader({
-        apiKey: googleApiKey,
+        apiKey: GOOGLE_MAPS_API_KEY,
         version: 'weekly',
         libraries: ['places']
       });
 
       await loader.load();
 
+      const defaultLocation = userLocation || { lat: 28.6139, lng: 77.2090 };
+
       const map = new google.maps.Map(mapRef.current, {
-        center: userLocation,
+        center: defaultLocation,
         zoom: 15,
         mapTypeControl: true,
         streetViewControl: true,
@@ -107,27 +105,29 @@ const GoogleMapsZoneEditor: React.FC<GoogleMapsZoneEditorProps> = ({ onBack }) =
       }
 
       // Add user location marker
-      new google.maps.Marker({
-        position: userLocation,
-        map: map,
-        title: 'Your Location',
-        icon: {
-          url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(`
-            <svg fill="blue" height="24" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg">
-              <circle cx="12" cy="12" r="8"/>
-              <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/>
-            </svg>
-          `),
-          scaledSize: new google.maps.Size(24, 24),
-        },
-      });
+      if (userLocation) {
+        new google.maps.Marker({
+          position: userLocation,
+          map: map,
+          title: 'Your Location',
+          icon: {
+            url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(`
+              <svg fill="blue" height="24" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg">
+                <circle cx="12" cy="12" r="8"/>
+                <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/>
+              </svg>
+            `),
+            scaledSize: new google.maps.Size(24, 24),
+          },
+        });
+      }
 
       loadExistingZones(map);
     } catch (error) {
       console.error('Error loading Google Maps:', error);
       toast({
         title: "Map Loading Error",
-        description: "Please check your Google Maps API key",
+        description: "Please check your internet connection",
         variant: "destructive"
       });
     }
@@ -223,9 +223,16 @@ const GoogleMapsZoneEditor: React.FC<GoogleMapsZoneEditorProps> = ({ onBack }) =
 
   const loadExistingZones = (map: google.maps.Map) => {
     zones.forEach(zone => {
-      if (zone.coordinates && Array.isArray(zone.coordinates) && zone.coordinates.length >= 3) {
+      const coordinates = Array.isArray(zone.coordinates) 
+        ? zone.coordinates.filter((coord): coord is { lat: number; lng: number } => 
+            typeof coord === 'object' && coord !== null && 
+            typeof coord.lat === 'number' && typeof coord.lng === 'number'
+          )
+        : [];
+
+      if (coordinates.length >= 3) {
         const polygon = new google.maps.Polygon({
-          paths: zone.coordinates,
+          paths: coordinates,
           strokeColor: zone.is_active ? '#00FF00' : '#CCCCCC',
           strokeOpacity: 0.8,
           strokeWeight: 2,
@@ -256,7 +263,18 @@ const GoogleMapsZoneEditor: React.FC<GoogleMapsZoneEditorProps> = ({ onBack }) =
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setZones(data || []);
+      
+      const validZones: Zone[] = (data || []).map(zone => ({
+        ...zone,
+        coordinates: Array.isArray(zone.coordinates) 
+          ? zone.coordinates.filter((coord): coord is { lat: number; lng: number } => 
+              typeof coord === 'object' && coord !== null && 
+              typeof coord.lat === 'number' && typeof coord.lng === 'number'
+            )
+          : []
+      }));
+      
+      setZones(validZones);
     } catch (error) {
       console.error('Error fetching zones:', error);
       toast({
@@ -265,18 +283,6 @@ const GoogleMapsZoneEditor: React.FC<GoogleMapsZoneEditorProps> = ({ onBack }) =
         variant: "destructive"
       });
     }
-  };
-
-  const handleApiKeySubmit = () => {
-    if (!googleApiKey.trim()) {
-      toast({
-        title: "API Key Required",
-        description: "Please enter your Google Maps API key",
-        variant: "destructive"
-      });
-      return;
-    }
-    setShowApiKeyInput(false);
   };
 
   const startCreating = () => {
@@ -427,39 +433,6 @@ const GoogleMapsZoneEditor: React.FC<GoogleMapsZoneEditorProps> = ({ onBack }) =
     setSelectedPoints([]);
     clearMapElements();
   };
-
-  if (showApiKeyInput) {
-    return (
-      <div className="max-w-2xl mx-auto p-6">
-        <Card>
-          <CardHeader>
-            <CardTitle>Google Maps API Configuration</CardTitle>
-            <CardDescription>
-              Enter your Google Maps API key to enable interactive zone creation with maps
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div>
-              <Label htmlFor="apiKey">Google Maps API Key</Label>
-              <Input
-                id="apiKey"
-                type="password"
-                value={googleApiKey}
-                onChange={(e) => setGoogleApiKey(e.target.value)}
-                placeholder="Enter your Google Maps API key"
-              />
-              <p className="text-sm text-gray-600 mt-2">
-                Get your API key from <a href="https://console.cloud.google.com/google/maps-apis" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">Google Cloud Console</a>
-              </p>
-            </div>
-            <Button onClick={handleApiKeySubmit}>
-              Initialize Maps
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
 
   return (
     <div className="max-w-7xl mx-auto space-y-6">
