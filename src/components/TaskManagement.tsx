@@ -24,7 +24,7 @@ interface TaskSubmission {
   employees?: {
     name: string;
     employee_id: string;
-  };
+  } | null;
 }
 
 const TaskManagement = () => {
@@ -42,15 +42,25 @@ const TaskManagement = () => {
         .from('task_submissions')
         .select(`
           *,
-          employees (
+          employees!inner (
             name,
             employee_id
           )
         `)
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
-      setTasks(data || []);
+      if (error) {
+        console.error('Supabase error:', error);
+        throw error;
+      }
+
+      // Transform the data to match our interface
+      const transformedTasks: TaskSubmission[] = (data || []).map(task => ({
+        ...task,
+        employees: task.employees && !Array.isArray(task.employees) ? task.employees : null
+      }));
+
+      setTasks(transformedTasks);
     } catch (error) {
       console.error('Error fetching tasks:', error);
       toast({
@@ -160,13 +170,13 @@ const TaskManagement = () => {
                           {getStatusBadge(task.status || 'submitted')}
                         </div>
                         <p className="text-sm text-gray-600 mb-1">
-                          Employee: {task.employees?.name} ({task.employees?.employee_id})
+                          Employee: {task.employees?.name || 'Unknown'} ({task.employees?.employee_id || 'N/A'})
                         </p>
                         <p className="text-sm text-gray-600 mb-1">
-                          Location: {task.location_address}
+                          Location: {task.location_address || 'Not specified'}
                         </p>
                         <p className="text-sm text-gray-600 mb-1">
-                          Time: {new Date(task.start_time).toLocaleString()} - {new Date(task.end_time).toLocaleString()}
+                          Time: {task.start_time ? new Date(task.start_time).toLocaleString() : 'N/A'} - {task.end_time ? new Date(task.end_time).toLocaleString() : 'N/A'}
                         </p>
                         {task.task_description && (
                           <p className="text-sm text-gray-700 mb-2">
@@ -234,9 +244,9 @@ const TaskManagement = () => {
               <div>
                 <h5 className="font-medium mb-2">Task Information</h5>
                 <p className="text-sm mb-1"><strong>Type:</strong> {selectedTask.task_type}</p>
-                <p className="text-sm mb-1"><strong>Employee:</strong> {selectedTask.employees?.name}</p>
+                <p className="text-sm mb-1"><strong>Employee:</strong> {selectedTask.employees?.name || 'Unknown'}</p>
                 <p className="text-sm mb-1"><strong>Status:</strong> {selectedTask.status}</p>
-                <p className="text-sm mb-1"><strong>Location:</strong> {selectedTask.location_address}</p>
+                <p className="text-sm mb-1"><strong>Location:</strong> {selectedTask.location_address || 'Not specified'}</p>
                 {selectedTask.task_description && (
                   <p className="text-sm mb-1"><strong>Description:</strong> {selectedTask.task_description}</p>
                 )}

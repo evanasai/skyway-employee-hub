@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -13,14 +14,19 @@ interface GoogleMapsZoneEditorProps {
   onBack?: () => void;
 }
 
+interface Coordinate {
+  lat: number;
+  lng: number;
+}
+
 const GoogleMapsZoneEditor: React.FC<GoogleMapsZoneEditorProps> = ({ onBack }) => {
   const [zones, setZones] = useState<Zone[]>([]);
   const [isCreating, setIsCreating] = useState(false);
   const [editingZone, setEditingZone] = useState<Zone | null>(null);
   const [newZoneName, setNewZoneName] = useState('');
-  const [selectedPoints, setSelectedPoints] = useState<{ lat: number; lng: number }[]>([]);
+  const [selectedPoints, setSelectedPoints] = useState<Coordinate[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
-  const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
+  const [userLocation, setUserLocation] = useState<Coordinate | null>(null);
   
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<google.maps.Map | null>(null);
@@ -31,6 +37,41 @@ const GoogleMapsZoneEditor: React.FC<GoogleMapsZoneEditorProps> = ({ onBack }) =
 
   // Using the provided Google Maps API key
   const GOOGLE_MAPS_API_KEY = 'AIzaSyBAie22cBjs6pcoxMyYvbT03GGcwJ1O9fw';
+
+  // Helper function to safely parse coordinates from JSON
+  const parseCoordinates = (coordinates: any): Coordinate[] => {
+    if (!coordinates) return [];
+    
+    try {
+      // If coordinates is already an array
+      if (Array.isArray(coordinates)) {
+        return coordinates.filter((coord): coord is Coordinate => 
+          typeof coord === 'object' && 
+          coord !== null && 
+          typeof coord.lat === 'number' && 
+          typeof coord.lng === 'number'
+        );
+      }
+      
+      // If coordinates is a JSON string, parse it
+      if (typeof coordinates === 'string') {
+        const parsed = JSON.parse(coordinates);
+        if (Array.isArray(parsed)) {
+          return parsed.filter((coord): coord is Coordinate => 
+            typeof coord === 'object' && 
+            coord !== null && 
+            typeof coord.lat === 'number' && 
+            typeof coord.lng === 'number'
+          );
+        }
+      }
+      
+      return [];
+    } catch (error) {
+      console.error('Error parsing coordinates:', error);
+      return [];
+    }
+  };
 
   useEffect(() => {
     fetchZones();
@@ -143,7 +184,7 @@ const GoogleMapsZoneEditor: React.FC<GoogleMapsZoneEditorProps> = ({ onBack }) =
       return;
     }
 
-    const newPoint = { lat, lng };
+    const newPoint: Coordinate = { lat, lng };
     const newPoints = [...selectedPoints, newPoint];
     setSelectedPoints(newPoints);
 
@@ -191,7 +232,7 @@ const GoogleMapsZoneEditor: React.FC<GoogleMapsZoneEditorProps> = ({ onBack }) =
     updatePolygon(newPoints);
   };
 
-  const updatePolygon = (points: { lat: number; lng: number }[]) => {
+  const updatePolygon = (points: Coordinate[]) => {
     if (polygonRef.current) {
       polygonRef.current.setMap(null);
     }
@@ -223,12 +264,7 @@ const GoogleMapsZoneEditor: React.FC<GoogleMapsZoneEditorProps> = ({ onBack }) =
 
   const loadExistingZones = (map: google.maps.Map) => {
     zones.forEach(zone => {
-      const coordinates = Array.isArray(zone.coordinates) 
-        ? zone.coordinates.filter((coord): coord is { lat: number; lng: number } => 
-            typeof coord === 'object' && coord !== null && 
-            typeof coord.lat === 'number' && typeof coord.lng === 'number'
-          )
-        : [];
+      const coordinates = parseCoordinates(zone.coordinates);
 
       if (coordinates.length >= 3) {
         const polygon = new google.maps.Polygon({
@@ -266,12 +302,7 @@ const GoogleMapsZoneEditor: React.FC<GoogleMapsZoneEditorProps> = ({ onBack }) =
       
       const validZones: Zone[] = (data || []).map(zone => ({
         ...zone,
-        coordinates: Array.isArray(zone.coordinates) 
-          ? zone.coordinates.filter((coord): coord is { lat: number; lng: number } => 
-              typeof coord === 'object' && coord !== null && 
-              typeof coord.lat === 'number' && typeof coord.lng === 'number'
-            )
-          : []
+        coordinates: zone.coordinates || []
       }));
       
       setZones(validZones);
@@ -296,13 +327,14 @@ const GoogleMapsZoneEditor: React.FC<GoogleMapsZoneEditorProps> = ({ onBack }) =
   const startEditing = (zone: Zone) => {
     setEditingZone(zone);
     setNewZoneName(zone.name);
-    setSelectedPoints(zone.coordinates || []);
+    const coordinates = parseCoordinates(zone.coordinates);
+    setSelectedPoints(coordinates);
     setIsCreating(false);
     clearMapElements();
     
     // Add editing markers
-    if (mapInstanceRef.current && zone.coordinates) {
-      zone.coordinates.forEach((point, index) => {
+    if (mapInstanceRef.current && coordinates.length > 0) {
+      coordinates.forEach((point, index) => {
         const marker = new google.maps.Marker({
           position: point,
           map: mapInstanceRef.current!,
@@ -322,7 +354,7 @@ const GoogleMapsZoneEditor: React.FC<GoogleMapsZoneEditorProps> = ({ onBack }) =
 
         markersRef.current.push(marker);
       });
-      updatePolygon(zone.coordinates);
+      updatePolygon(coordinates);
     }
   };
 
@@ -524,37 +556,40 @@ const GoogleMapsZoneEditor: React.FC<GoogleMapsZoneEditorProps> = ({ onBack }) =
             {zones.length === 0 ? (
               <p className="text-gray-500">No zones created yet</p>
             ) : (
-              zones.map((zone) => (
-                <Card key={zone.id}>
-                  <CardContent className="p-4">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <h4 className="font-medium">{zone.name}</h4>
-                        <p className="text-sm text-gray-600">
-                          {Array.isArray(zone.coordinates) ? zone.coordinates.length : 0} coordinates • 
-                          {zone.is_active ? ' Active' : ' Inactive'}
-                        </p>
+              zones.map((zone) => {
+                const coordinates = parseCoordinates(zone.coordinates);
+                return (
+                  <Card key={zone.id}>
+                    <CardContent className="p-4">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <h4 className="font-medium">{zone.name}</h4>
+                          <p className="text-sm text-gray-600">
+                            {coordinates.length} coordinates • 
+                            {zone.is_active ? ' Active' : ' Inactive'}
+                          </p>
+                        </div>
+                        <div className="flex space-x-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => startEditing(zone)}
+                          >
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="destructive"
+                            size="sm"
+                            onClick={() => deleteZone(zone.id)}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
                       </div>
-                      <div className="flex space-x-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => startEditing(zone)}
-                        >
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="destructive"
-                          size="sm"
-                          onClick={() => deleteZone(zone.id)}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))
+                    </CardContent>
+                  </Card>
+                );
+              })
             )}
           </div>
         </CardContent>
