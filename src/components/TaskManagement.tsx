@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -6,26 +5,7 @@ import { Button } from '@/components/ui/button';
 import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { CheckCircle, XCircle, Clock, Eye } from 'lucide-react';
-
-interface TaskSubmission {
-  id: string;
-  employee_id: string;
-  task_type: string;
-  task_description: string;
-  status: string;
-  start_time: string;
-  end_time: string;
-  location_address: string;
-  pre_work_photo: string;
-  post_work_photo: string;
-  comments: string;
-  supervisor_feedback: string;
-  created_at: string;
-  employees?: {
-    name: string;
-    employee_id: string;
-  } | null;
-}
+import { TaskSubmission } from '@/types/database';
 
 const TaskManagement = () => {
   const [tasks, setTasks] = useState<TaskSubmission[]>([]);
@@ -42,7 +22,7 @@ const TaskManagement = () => {
         .from('task_submissions')
         .select(`
           *,
-          employees!inner (
+          employees!task_submissions_employee_id_fkey (
             name,
             employee_id
           )
@@ -57,7 +37,10 @@ const TaskManagement = () => {
       // Transform the data to match our interface
       const transformedTasks: TaskSubmission[] = (data || []).map(task => ({
         ...task,
-        employees: task.employees && !Array.isArray(task.employees) ? task.employees : null
+        employees: task.employees && !Array.isArray(task.employees) ? {
+          name: task.employees.name,
+          employee_id: task.employees.employee_id
+        } : null
       }));
 
       setTasks(transformedTasks);

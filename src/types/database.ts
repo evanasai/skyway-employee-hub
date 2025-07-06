@@ -39,12 +39,16 @@ export interface TaskSubmission {
   pre_work_photo?: string;
   post_work_photo?: string;
   comments?: string;
-  status: 'in_progress' | 'completed' | 'approved' | 'rejected' | 'pending_review';
+  status: 'in_progress' | 'completed' | 'approved' | 'rejected' | 'pending_review' | 'submitted';
   supervisor_feedback?: string;
   reviewed_by?: string;
   reviewed_at?: string;
   created_at: string;
   updated_at: string;
+  employees?: {
+    name: string;
+    employee_id: string;
+  } | null;
 }
 
 export interface Asset {
@@ -90,6 +94,7 @@ export interface EmployeeDeduction {
   created_at: string;
 }
 
+// Updated Zone interface to use Coordinate type
 export interface Zone {
   id: string;
   name: string;
