@@ -14,6 +14,48 @@ export interface Employee {
   updated_at: string;
 }
 
+export interface Department {
+  id: string;
+  name: string;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface Task {
+  id: string;
+  name: string;
+  description: string;
+  form_fields: any[];
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface DepartmentTask {
+  id: string;
+  department_id: string;
+  task_id: string;
+  is_required: boolean;
+  created_at: string;
+}
+
+export interface AdvanceRequest {
+  id: string;
+  employee_id: string;
+  amount: number;
+  reason: string;
+  status: 'pending' | 'approved' | 'rejected';
+  request_date: string;
+  approved_by?: string;
+  approved_date?: string;
+  created_at: string;
+  employees?: {
+    name: string;
+    employee_id: string;
+  } | null;
+}
+
 export interface Attendance {
   id: string;
   employee_id: string;
@@ -39,7 +81,7 @@ export interface TaskSubmission {
   pre_work_photo?: string;
   post_work_photo?: string;
   comments?: string;
-  status: string; // Changed from union type to string to match database
+  status: string;
   supervisor_feedback?: string;
   reviewed_by?: string;
   reviewed_at?: string;
@@ -94,7 +136,6 @@ export interface EmployeeDeduction {
   created_at: string;
 }
 
-// Updated Zone interface to use Coordinate type
 export interface Zone {
   id: string;
   name: string;

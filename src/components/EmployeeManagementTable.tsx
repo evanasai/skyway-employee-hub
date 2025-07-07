@@ -6,48 +6,34 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Checkbox } from '@/components/ui/checkbox';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { Trash2, Edit, Plus, Save, X, MapPin } from 'lucide-react';
-import { Zone, ZoneFromDB, parseCoordinates } from '@/types/zone';
-
-interface Employee {
-  id: string;
-  employee_id: string;
-  name: string;
-  email: string;
-  phone: string;
-  role: string;
-  department: string;
-  is_active: boolean;
-  salary?: number;
-  assigned_zones?: string[];
-}
+import { Trash2, Edit, Plus, Save, X } from 'lucide-react';
+import { Employee, Department, Zone } from '@/types/database';
 
 const EmployeeManagementTable = () => {
   const [employees, setEmployees] = useState<Employee[]>([]);
+  const [departments, setDepartments] = useState<Department[]>([]);
   const [zones, setZones] = useState<Zone[]>([]);
-  const [departments, setDepartments] = useState<string[]>([]);
-  const [isCreating, setIsCreating] = useState(false);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingEmployee, setEditingEmployee] = useState<Employee | null>(null);
-  const [showZoneAssignment, setShowZoneAssignment] = useState<Employee | null>(null);
   const [formData, setFormData] = useState({
     employee_id: '',
     name: '',
     email: '',
     phone: '',
-    role: 'employee',
     department: '',
-    password: '',
-    salary: '',
+    role: 'employee' as 'employee' | 'supervisor' | 'admin' | 'super_admin',
+    salary: 0,
+    joining_date: '',
     assigned_zones: [] as string[]
   });
 
   useEffect(() => {
     fetchEmployees();
-    fetchZones();
     fetchDepartments();
+    fetchZones();
   }, []);
 
   const fetchEmployees = async () => {
@@ -69,6 +55,23 @@ const EmployeeManagementTable = () => {
     }
   };
 
+  const fetchDepartments = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('departments')
+        .select('*')
+        .eq('is_active', true)
+        .order('name');
+
+      if (error) throw error;
+      setDepartments(data || []);
+    } catch (error) {
+      console.error('Error fetching departments:', error);
+      // Don't show error toast for departments as they might not exist yet
+      setDepartments([]);
+    }
+  };
+
   const fetchZones = async () => {
     try {
       const { data, error } = await supabase
@@ -79,43 +82,27 @@ const EmployeeManagementTable = () => {
 
       if (error) throw error;
       
-      const parsedZones: Zone[] = (data || []).map((zone: ZoneFromDB) => ({
+      const parsedZones = (data || []).map(zone => ({
         ...zone,
-        coordinates: parseCoordinates(zone.coordinates)
+        coordinates: Array.isArray(zone.coordinates) 
+          ? zone.coordinates 
+          : typeof zone.coordinates === 'string' 
+            ? JSON.parse(zone.coordinates) 
+            : []
       }));
       
       setZones(parsedZones);
     } catch (error) {
       console.error('Error fetching zones:', error);
-    }
-  };
-
-  const fetchDepartments = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('departments')
-        .select('name')
-        .eq('is_active', true)
-        .order('name');
-
-      if (error) {
-        // If departments table doesn't exist, use default departments
-        setDepartments(['HR', 'IT', 'Finance', 'Operations', 'Sales']);
-        return;
-      }
-      
-      setDepartments((data || []).map(dept => dept.name));
-    } catch (error) {
-      console.error('Error fetching departments:', error);
-      setDepartments(['HR', 'IT', 'Finance', 'Operations', 'Sales']);
+      setZones([]);
     }
   };
 
   const createEmployee = async () => {
-    if (!formData.name || !formData.email || !formData.employee_id) {
+    if (!formData.employee_id || !formData.name || !formData.email || !formData.phone || !formData.department) {
       toast({
         title: "Missing Information",
-        description: "Name, email, and employee ID are required",
+        description: "Please fill in all required fields",
         variant: "destructive"
       });
       return;
@@ -129,10 +116,11 @@ const EmployeeManagementTable = () => {
           name: formData.name,
           email: formData.email,
           phone: formData.phone,
-          role: formData.role,
           department: formData.department,
-          password: formData.password ? parseInt(formData.password) : null,
-          salary: formData.salary ? parseFloat(formData.salary) : null
+          role: formData.role,
+          salary: formData.salary,
+          joining_date: formData.joining_date || new Date().toISOString().split('T')[0],
+          is_active: true
         });
 
       if (error) throw error;
@@ -148,7 +136,7 @@ const EmployeeManagementTable = () => {
       console.error('Error creating employee:', error);
       toast({
         title: "Error",
-        description: "Failed to create employee",
+        description: "Failed to create employee. Employee ID or email might already exist.",
         variant: "destructive"
       });
     }
@@ -158,26 +146,19 @@ const EmployeeManagementTable = () => {
     if (!editingEmployee) return;
 
     try {
-      const updateData: any = {
-        name: formData.name,
-        email: formData.email,
-        phone: formData.phone,
-        role: formData.role,
-        department: formData.department,
-        updated_at: new Date().toISOString()
-      };
-
-      if (formData.password) {
-        updateData.password = parseInt(formData.password);
-      }
-
-      if (formData.salary) {
-        updateData.salary = parseFloat(formData.salary);
-      }
-
       const { error } = await supabase
         .from('employees')
-        .update(updateData)
+        .update({
+          employee_id: formData.employee_id,
+          name: formData.name,
+          email: formData.email,
+          phone: formData.phone,
+          department: formData.department,
+          role: formData.role,
+          salary: formData.salary,
+          joining_date: formData.joining_date,
+          updated_at: new Date().toISOString()
+        })
         .eq('id', editingEmployee.id);
 
       if (error) throw error;
@@ -203,7 +184,7 @@ const EmployeeManagementTable = () => {
     try {
       const { error } = await supabase
         .from('employees')
-        .delete()
+        .update({ is_active: false })
         .eq('id', employeeId);
 
       if (error) throw error;
@@ -211,7 +192,7 @@ const EmployeeManagementTable = () => {
       fetchEmployees();
       toast({
         title: "Employee Deleted",
-        description: "Employee has been removed successfully",
+        description: "Employee has been deactivated successfully",
       });
     } catch (error) {
       console.error('Error deleting employee:', error);
@@ -223,35 +204,20 @@ const EmployeeManagementTable = () => {
     }
   };
 
-  const assignZoneToEmployee = async (employeeId: string, zoneIds: string[]) => {
-    try {
-      // For now, we'll store zone assignments in a simple way
-      // In a real app, you'd have an employee_zones junction table
-      const { error } = await supabase
-        .from('employees')
-        .update({ 
-          department: `${employees.find(e => e.id === employeeId)?.department}`,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', employeeId);
-
-      if (error) throw error;
-
-      toast({
-        title: "Zone Assignment Updated",
-        description: "Employee zone assignment has been updated successfully",
-      });
-      
-      setShowZoneAssignment(null);
-      fetchEmployees();
-    } catch (error) {
-      console.error('Error assigning zones:', error);
-      toast({
-        title: "Error",
-        description: "Failed to assign zones",
-        variant: "destructive"
-      });
-    }
+  const resetForm = () => {
+    setFormData({
+      employee_id: '',
+      name: '',
+      email: '',
+      phone: '',
+      department: '',
+      role: 'employee',
+      salary: 0,
+      joining_date: '',
+      assigned_zones: []
+    });
+    setEditingEmployee(null);
+    setIsDialogOpen(false);
   };
 
   const startEditing = (employee: Employee) => {
@@ -261,79 +227,14 @@ const EmployeeManagementTable = () => {
       name: employee.name,
       email: employee.email,
       phone: employee.phone,
-      role: employee.role,
       department: employee.department,
-      password: '',
-      salary: employee.salary?.toString() || '',
-      assigned_zones: employee.assigned_zones || []
-    });
-    setIsCreating(false);
-  };
-
-  const resetForm = () => {
-    setIsCreating(false);
-    setEditingEmployee(null);
-    setFormData({
-      employee_id: '',
-      name: '',
-      email: '',
-      phone: '',
-      role: 'employee',
-      department: '',
-      password: '',
-      salary: '',
+      role: employee.role,
+      salary: employee.salary,
+      joining_date: employee.joining_date,
       assigned_zones: []
     });
+    setIsDialogOpen(true);
   };
-
-  if (showZoneAssignment) {
-    return (
-      <Card>
-        <CardHeader>
-          <CardTitle>Assign Zones - {showZoneAssignment.name}</CardTitle>
-          <CardDescription>
-            Select zones to assign to this employee
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="space-y-2">
-            {zones.map((zone) => (
-              <div key={zone.id} className="flex items-center space-x-2">
-                <Checkbox
-                  id={zone.id}
-                  checked={formData.assigned_zones.includes(zone.id)}
-                  onCheckedChange={(checked) => {
-                    if (checked) {
-                      setFormData({
-                        ...formData,
-                        assigned_zones: [...formData.assigned_zones, zone.id]
-                      });
-                    } else {
-                      setFormData({
-                        ...formData,
-                        assigned_zones: formData.assigned_zones.filter(id => id !== zone.id)
-                      });
-                    }
-                  }}
-                />
-                <Label htmlFor={zone.id}>{zone.name}</Label>
-              </div>
-            ))}
-          </div>
-          <div className="flex space-x-2">
-            <Button onClick={() => assignZoneToEmployee(showZoneAssignment.id, formData.assigned_zones)}>
-              <Save className="h-4 w-4 mr-2" />
-              Save Assignment
-            </Button>
-            <Button variant="outline" onClick={() => setShowZoneAssignment(null)}>
-              <X className="h-4 w-4 mr-2" />
-              Cancel
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
 
   return (
     <div className="space-y-6">
@@ -341,13 +242,28 @@ const EmployeeManagementTable = () => {
         <CardHeader>
           <CardTitle>Employee Management</CardTitle>
           <CardDescription>
-            Manage employee accounts and zone assignments
+            Manage employee information, departments, and zone assignments
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
-          {(isCreating || editingEmployee) && (
-            <div className="space-y-4 p-4 border rounded-lg bg-gray-50">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+            <DialogTrigger asChild>
+              <Button>
+                <Plus className="h-4 w-4 mr-2" />
+                Add New Employee
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-2xl">
+              <DialogHeader>
+                <DialogTitle>
+                  {editingEmployee ? 'Edit Employee' : 'Add New Employee'}
+                </DialogTitle>
+                <DialogDescription>
+                  {editingEmployee ? 'Update employee information' : 'Enter employee details to add them to the system'}
+                </DialogDescription>
+              </DialogHeader>
+
+              <div className="grid grid-cols-2 gap-4">
                 <div>
                   <Label htmlFor="employee_id">Employee ID</Label>
                   <Input
@@ -355,11 +271,10 @@ const EmployeeManagementTable = () => {
                     value={formData.employee_id}
                     onChange={(e) => setFormData({...formData, employee_id: e.target.value})}
                     placeholder="Enter employee ID"
-                    disabled={!!editingEmployee}
                   />
                 </div>
                 <div>
-                  <Label htmlFor="name">Name</Label>
+                  <Label htmlFor="name">Full Name</Label>
                   <Input
                     id="name"
                     value={formData.name}
@@ -370,8 +285,8 @@ const EmployeeManagementTable = () => {
                 <div>
                   <Label htmlFor="email">Email</Label>
                   <Input
-                    id="email"
                     type="email"
+                    id="email"
                     value={formData.email}
                     onChange={(e) => setFormData({...formData, email: e.target.value})}
                     placeholder="Enter email address"
@@ -387,8 +302,21 @@ const EmployeeManagementTable = () => {
                   />
                 </div>
                 <div>
+                  <Label htmlFor="department">Department</Label>
+                  <Select value={formData.department} onValueChange={(value) => setFormData({...formData, department: value})}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select department" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {departments.map((dept) => (
+                        <SelectItem key={dept.id} value={dept.name}>{dept.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
                   <Label htmlFor="role">Role</Label>
-                  <Select value={formData.role} onValueChange={(value) => setFormData({...formData, role: value})}>
+                  <Select value={formData.role} onValueChange={(value: any) => setFormData({...formData, role: value})}>
                     <SelectTrigger>
                       <SelectValue placeholder="Select role" />
                     </SelectTrigger>
@@ -401,59 +329,67 @@ const EmployeeManagementTable = () => {
                   </Select>
                 </div>
                 <div>
-                  <Label htmlFor="department">Department</Label>
-                  <Select value={formData.department} onValueChange={(value) => setFormData({...formData, department: value})}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select department" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {departments.map((dept) => (
-                        <SelectItem key={dept} value={dept}>{dept}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <Label htmlFor="password">Password</Label>
+                  <Label htmlFor="salary">Salary</Label>
                   <Input
-                    id="password"
-                    type="password"
-                    value={formData.password}
-                    onChange={(e) => setFormData({...formData, password: e.target.value})}
-                    placeholder="Enter numeric password"
+                    type="number"
+                    id="salary"
+                    value={formData.salary}
+                    onChange={(e) => setFormData({...formData, salary: parseFloat(e.target.value) || 0})}
+                    placeholder="Enter salary"
                   />
                 </div>
                 <div>
-                  <Label htmlFor="salary">Salary</Label>
+                  <Label htmlFor="joining_date">Joining Date</Label>
                   <Input
-                    id="salary"
-                    type="number"
-                    value={formData.salary}
-                    onChange={(e) => setFormData({...formData, salary: e.target.value})}
-                    placeholder="Enter salary amount"
+                    type="date"
+                    id="joining_date"
+                    value={formData.joining_date}
+                    onChange={(e) => setFormData({...formData, joining_date: e.target.value})}
                   />
                 </div>
               </div>
 
-              <div className="flex space-x-2">
-                <Button onClick={editingEmployee ? updateEmployee : createEmployee}>
-                  <Save className="h-4 w-4 mr-2" />
-                  {editingEmployee ? 'Update Employee' : 'Create Employee'}
-                </Button>
+              <div>
+                <Label>Assigned Zones</Label>
+                <div className="grid grid-cols-2 gap-2 mt-2">
+                  {zones.map((zone) => (
+                    <div key={zone.id} className="flex items-center space-x-2">
+                      <input
+                        type="checkbox"
+                        id={`zone-${zone.id}`}
+                        checked={formData.assigned_zones.includes(zone.id)}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setFormData({
+                              ...formData,
+                              assigned_zones: [...formData.assigned_zones, zone.id]
+                            });
+                          } else {
+                            setFormData({
+                              ...formData,
+                              assigned_zones: formData.assigned_zones.filter(id => id !== zone.id)
+                            });
+                          }
+                        }}
+                      />
+                      <Label htmlFor={`zone-${zone.id}`}>{zone.name}</Label>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <DialogFooter>
                 <Button variant="outline" onClick={resetForm}>
                   <X className="h-4 w-4 mr-2" />
                   Cancel
                 </Button>
-              </div>
-            </div>
-          )}
-
-          {!isCreating && !editingEmployee && (
-            <Button onClick={() => setIsCreating(true)}>
-              <Plus className="h-4 w-4 mr-2" />
-              Add New Employee
-            </Button>
-          )}
+                <Button onClick={editingEmployee ? updateEmployee : createEmployee}>
+                  <Save className="h-4 w-4 mr-2" />
+                  {editingEmployee ? 'Update Employee' : 'Create Employee'}
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
 
           <div className="rounded-md border">
             <Table>
@@ -462,74 +398,49 @@ const EmployeeManagementTable = () => {
                   <TableHead>Employee ID</TableHead>
                   <TableHead>Name</TableHead>
                   <TableHead>Email</TableHead>
-                  <TableHead>Role</TableHead>
                   <TableHead>Department</TableHead>
-                  <TableHead>Status</TableHead>
+                  <TableHead>Role</TableHead>
                   <TableHead>Salary</TableHead>
+                  <TableHead>Status</TableHead>
                   <TableHead>Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {employees.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={8} className="text-center py-4">
-                      No employees found
+                {employees.filter(emp => emp.is_active).map((employee) => (
+                  <TableRow key={employee.id}>
+                    <TableCell className="font-medium">{employee.employee_id}</TableCell>
+                    <TableCell>{employee.name}</TableCell>
+                    <TableCell>{employee.email}</TableCell>
+                    <TableCell>{employee.department}</TableCell>
+                    <TableCell>
+                      <span className="capitalize">{employee.role.replace('_', ' ')}</span>
+                    </TableCell>
+                    <TableCell>₹{employee.salary}</TableCell>
+                    <TableCell>
+                      <span className="px-2 py-1 rounded-full text-xs bg-green-100 text-green-800">
+                        Active
+                      </span>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex space-x-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => startEditing(employee)}
+                        >
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="destructive"
+                          size="sm"
+                          onClick={() => deleteEmployee(employee.id)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
                     </TableCell>
                   </TableRow>
-                ) : (
-                  employees.map((employee) => (
-                    <TableRow key={employee.id}>
-                      <TableCell className="font-medium">{employee.employee_id}</TableCell>
-                      <TableCell>{employee.name}</TableCell>
-                      <TableCell>{employee.email}</TableCell>
-                      <TableCell className="capitalize">{employee.role}</TableCell>
-                      <TableCell>{employee.department}</TableCell>
-                      <TableCell>
-                        <span className={`px-2 py-1 rounded-full text-xs ${
-                          employee.is_active 
-                            ? 'bg-green-100 text-green-800' 
-                            : 'bg-red-100 text-red-800'
-                        }`}>
-                          {employee.is_active ? 'Active' : 'Inactive'}
-                        </span>
-                      </TableCell>
-                      <TableCell>
-                        {employee.salary ? `₹${employee.salary}` : 'Not set'}
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex space-x-2">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => startEditing(employee)}
-                          >
-                            <Edit className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => {
-                              setShowZoneAssignment(employee);
-                              setFormData({
-                                ...formData,
-                                assigned_zones: employee.assigned_zones || []
-                              });
-                            }}
-                          >
-                            <MapPin className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="destructive"
-                            size="sm"
-                            onClick={() => deleteEmployee(employee.id)}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))
-                )}
+                ))}
               </TableBody>
             </Table>
           </div>

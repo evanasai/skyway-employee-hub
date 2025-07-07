@@ -216,6 +216,69 @@ export type Database = {
           },
         ]
       }
+      department_tasks: {
+        Row: {
+          created_at: string
+          department_id: string
+          id: string
+          is_required: boolean
+          task_id: string
+        }
+        Insert: {
+          created_at?: string
+          department_id: string
+          id?: string
+          is_required?: boolean
+          task_id: string
+        }
+        Update: {
+          created_at?: string
+          department_id?: string
+          id?: string
+          is_required?: boolean
+          task_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "department_tasks_department_id_fkey"
+            columns: ["department_id"]
+            isOneToOne: false
+            referencedRelation: "departments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "department_tasks_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "tasks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      departments: {
+        Row: {
+          created_at: string
+          id: string
+          is_active: boolean
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       employee_deductions: {
         Row: {
           amount: number
@@ -504,6 +567,36 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      tasks: {
+        Row: {
+          created_at: string
+          description: string | null
+          form_fields: Json | null
+          id: string
+          is_active: boolean
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          form_fields?: Json | null
+          id?: string
+          is_active?: boolean
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          form_fields?: Json | null
+          id?: string
+          is_active?: boolean
+          name?: string
+          updated_at?: string
+        }
+        Relationships: []
       }
       zones: {
         Row: {
