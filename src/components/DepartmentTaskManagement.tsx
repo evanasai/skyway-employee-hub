@@ -87,33 +87,23 @@ const DepartmentTaskManagement = () => {
   const fetchDepartmentTasks = async () => {
     try {
       setIsLoading(true);
-      // Use rpc call or direct query with type assertion
       const { data, error } = await supabase
-        .rpc('get_department_tasks_with_dept_name')
-        .returns<DepartmentTask[]>();
+        .from('department_task_assignments')
+        .select(`
+          *,
+          departments!inner(name)
+        `)
+        .eq('is_active', true)
+        .order('created_at', { ascending: false });
 
-      if (error) {
-        // Fallback to direct query if RPC doesn't exist
-        const { data: fallbackData, error: fallbackError } = await (supabase as any)
-          .from('department_task_assignments')
-          .select(`
-            *,
-            departments!inner(name)
-          `)
-          .eq('is_active', true)
-          .order('created_at', { ascending: false });
+      if (error) throw error;
 
-        if (fallbackError) throw fallbackError;
+      const tasksWithDeptName = (data || []).map((task: any) => ({
+        ...task,
+        department_name: task.departments?.name || 'Unknown Department'
+      }));
 
-        const tasksWithDeptName = (fallbackData || []).map((task: any) => ({
-          ...task,
-          department_name: task.departments?.name || 'Unknown Department'
-        }));
-
-        setDepartmentTasks(tasksWithDeptName);
-      } else {
-        setDepartmentTasks(data || []);
-      }
+      setDepartmentTasks(tasksWithDeptName);
     } catch (error) {
       console.error('Error fetching department tasks:', error);
       toast({
@@ -147,7 +137,7 @@ const DepartmentTaskManagement = () => {
         due_date: formData.due_date ? new Date(formData.due_date).toISOString() : null
       };
 
-      const { error } = await (supabase as any)
+      const { error } = await supabase
         .from('department_task_assignments')
         .insert(taskData);
 
@@ -177,7 +167,7 @@ const DepartmentTaskManagement = () => {
 
     try {
       setIsLoading(true);
-      const { error } = await (supabase as any)
+      const { error } = await supabase
         .from('department_task_assignments')
         .update({
           department_id: formData.department_id,
@@ -214,7 +204,7 @@ const DepartmentTaskManagement = () => {
   const deleteTask = async (taskId: string) => {
     try {
       setIsLoading(true);
-      const { error } = await (supabase as any)
+      const { error } = await supabase
         .from('department_task_assignments')
         .update({ is_active: false })
         .eq('id', taskId);

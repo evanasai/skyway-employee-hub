@@ -34,14 +34,16 @@ const EmployeeDepartmentTasks = ({ employeeId, employeeDepartment }: EmployeeDep
     try {
       setIsLoading(true);
       
-      // Try to fetch from the view first
-      const { data, error } = await (supabase as any)
+      // Use the employee_department_tasks view
+      const { data, error } = await supabase
         .from('employee_department_tasks')
         .select('*')
         .eq('employee_id', employeeId)
         .order('assigned_at', { ascending: false });
 
       if (error) {
+        console.error('View query failed, using fallback:', error);
+        
         // Fallback to joining tables manually
         const { data: fallbackData, error: fallbackError } = await supabase
           .from('departments')
