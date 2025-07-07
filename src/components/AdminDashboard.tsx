@@ -10,6 +10,9 @@ import PayrollManagement from './PayrollManagement';
 import AdminSidebar from './AdminSidebar';
 import EnhancedEmployeeManagement from './EnhancedEmployeeManagement';
 import EnhancedTaskManagement from './EnhancedTaskManagement';
+import ZoneManagement from './ZoneManagement';
+import ReportsAndAnalytics from './ReportsAndAnalytics';
+import Settings from './Settings';
 import TestCredentialsButton from './TestCredentialsButton';
 import { SidebarProvider, SidebarInset, SidebarTrigger } from '@/components/ui/sidebar';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -171,61 +174,11 @@ const AdminDashboard = () => {
                 {currentView === 'enhanced-employees' && <EnhancedEmployeeManagement />}
                 {currentView === 'tasks' && <TaskManagement />}
                 {currentView === 'enhanced-tasks' && <EnhancedTaskManagement />}
-                {currentView === 'zones' && (
-                  <Card>
-                    <CardHeader>
-                      <CardTitle>Zone Management</CardTitle>
-                      <CardDescription>Manage geographical zones and assignments</CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                      <p className="text-gray-600">Zone management functionality is being developed. This will allow you to:</p>
-                      <ul className="list-disc list-inside mt-2 space-y-1 text-gray-600">
-                        <li>Create and manage geographical zones</li>
-                        <li>Assign employees to specific zones</li>
-                        <li>Track zone-based performance</li>
-                        <li>Set zone boundaries and restrictions</li>
-                      </ul>
-                    </CardContent>
-                  </Card>
-                )}
+                {currentView === 'zones' && <ZoneManagement />}
                 {currentView === 'inventory' && <InventoryManagement />}
                 {currentView === 'payroll' && <PayrollManagement />}
-                {currentView === 'reports' && (
-                  <Card>
-                    <CardHeader>
-                      <CardTitle>Reports & Analytics</CardTitle>
-                      <CardDescription>Comprehensive reporting and analytics dashboard</CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                      <p className="text-gray-600">Advanced reporting features coming soon:</p>
-                      <ul className="list-disc list-inside mt-2 space-y-1 text-gray-600">
-                        <li>Employee performance analytics</li>
-                        <li>Task completion reports</li>
-                        <li>Attendance and time tracking</li>
-                        <li>Payroll summaries and trends</li>
-                        <li>Zone-wise productivity metrics</li>
-                      </ul>
-                    </CardContent>
-                  </Card>
-                )}
-                {currentView === 'settings' && (
-                  <Card>
-                    <CardHeader>
-                      <CardTitle>System Settings</CardTitle>
-                      <CardDescription>Configure application settings and preferences</CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                      <p className="text-gray-600">Settings panel includes:</p>
-                      <ul className="list-disc list-inside mt-2 space-y-1 text-gray-600">
-                        <li>User role and permission management</li>
-                        <li>System configuration options</li>
-                        <li>Notification preferences</li>
-                        <li>Data backup and security settings</li>
-                        <li>Integration configurations</li>
-                      </ul>
-                    </CardContent>
-                  </Card>
-                )}
+                {currentView === 'reports' && <ReportsAndAnalytics />}
+                {currentView === 'settings' && <Settings />}
               </div>
             </div>
           </div>
