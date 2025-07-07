@@ -2,7 +2,9 @@
 import React, { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from '@/hooks/use-toast';
+import { Button } from '@/components/ui/button';
 import { SidebarProvider, SidebarInset, SidebarTrigger } from '@/components/ui/sidebar';
+import { LogOut } from 'lucide-react';
 import EmployeeSidebar from './EmployeeSidebar';
 import AdminDashboard from './AdminDashboard';
 import DashboardViews from './DashboardViews';
@@ -12,7 +14,7 @@ import { useMonthlyStats } from '@/hooks/useMonthlyStats';
 import { useIsMobile } from '@/hooks/use-mobile';
 
 const Dashboard = () => {
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
   const [currentView, setCurrentView] = useState<string>('dashboard');
   const isMobile = useIsMobile();
   
@@ -53,11 +55,20 @@ const Dashboard = () => {
         <EmployeeSidebar currentView={currentView} onNavigate={handleNavigate} />
         
         <SidebarInset className="flex-1">
-          <header className="flex h-16 shrink-0 items-center gap-2 border-b px-4">
-            <SidebarTrigger className="-ml-1" />
+          <header className="flex h-16 shrink-0 items-center justify-between gap-2 border-b px-4">
             <div className="flex items-center space-x-2">
+              <SidebarTrigger className="-ml-1" />
               <span className="font-semibold">Employee Dashboard</span>
             </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={logout}
+              className="flex items-center space-x-2"
+            >
+              <LogOut className="h-4 w-4" />
+              <span>Logout</span>
+            </Button>
           </header>
           
           <DashboardContent
