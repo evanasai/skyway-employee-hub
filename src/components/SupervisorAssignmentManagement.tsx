@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge';
 import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { Plus, UserCog, Users, Building, Save, X } from 'lucide-react';
+import { Plus, UserCog, Users, Building, Save, X, Upload, User } from 'lucide-react';
 
 interface Employee {
   id: string;
@@ -17,6 +17,15 @@ interface Employee {
   email: string;
   role: string;
   department: string;
+}
+
+interface Team {
+  id: string;
+  name: string;
+  category: string;
+  department: {
+    name: string;
+  } | null;
 }
 
 interface Department {
@@ -38,6 +47,11 @@ interface SupervisorAllocation {
     name: string;
     employee_id: string;
     email: string;
+    department: string;
+  } | null;
+  team: {
+    name: string;
+    category: string;
   } | null;
   department: {
     name: string;
@@ -47,6 +61,7 @@ interface SupervisorAllocation {
 const SupervisorAllocationManagement = () => {
   const [allocations, setAllocations] = useState<SupervisorAllocation[]>([]);
   const [employees, setEmployees] = useState<Employee[]>([]);
+  const [teams, setTeams] = useState<Team[]>([]);
   const [departments, setDepartments] = useState<Department[]>([]);
   const [supervisors, setSupervisors] = useState<Employee[]>([]);
   const [loading, setLoading] = useState(true);
@@ -57,12 +72,14 @@ const SupervisorAllocationManagement = () => {
     supervisor_id: '',
     assignment_type: 'individual',
     employee_id: '',
+    team_id: '',
     department_id: ''
   });
 
   useEffect(() => {
     fetchAllocations();
     fetchEmployees();
+    fetchTeams();
     fetchDepartments();
   }, []);
 
@@ -77,7 +94,6 @@ const SupervisorAllocationManagement = () => {
       if (error) throw error;
       
       setEmployees(data || []);
-      // Filter supervisors (assuming they have supervisor role or higher role_level)
       setSupervisors((data || []).filter(emp => 
         emp.role.toLowerCase().includes('supervisor') || 
         emp.role.toLowerCase().includes('admin') ||
@@ -88,6 +104,29 @@ const SupervisorAllocationManagement = () => {
       toast({
         title: "Error",
         description: "Failed to fetch employees",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const fetchTeams = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('teams')
+        .select(`
+          *,
+          department:departments(name)
+        `)
+        .eq('is_active', true)
+        .order('name');
+
+      if (error) throw error;
+      setTeams(data || []);
+    } catch (error) {
+      console.error('Error fetching teams:', error);
+      toast({
+        title: "Error",
+        description: "Failed to fetch teams",
         variant: "destructive"
       });
     }
@@ -120,7 +159,8 @@ const SupervisorAllocationManagement = () => {
         .select(`
           *,
           supervisor:employees!supervisor_assignments_supervisor_id_fkey(name, employee_id, email),
-          employee:employees!supervisor_assignments_employee_id_fkey(name, employee_id, email),
+          employee:employees!supervisor_assignments_employee_id_fkey(name, employee_id, email, department),
+          team:teams(name, category),
           department:departments(name)
         `)
         .order('assigned_at', { ascending: false });
@@ -136,6 +176,42 @@ const SupervisorAllocationManagement = () => {
       });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const checkExistingSupervisor = async (employeeId: string, teamId: string = '') => {
+    try {
+      let query = supabase
+        .from('supervisor_assignments')
+        .select('*')
+        .eq('is_active', true);
+
+      if (employeeId) {
+        query = query.eq('employee_id', employeeId);
+      } else if (teamId) {
+        // Check if any team member already has a supervisor
+        const { data: teamMembers } = await supabase
+          .from('team_members')
+          .select('employee_id')
+          .eq('team_id', teamId);
+
+        if (teamMembers && teamMembers.length > 0) {
+          const employeeIds = teamMembers.map(member => member.employee_id);
+          const { data: existingAssignments } = await supabase
+            .from('supervisor_assignments')
+            .select('*')
+            .in('employee_id', employeeIds)
+            .eq('is_active', true);
+
+          return existingAssignments && existingAssignments.length > 0;
+        }
+      }
+
+      const { data } = await query;
+      return data && data.length > 0;
+    } catch (error) {
+      console.error('Error checking existing supervisor:', error);
+      return false;
     }
   };
 
@@ -158,13 +234,39 @@ const SupervisorAllocationManagement = () => {
       return;
     }
 
-    if (formData.assignment_type === 'department' && !formData.department_id) {
+    if (formData.assignment_type === 'team' && !formData.team_id) {
       toast({
         title: "Missing Information",
-        description: "Please select a department for department assignment",
+        description: "Please select a team for team assignment",
         variant: "destructive"
       });
       return;
+    }
+
+    if (!formData.department_id) {
+      toast({
+        title: "Missing Information",
+        description: "Please select a department",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    // Check for existing supervisor assignment
+    if (!editingAllocation) {
+      const hasExistingSupervisor = await checkExistingSupervisor(
+        formData.assignment_type === 'individual' ? formData.employee_id : '',
+        formData.assignment_type === 'team' ? formData.team_id : ''
+      );
+
+      if (hasExistingSupervisor) {
+        toast({
+          title: "Assignment Conflict",
+          description: "This employee/team already has a supervisor assigned",
+          variant: "destructive"
+        });
+        return;
+      }
     }
 
     try {
@@ -172,7 +274,8 @@ const SupervisorAllocationManagement = () => {
         supervisor_id: formData.supervisor_id,
         assignment_type: formData.assignment_type,
         employee_id: formData.assignment_type === 'individual' ? formData.employee_id : null,
-        department_id: formData.assignment_type === 'department' ? formData.department_id : null,
+        team_id: formData.assignment_type === 'team' ? formData.team_id : null,
+        department_id: formData.department_id,
         is_active: true
       };
 
@@ -218,6 +321,7 @@ const SupervisorAllocationManagement = () => {
       supervisor_id: '',
       assignment_type: 'individual',
       employee_id: '',
+      team_id: '',
       department_id: ''
     });
     setShowForm(false);
@@ -230,6 +334,7 @@ const SupervisorAllocationManagement = () => {
       supervisor_id: allocation.supervisor?.employee_id || '',
       assignment_type: allocation.assignment_type,
       employee_id: allocation.employee?.employee_id || '',
+      team_id: allocation.team?.name || '',
       department_id: allocation.department?.name || ''
     });
     setShowForm(true);
@@ -260,12 +365,19 @@ const SupervisorAllocationManagement = () => {
     }
   };
 
+  const handleBulkUpload = () => {
+    toast({
+      title: "Bulk Upload",
+      description: "Bulk upload feature will be implemented in the next phase",
+    });
+  };
+
   const getAllocationTypeBadge = (type: string) => {
     switch (type) {
       case 'individual':
-        return <Badge variant="default"><Users className="w-3 h-3 mr-1" />Individual</Badge>;
-      case 'department':
-        return <Badge variant="secondary"><Building className="w-3 h-3 mr-1" />Department</Badge>;
+        return <Badge variant="default"><User className="w-3 h-3 mr-1" />Individual</Badge>;
+      case 'team':
+        return <Badge variant="secondary"><Users className="w-3 h-3 mr-1" />Team</Badge>;
       default:
         return <Badge variant="outline">{type}</Badge>;
     }
@@ -288,12 +400,18 @@ const SupervisorAllocationManagement = () => {
       <div className="flex justify-between items-center">
         <div>
           <h2 className="text-2xl font-bold">Supervisor Allocation</h2>
-          <p className="text-gray-600">Manage supervisor-employee relationships</p>
+          <p className="text-gray-600">Manage supervisor-employee/team relationships by department</p>
         </div>
-        <Button onClick={() => setShowForm(true)}>
-          <Plus className="w-4 h-4 mr-2" />
-          New Allocation
-        </Button>
+        <div className="flex space-x-2">
+          <Button onClick={() => setShowForm(true)}>
+            <Plus className="w-4 h-4 mr-2" />
+            New Allocation
+          </Button>
+          <Button variant="outline" onClick={handleBulkUpload}>
+            <Upload className="w-4 h-4 mr-2" />
+            Bulk Upload
+          </Button>
+        </div>
       </div>
 
       {showForm && (
@@ -301,7 +419,7 @@ const SupervisorAllocationManagement = () => {
           <CardHeader>
             <CardTitle>{editingAllocation ? 'Edit' : 'Create'} Supervisor Allocation</CardTitle>
             <CardDescription>
-              Assign supervisors to employees or departments
+              Assign supervisors to individual employees or teams within departments
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -326,6 +444,25 @@ const SupervisorAllocationManagement = () => {
               </div>
 
               <div>
+                <Label htmlFor="department">Department</Label>
+                <Select 
+                  value={formData.department_id} 
+                  onValueChange={(value) => setFormData({...formData, department_id: value})}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select department" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {departments.map((department) => (
+                      <SelectItem key={department.id} value={department.id}>
+                        {department.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
                 <Label htmlFor="assignment_type">Assignment Type</Label>
                 <Select 
                   value={formData.assignment_type} 
@@ -336,7 +473,7 @@ const SupervisorAllocationManagement = () => {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="individual">Individual Employee</SelectItem>
-                    <SelectItem value="department">Department</SelectItem>
+                    <SelectItem value="team">Team</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -352,9 +489,12 @@ const SupervisorAllocationManagement = () => {
                       <SelectValue placeholder="Select employee" />
                     </SelectTrigger>
                     <SelectContent>
-                      {employees.filter(emp => !supervisors.some(sup => sup.id === emp.id)).map((employee) => (
+                      {employees
+                        .filter(emp => !supervisors.some(sup => sup.id === emp.id))
+                        .filter(emp => !formData.department_id || emp.department === departments.find(d => d.id === formData.department_id)?.name)
+                        .map((employee) => (
                         <SelectItem key={employee.id} value={employee.id}>
-                          {employee.name} ({employee.employee_id})
+                          {employee.name} ({employee.employee_id}) - {employee.department}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -362,20 +502,22 @@ const SupervisorAllocationManagement = () => {
                 </div>
               )}
 
-              {formData.assignment_type === 'department' && (
+              {formData.assignment_type === 'team' && (
                 <div>
-                  <Label htmlFor="department">Department</Label>
+                  <Label htmlFor="team">Team</Label>
                   <Select 
-                    value={formData.department_id} 
-                    onValueChange={(value) => setFormData({...formData, department_id: value})}
+                    value={formData.team_id} 
+                    onValueChange={(value) => setFormData({...formData, team_id: value})}
                   >
                     <SelectTrigger>
-                      <SelectValue placeholder="Select department" />
+                      <SelectValue placeholder="Select team" />
                     </SelectTrigger>
                     <SelectContent>
-                      {departments.map((department) => (
-                        <SelectItem key={department.id} value={department.id}>
-                          {department.name}
+                      {teams
+                        .filter(team => !formData.department_id || team.department?.name === departments.find(d => d.id === formData.department_id)?.name)
+                        .map((team) => (
+                        <SelectItem key={team.id} value={team.id}>
+                          {team.name} - {team.category}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -409,6 +551,7 @@ const SupervisorAllocationManagement = () => {
                   </CardTitle>
                   <CardDescription>
                     Supervisor ID: {allocation.supervisor?.employee_id} | 
+                    Department: {allocation.department?.name} |
                     Allocated: {new Date(allocation.assigned_at).toLocaleDateString()}
                   </CardDescription>
                 </div>
@@ -420,7 +563,7 @@ const SupervisorAllocationManagement = () => {
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div>
                     <p className="text-sm font-medium text-gray-700">Supervisor</p>
                     <p className="text-sm text-gray-600">
@@ -431,26 +574,32 @@ const SupervisorAllocationManagement = () => {
                   
                   {allocation.assignment_type === 'individual' && allocation.employee && (
                     <div>
-                      <p className="text-sm font-medium text-gray-700">Allocated Employee</p>
+                      <p className="text-sm font-medium text-gray-700">Employee</p>
                       <p className="text-sm text-gray-600">
                         {allocation.employee.name} ({allocation.employee.employee_id})
                       </p>
-                      <p className="text-xs text-gray-500">{allocation.employee.email}</p>
+                      <p className="text-xs text-gray-500">{allocation.employee.department}</p>
                     </div>
                   )}
                   
-                  {allocation.assignment_type === 'department' && allocation.department && (
+                  {allocation.assignment_type === 'team' && allocation.team && (
                     <div>
-                      <p className="text-sm font-medium text-gray-700">Allocated Department</p>
-                      <p className="text-sm text-gray-600">{allocation.department.name}</p>
+                      <p className="text-sm font-medium text-gray-700">Team</p>
+                      <p className="text-sm text-gray-600">{allocation.team.name}</p>
+                      <p className="text-xs text-gray-500">{allocation.team.category}</p>
                     </div>
                   )}
+
+                  <div>
+                    <p className="text-sm font-medium text-gray-700">Department</p>
+                    <p className="text-sm text-gray-600">{allocation.department?.name}</p>
+                  </div>
                 </div>
 
                 <div className="flex space-x-2 pt-2">
                   <Button variant="outline" size="sm" onClick={() => startEditing(allocation)}>
                     <UserCog className="w-4 h-4 mr-1" />
-                    Edit Allocation
+                    Edit
                   </Button>
                   <Button 
                     variant={allocation.is_active ? "destructive" : "default"} 
