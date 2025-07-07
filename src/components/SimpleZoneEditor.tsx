@@ -6,7 +6,7 @@ import { Label } from '@/components/ui/label';
 import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { Plus, Edit, Trash2, MapPin } from 'lucide-react';
-import { Zone, parseCoordinates } from '@/types/zone';
+import { Zone, ZoneFromDB, parseCoordinates } from '@/types/zone';
 
 const SimpleZoneEditor = () => {
   const [zones, setZones] = useState<Zone[]>([]);
@@ -33,7 +33,7 @@ const SimpleZoneEditor = () => {
       if (error) throw error;
       
       // Parse coordinates from Json to Coordinate[] format
-      const parsedZones: Zone[] = (data || []).map(zone => ({
+      const parsedZones: Zone[] = (data || []).map((zone: ZoneFromDB) => ({
         ...zone,
         coordinates: parseCoordinates(zone.coordinates)
       }));

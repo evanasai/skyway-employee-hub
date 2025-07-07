@@ -8,7 +8,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { Trash2, Edit, Plus, Save, X, MapPin } from 'lucide-react';
-import { Zone, parseCoordinates } from '@/types/zone';
+import { Zone, ZoneFromDB, parseCoordinates } from '@/types/zone';
 
 interface Employee {
   id: string;
@@ -73,7 +73,7 @@ const EmployeeManagementTable = () => {
       if (error) throw error;
       
       // Parse coordinates from Json to Coordinate[] format
-      const parsedZones: Zone[] = (data || []).map(zone => ({
+      const parsedZones: Zone[] = (data || []).map((zone: ZoneFromDB) => ({
         ...zone,
         coordinates: parseCoordinates(zone.coordinates)
       }));
