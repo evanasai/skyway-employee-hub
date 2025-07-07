@@ -1,13 +1,13 @@
 
 import React from 'react';
-import MapZoneEditor from './MapZoneEditor';
+import SimpleZoneEditor from './SimpleZoneEditor';
 
 interface ZoneEditorProps {
   onBack?: () => void;
 }
 
 const ZoneEditor: React.FC<ZoneEditorProps> = ({ onBack }) => {
-  return <MapZoneEditor onBack={onBack} />;
+  return <SimpleZoneEditor />;
 };
 
 export default ZoneEditor;
