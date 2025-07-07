@@ -1,11 +1,10 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { LogOut } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { SidebarProvider, SidebarInset, SidebarTrigger } from '@/components/ui/sidebar';
 import AdminSidebar from './AdminSidebar';
-import DashboardViews from './DashboardViews';
+import AdminDashboardOverview from './AdminDashboardOverview';
 import EmployeeManagement from './EmployeeManagement';
 import EnhancedEmployeeManagement from './EnhancedEmployeeManagement';
 import TaskManagement from './TaskManagement';
@@ -26,7 +25,7 @@ const AdminDashboard = () => {
   const renderCurrentView = () => {
     switch (currentView) {
       case 'dashboard':
-        return <DashboardViews />;
+        return <AdminDashboardOverview />;
       case 'employees':
         return <EmployeeManagement />;
       case 'enhanced-employees':
@@ -52,7 +51,7 @@ const AdminDashboard = () => {
       case 'settings':
         return <Settings />;
       default:
-        return <DashboardViews />;
+        return <AdminDashboardOverview />;
     }
   };
 
