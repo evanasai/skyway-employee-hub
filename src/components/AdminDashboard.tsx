@@ -1,6 +1,9 @@
 
 import React, { useState } from 'react';
 import { SidebarProvider, SidebarInset, SidebarTrigger } from '@/components/ui/sidebar';
+import { Button } from '@/components/ui/button';
+import { LogOut } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
 import AdminSidebar from './AdminSidebar';
 import EmployeeManagementTable from './EmployeeManagementTable';
 import SimpleZoneEditor from './SimpleZoneEditor';
@@ -12,6 +15,7 @@ import PayrollManagement from './PayrollManagement';
 import AdvanceExpenseManagement from './AdvanceExpenseManagement';
 
 const AdminDashboard = () => {
+  const { user, logout } = useAuth();
   const [currentView, setCurrentView] = useState('dashboard');
 
   const renderContent = () => {
@@ -74,10 +78,31 @@ const AdminDashboard = () => {
         <AdminSidebar currentView={currentView} onNavigate={setCurrentView} />
         
         <SidebarInset className="flex-1">
-          <header className="flex h-16 shrink-0 items-center gap-2 border-b px-4">
-            <SidebarTrigger className="-ml-1" />
-            <div className="flex items-center space-x-2">
-              <span className="font-semibold">Admin Dashboard</span>
+          <header className="flex h-16 shrink-0 items-center justify-between gap-2 border-b px-4 bg-gradient-to-r from-blue-600 to-blue-800">
+            <div className="flex items-center space-x-4">
+              <SidebarTrigger className="-ml-1 text-white hover:bg-blue-700" />
+              <div className="flex items-center space-x-3">
+                <div className="text-white">
+                  <h1 className="text-xl font-bold">Skyway Networks</h1>
+                  <p className="text-xs text-blue-100">Admin Panel</p>
+                </div>
+              </div>
+            </div>
+            
+            <div className="flex items-center space-x-4">
+              <div className="text-white text-right">
+                <p className="text-sm font-medium">{user?.name}</p>
+                <p className="text-xs text-blue-100 capitalize">{user?.role}</p>
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={logout}
+                className="bg-white/10 border-white/20 text-white hover:bg-white/20 hover:text-white"
+              >
+                <LogOut className="h-4 w-4 mr-2" />
+                Logout
+              </Button>
             </div>
           </header>
           
