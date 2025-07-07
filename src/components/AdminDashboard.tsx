@@ -7,7 +7,7 @@ import { SidebarProvider, SidebarInset, SidebarTrigger } from '@/components/ui/s
 import AdminSidebar from './AdminSidebar';
 import AdminDashboardOverview from './AdminDashboardOverview';
 import EmployeeManagement from './EmployeeManagement';
-import EnhancedEmployeeManagement from './EnhancedEmployeeManagement';
+import ComprehensiveEmployeeManagement from './ComprehensiveEmployeeManagement';
 import TaskManagement from './TaskManagement';
 import EnhancedTaskManagement from './EnhancedTaskManagement';
 import ZoneManagement from './ZoneManagement';
@@ -16,8 +16,7 @@ import InventoryManagementView from './InventoryManagementView';
 import PayrollManagement from './PayrollManagement';
 import ReportsAnalyticsView from './ReportsAnalyticsView';
 import SettingsView from './SettingsView';
-import KYCManagementView from './KYCManagementView';
-import TeamManagementView from './TeamManagementView';
+import EnhancedTeamManagement from './EnhancedTeamManagement';
 import SupervisorAllocationManagement from './SupervisorAssignmentManagement';
 
 const AdminDashboard = () => {
@@ -29,7 +28,7 @@ const AdminDashboard = () => {
       case 'dashboard':
         return <AdminDashboardOverview />;
       case 'employees':
-        return <EnhancedEmployeeManagement />;
+        return <ComprehensiveEmployeeManagement />;
       case 'tasks':
         return <TaskManagement />;
       case 'enhanced-tasks':
@@ -39,11 +38,9 @@ const AdminDashboard = () => {
       case 'zone-assignment':
         return <EmployeeZoneAssignment />;
       case 'team-management':
-        return <TeamManagementView />;
+        return <EnhancedTeamManagement />;
       case 'supervisor-assignment':
         return <SupervisorAllocationManagement />;
-      case 'kyc-management':
-        return <KYCManagementView />;
       case 'inventory':
         return <InventoryManagementView />;
       case 'payroll':

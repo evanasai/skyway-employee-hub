@@ -61,12 +61,6 @@ const AdminSidebar = ({ currentView, onNavigate }: AdminSidebarProps) => {
       category: 'hr'
     },
     { 
-      id: 'kyc-management', 
-      label: 'Employee Verification (KYC)', 
-      icon: Shield,
-      category: 'hr'
-    },
-    { 
       id: 'enhanced-tasks', 
       label: 'Task Management', 
       icon: CheckSquare,
