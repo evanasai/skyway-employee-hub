@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -37,6 +38,7 @@ interface SupervisorAllocation {
   assignment_type: string;
   assigned_at: string;
   is_active: boolean;
+  team_id: string | null;
   supervisor: {
     name: string;
     employee_id: string;
@@ -159,20 +161,14 @@ const SupervisorAllocationManagement = () => {
           *,
           supervisor:employees!supervisor_assignments_supervisor_id_fkey(name, employee_id, email),
           employee:employees!supervisor_assignments_employee_id_fkey(name, employee_id, email, department),
+          team:teams(name, category),
           department:departments(name)
         `)
         .order('assigned_at', { ascending: false });
 
       if (error) throw error;
       
-      // Map the data to include team information if needed
-      const allocationsWithTeams = (data || []).map(allocation => ({
-        ...allocation,
-        team: allocation.assignment_type === 'team' && allocation.team_id ? 
-          teams.find(team => team.id === allocation.team_id) || null : null
-      }));
-      
-      setAllocations(allocationsWithTeams);
+      setAllocations(data || []);
     } catch (error) {
       console.error('Error fetching supervisor allocations:', error);
       toast({
@@ -195,22 +191,7 @@ const SupervisorAllocationManagement = () => {
       if (employeeId) {
         query = query.eq('employee_id', employeeId);
       } else if (teamId) {
-        // Check if any team member already has a supervisor
-        const { data: teamMembers } = await supabase
-          .from('team_members')
-          .select('employee_id')
-          .eq('team_id', teamId);
-
-        if (teamMembers && teamMembers.length > 0) {
-          const employeeIds = teamMembers.map(member => member.employee_id);
-          const { data: existingAssignments } = await supabase
-            .from('supervisor_assignments')
-            .select('*')
-            .in('employee_id', employeeIds)
-            .eq('is_active', true);
-
-          return existingAssignments && existingAssignments.length > 0;
-        }
+        query = query.eq('team_id', teamId);
       }
 
       const { data } = await query;
@@ -340,7 +321,7 @@ const SupervisorAllocationManagement = () => {
       supervisor_id: allocation.supervisor?.employee_id || '',
       assignment_type: allocation.assignment_type,
       employee_id: allocation.employee?.employee_id || '',
-      team_id: allocation.team?.name || '',
+      team_id: allocation.team_id || '',
       department_id: allocation.department?.name || ''
     });
     setShowForm(true);

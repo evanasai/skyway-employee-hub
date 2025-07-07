@@ -656,6 +656,7 @@ export type Database = {
           id: string
           is_active: boolean | null
           supervisor_id: string | null
+          team_id: string | null
         }
         Insert: {
           assigned_at?: string | null
@@ -666,6 +667,7 @@ export type Database = {
           id?: string
           is_active?: boolean | null
           supervisor_id?: string | null
+          team_id?: string | null
         }
         Update: {
           assigned_at?: string | null
@@ -676,6 +678,7 @@ export type Database = {
           id?: string
           is_active?: boolean | null
           supervisor_id?: string | null
+          team_id?: string | null
         }
         Relationships: [
           {
@@ -704,6 +707,13 @@ export type Database = {
             columns: ["supervisor_id"]
             isOneToOne: false
             referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "supervisor_assignments_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
             referencedColumns: ["id"]
           },
         ]
