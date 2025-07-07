@@ -1,14 +1,20 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { Trash2, Edit, Plus, Save, X, MapPin, Users } from 'lucide-react';
+import { Trash2, Edit, Plus, Save, X, MapPin, Users, UserCheck, FileText } from 'lucide-react';
 import { Zone, ZoneFromDB, parseCoordinates } from '@/types/zone';
 import EmployeeZoneAssignment from './EmployeeZoneAssignment';
+import TeamManagement from './TeamManagement';
+import KYCManagement from './KYCManagement';
+import SupervisorAssignmentManagement from './SupervisorAssignmentManagement';
 
 interface Employee {
   id: string;
@@ -18,6 +24,9 @@ interface Employee {
   phone: string;
   role: string;
   department: string;
+  role_level: number;
+  assigned_supervisor?: string;
+  kyc_status: string;
   employee_type: string;
   assigned_zones: string[];
   is_active: boolean;
@@ -25,11 +34,11 @@ interface Employee {
 }
 
 const EnhancedEmployeeManagement = () => {
+  const [currentView, setCurrentView] = useState('employees');
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [zones, setZones] = useState<Zone[]>([]);
   const [isCreating, setIsCreating] = useState(false);
   const [editingEmployee, setEditingEmployee] = useState<Employee | null>(null);
-  const [showZoneAssignment, setShowZoneAssignment] = useState(false);
   const [formData, setFormData] = useState({
     employee_id: '',
     name: '',
@@ -53,9 +62,11 @@ const EnhancedEmployeeManagement = () => {
   ];
 
   useEffect(() => {
-    fetchEmployees();
-    fetchZones();
-  }, []);
+    if (currentView === 'employees') {
+      fetchEmployees();
+      fetchZones();
+    }
+  }, [currentView]);
 
   const fetchEmployees = async () => {
     try {
@@ -126,6 +137,7 @@ const EnhancedEmployeeManagement = () => {
           phone: formData.phone,
           role: formData.role,
           department: formData.employee_type,
+          role_level: getRoleLevel(formData.role),
           password: formData.password ? parseInt(formData.password) : null,
           salary: formData.salary ? parseFloat(formData.salary) : null
         });
@@ -159,6 +171,7 @@ const EnhancedEmployeeManagement = () => {
         phone: formData.phone,
         role: formData.role,
         department: formData.employee_type,
+        role_level: getRoleLevel(formData.role),
         updated_at: new Date().toISOString()
       };
 
@@ -218,6 +231,30 @@ const EnhancedEmployeeManagement = () => {
     }
   };
 
+  const getRoleLevel = (role: string) => {
+    switch (role) {
+      case 'super_admin': return 5;
+      case 'admin': return 4;
+      case 'sub_admin': return 3;
+      case 'supervisor': return 2;
+      case 'employee': return 1;
+      default: return 1;
+    }
+  };
+
+  const getKYCStatusBadge = (status: string) => {
+    switch (status) {
+      case 'completed':
+        return <Badge className="bg-green-100 text-green-800">Completed</Badge>;
+      case 'in_progress':
+        return <Badge className="bg-yellow-100 text-yellow-800">In Progress</Badge>;
+      case 'rejected':
+        return <Badge className="bg-red-100 text-red-800">Rejected</Badge>;
+      default:
+        return <Badge variant="outline">Pending</Badge>;
+    }
+  };
+
   const startEditing = (employee: Employee) => {
     setEditingEmployee(employee);
     setFormData({
@@ -252,17 +289,91 @@ const EnhancedEmployeeManagement = () => {
     });
   };
 
-  if (showZoneAssignment) {
-    return <EmployeeZoneAssignment onBack={() => setShowZoneAssignment(false)} />;
+  const renderNavigation = () => (
+    <div className="flex space-x-2 mb-6">
+      <Button
+        variant={currentView === 'employees' ? 'default' : 'outline'}
+        onClick={() => setCurrentView('employees')}
+      >
+        <Users className="h-4 w-4 mr-2" />
+        Employees
+      </Button>
+      <Button
+        variant={currentView === 'zones' ? 'default' : 'outline'}
+        onClick={() => setCurrentView('zones')}
+      >
+        <MapPin className="h-4 w-4 mr-2" />
+        Zone Assignment
+      </Button>
+      <Button
+        variant={currentView === 'teams' ? 'default' : 'outline'}
+        onClick={() => setCurrentView('teams')}
+      >
+        <Users className="h-4 w-4 mr-2" />
+        Team Management
+      </Button>
+      <Button
+        variant={currentView === 'supervisors' ? 'default' : 'outline'}
+        onClick={() => setCurrentView('supervisors')}
+      >
+        <UserCheck className="h-4 w-4 mr-2" />
+        Supervisor Assignment
+      </Button>
+      <Button
+        variant={currentView === 'kyc' ? 'default' : 'outline'}
+        onClick={() => setCurrentView('kyc')}
+      >
+        <FileText className="h-4 w-4 mr-2" />
+        KYC Management
+      </Button>
+    </div>
+  );
+
+  if (currentView === 'zones') {
+    return (
+      <div>
+        {renderNavigation()}
+        <EmployeeZoneAssignment onBack={() => setCurrentView('employees')} />
+      </div>
+    );
+  }
+
+  if (currentView === 'teams') {
+    return (
+      <div>
+        {renderNavigation()}
+        <TeamManagement />
+      </div>
+    );
+  }
+
+  if (currentView === 'supervisors') {
+    return (
+      <div>
+        {renderNavigation()}
+        <SupervisorAssignmentManagement />
+      </div>
+    );
+  }
+
+  if (currentView === 'kyc') {
+    return (
+      <div>
+        {renderNavigation()}
+        <KYCManagement />
+      </div>
+    );
   }
 
   return (
     <div className="space-y-6">
+      {renderNavigation()}
+      
       <Card>
         <CardHeader>
           <CardTitle>Employee Management</CardTitle>
           <CardDescription>
-            Manage employee accounts, assign zones, and set employee types
+            Manage employee accounts, assign roles, and track KYC status
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
@@ -316,6 +427,7 @@ const EnhancedEmployeeManagement = () => {
                     <SelectContent>
                       <SelectItem value="employee">Employee</SelectItem>
                       <SelectItem value="supervisor">Supervisor</SelectItem>
+                      <SelectItem value="sub_admin">Sub Admin</SelectItem>
                       <SelectItem value="admin">Admin</SelectItem>
                       <SelectItem value="super_admin">Super Admin</SelectItem>
                     </SelectContent>
@@ -372,16 +484,10 @@ const EnhancedEmployeeManagement = () => {
           )}
 
           {!isCreating && !editingEmployee && (
-            <div className="flex space-x-2">
-              <Button onClick={() => setIsCreating(true)}>
-                <Plus className="h-4 w-4 mr-2" />
-                Add New Employee
-              </Button>
-              <Button variant="outline" onClick={() => setShowZoneAssignment(true)}>
-                <MapPin className="h-4 w-4 mr-2" />
-                Assign Zones
-              </Button>
-            </div>
+            <Button onClick={() => setIsCreating(true)}>
+              <Plus className="h-4 w-4 mr-2" />
+              Add New Employee
+            </Button>
           )}
 
           <div className="space-y-4">
@@ -396,15 +502,25 @@ const EnhancedEmployeeManagement = () => {
                       <div>
                         <h4 className="font-medium">{employee.name}</h4>
                         <p className="text-sm text-gray-600">
-                          ID: {employee.employee_id} • {employee.role} • {employeeTypes.find(t => t.value === employee.employee_type)?.label || employee.department}
+                          ID: {employee.employee_id} • {employee.role} • Level {employee.role_level}
                         </p>
                         <p className="text-sm text-gray-600">
                           {employee.email} • {employee.phone}
                         </p>
-                        <p className="text-sm text-gray-600">
-                          Status: {employee.is_active ? 'Active' : 'Inactive'}
-                          {employee.salary && ` • Salary: ₹${employee.salary}`}
-                        </p>
+                        <div className="flex items-center space-x-2 mt-2">
+                          <span className="text-sm text-gray-600">
+                            Status: {employee.is_active ? 'Active' : 'Inactive'}
+                          </span>
+                          {employee.salary && (
+                            <span className="text-sm text-gray-600">
+                              • Salary: ₹{employee.salary}
+                            </span>
+                          )}
+                        </div>
+                        <div className="flex items-center space-x-2 mt-1">
+                          <span className="text-sm text-gray-600">KYC:</span>
+                          {getKYCStatusBadge(employee.kyc_status)}
+                        </div>
                         {employee.assigned_zones && employee.assigned_zones.length > 0 && (
                           <p className="text-sm text-blue-600">
                             Zones: {employee.assigned_zones.length} assigned
