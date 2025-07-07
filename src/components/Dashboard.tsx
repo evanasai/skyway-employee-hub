@@ -3,29 +3,10 @@ import React, { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from '@/hooks/use-toast';
 import { SidebarProvider, SidebarInset, SidebarTrigger } from '@/components/ui/sidebar';
-import { Button } from '@/components/ui/button';
-import { ArrowLeft } from 'lucide-react';
-
-// Component imports
 import EmployeeSidebar from './EmployeeSidebar';
-import EmployeeDashboardHeader from './EmployeeDashboardHeader';
-import CheckInButton from './CheckInButton';
-import MonthlyStatsCard from './MonthlyStatsCard';
-import QuickActions from './QuickActions';
-import ContactCard from './ContactCard';
-import AssignedZones from './AssignedZones';
-import TaskSubmissionForm from './TaskSubmissionForm';
-import LeaveRequestForm from './LeaveRequestForm';
-import AdvanceRequestForm from './AdvanceRequestForm';
-import AssetRequestForm from './AssetRequestForm';
-import PayslipsView from './PayslipsView';
-import SupportView from './SupportView';
 import AdminDashboard from './AdminDashboard';
-import MonthlyPerformance from './MonthlyPerformance';
-import MyDocuments from './MyDocuments';
-import EmployeeProfile from './EmployeeProfile';
-
-// Custom hooks
+import DashboardViews from './DashboardViews';
+import DashboardContent from './DashboardContent';
 import { useAttendance } from '@/hooks/useAttendance';
 import { useMonthlyStats } from '@/hooks/useMonthlyStats';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -60,96 +41,9 @@ const Dashboard = () => {
     return <AdminDashboard />;
   }
 
-  // Mobile back button component
-  const MobileBackButton = () => (
-    <Button
-      variant="ghost"
-      size="sm"
-      onClick={handleBackToDashboard}
-      className="mb-4 md:hidden"
-    >
-      <ArrowLeft className="h-4 w-4 mr-2" />
-      Back to Dashboard
-    </Button>
-  );
-
-  // Render different views based on currentView
-  if (currentView === 'task') {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
-        <MobileBackButton />
-        <TaskSubmissionForm />
-      </div>
-    );
-  }
-
-  if (currentView === 'leave') {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
-        <MobileBackButton />
-        <LeaveRequestForm onBack={handleBackToDashboard} />
-      </div>
-    );
-  }
-
-  if (currentView === 'advance') {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
-        <MobileBackButton />
-        <AdvanceRequestForm onBack={handleBackToDashboard} />
-      </div>
-    );
-  }
-
-  if (currentView === 'asset') {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
-        <MobileBackButton />
-        <AssetRequestForm onBack={handleBackToDashboard} />
-      </div>
-    );
-  }
-
-  if (currentView === 'profile') {
-    return (
-      <EmployeeProfile onBack={handleBackToDashboard} />
-    );
-  }
-
-  if (currentView === 'payslips') {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
-        <MobileBackButton />
-        <PayslipsView onBack={handleBackToDashboard} />
-      </div>
-    );
-  }
-
-  if (currentView === 'support') {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
-        <MobileBackButton />
-        <SupportView onBack={handleBackToDashboard} />
-      </div>
-    );
-  }
-
-  if (currentView === 'performance') {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
-        <MobileBackButton />
-        <MonthlyPerformance onBack={handleBackToDashboard} />
-      </div>
-    );
-  }
-
-  if (currentView === 'documents') {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
-        <MobileBackButton />
-        <MyDocuments onBack={handleBackToDashboard} />
-      </div>
-    );
+  // Show different views based on currentView
+  if (currentView !== 'dashboard') {
+    return <DashboardViews currentView={currentView} onBack={handleBackToDashboard} />;
   }
 
   // Main dashboard view
@@ -166,39 +60,17 @@ const Dashboard = () => {
             </div>
           </header>
           
-          <div className="flex-1 p-4 bg-gradient-to-br from-blue-50 to-indigo-100">
-            <div className="max-w-4xl mx-auto space-y-6">
-              {/* Header */}
-              <EmployeeDashboardHeader 
-                user={user!} 
-                isCheckedIn={isCheckedIn} 
-                currentAttendance={currentAttendance}
-                currentZone={currentZone}
-              />
-
-              {/* Check-in/Check-out Button */}
-              <CheckInButton
-                isCheckedIn={isCheckedIn}
-                onCheckIn={handleCheckIn}
-                onCheckOut={handleCheckOut}
-              />
-
-              {/* Assigned Zones */}
-              <AssignedZones zones={assignedZones} />
-
-              {/* Monthly Stats */}
-              <MonthlyStatsCard 
-                monthlyStats={monthlyStats} 
-                isCheckedIn={isCheckedIn} 
-              />
-
-              {/* Quick Actions */}
-              <QuickActions onNavigate={handleNavigate} />
-
-              {/* Contact Information */}
-              <ContactCard />
-            </div>
-          </div>
+          <DashboardContent
+            user={user!}
+            isCheckedIn={isCheckedIn}
+            currentAttendance={currentAttendance}
+            currentZone={currentZone}
+            assignedZones={assignedZones}
+            monthlyStats={monthlyStats}
+            onCheckIn={handleCheckIn}
+            onCheckOut={handleCheckOut}
+            onNavigate={handleNavigate}
+          />
         </SidebarInset>
       </div>
     </SidebarProvider>
