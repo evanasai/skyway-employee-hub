@@ -1,117 +1,81 @@
-
 import React, { useState } from 'react';
-import { SidebarProvider, SidebarInset, SidebarTrigger } from '@/components/ui/sidebar';
 import { Button } from '@/components/ui/button';
 import { LogOut } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
-import AdminSidebar from './AdminSidebar';
-import EmployeeManagementTable from './EmployeeManagementTable';
-import SimpleZoneEditor from './SimpleZoneEditor';
+import EmployeeManagement from './EmployeeManagement';
 import TaskManagement from './TaskManagement';
-import EnhancedReportDownloader from './EnhancedReportDownloader';
+import ZoneManagement from './ZoneManagement';
 import InventoryManagement from './InventoryManagement';
-import SettingsManagement from './SettingsManagement';
 import PayrollManagement from './PayrollManagement';
-import AdvanceExpenseManagement from './AdvanceExpenseManagement';
+import ReportsAndAnalytics from './ReportsAndAnalytics';
+import Settings from './Settings';
+import AdminSidebar from './AdminSidebar';
+import EnhancedEmployeeManagement from './EnhancedEmployeeManagement';
+import EnhancedTaskManagement from './EnhancedTaskManagement';
+import TestCredentialsButton from './TestCredentialsButton';
+
+interface AdminDashboardProps {
+  // You can define props here if needed
+}
 
 const AdminDashboard = () => {
-  const { user, logout } = useAuth();
-  const [currentView, setCurrentView] = useState('dashboard');
-
-  const renderContent = () => {
-    switch (currentView) {
-      case 'employees':
-        return <EmployeeManagementTable />;
-      case 'zones':
-        return <SimpleZoneEditor />;
-      case 'tasks':
-        return <TaskManagement />;
-      case 'reports':
-        return <EnhancedReportDownloader />;
-      case 'inventory':
-        return <InventoryManagement />;
-      case 'settings':
-        return <SettingsManagement />;
-      case 'payroll':
-        return <PayrollManagement />;
-      case 'advances':
-        return <AdvanceExpenseManagement />;
-      case 'dashboard':
-      default:
-        return (
-          <div className="p-6">
-            <h1 className="text-3xl font-bold mb-6">Admin Dashboard</h1>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              <div className="bg-white p-6 rounded-lg shadow">
-                <h3 className="text-lg font-semibold mb-2">Total Employees</h3>
-                <p className="text-3xl font-bold text-blue-600">--</p>
-              </div>
-              <div className="bg-white p-6 rounded-lg shadow">
-                <h3 className="text-lg font-semibold mb-2">Active Zones</h3>
-                <p className="text-3xl font-bold text-green-600">--</p>
-              </div>
-              <div className="bg-white p-6 rounded-lg shadow">
-                <h3 className="text-lg font-semibold mb-2">Pending Tasks</h3>
-                <p className="text-3xl font-bold text-orange-600">--</p>
-              </div>
-              <div className="bg-white p-6 rounded-lg shadow">
-                <h3 className="text-lg font-semibold mb-2">Pending Advances</h3>
-                <p className="text-3xl font-bold text-red-600">--</p>
-              </div>
-              <div className="bg-white p-6 rounded-lg shadow">
-                <h3 className="text-lg font-semibold mb-2">Departments</h3>
-                <p className="text-3xl font-bold text-purple-600">--</p>
-              </div>
-              <div className="bg-white p-6 rounded-lg shadow">
-                <h3 className="text-lg font-semibold mb-2">Active Tasks</h3>
-                <p className="text-3xl font-bold text-indigo-600">--</p>
-              </div>
-            </div>
-          </div>
-        );
-    }
-  };
+  const { logout } = useAuth();
+  const [currentView, setCurrentView] = useState('overview');
 
   return (
-    <SidebarProvider>
-      <div className="flex min-h-screen w-full">
-        <AdminSidebar currentView={currentView} onNavigate={setCurrentView} />
-        
-        <SidebarInset className="flex-1">
-          <header className="flex h-16 shrink-0 items-center justify-between gap-2 border-b px-4 bg-gradient-to-r from-blue-600 to-blue-800">
+    <div className="flex h-screen bg-gray-50">
+      <AdminSidebar currentView={currentView} onViewChange={setCurrentView} />
+      
+      <div className="flex-1 flex flex-col overflow-hidden">
+        <div className="bg-white border-b border-gray-200 px-6 py-4">
+          <div className="flex items-center justify-between">
+            <h1 className="text-2xl font-bold text-gray-900">
+              {currentView === 'overview' && 'Dashboard Overview'}
+              {currentView === 'employees' && 'Employee Management'}
+              {currentView === 'enhanced-employees' && 'Enhanced Employee Management'}
+              {currentView === 'tasks' && 'Task Management'}
+              {currentView === 'enhanced-tasks' && 'Enhanced Task Management'}
+              {currentView === 'zones' && 'Zone Management'}
+              {currentView === 'inventory' && 'Inventory Management'}
+              {currentView === 'payroll' && 'Payroll Management'}
+              {currentView === 'reports' && 'Reports & Analytics'}
+              {currentView === 'settings' && 'Settings'}
+            </h1>
             <div className="flex items-center space-x-4">
-              <SidebarTrigger className="-ml-1 text-white hover:bg-blue-700" />
-              <div className="flex items-center space-x-3">
-                <div className="text-white">
-                  <h1 className="text-xl font-bold">Skyway Networks</h1>
-                  <p className="text-xs text-blue-100">Admin Panel</p>
-                </div>
-              </div>
-            </div>
-            
-            <div className="flex items-center space-x-4">
-              <div className="text-white text-right">
-                <p className="text-sm font-medium">{user?.name}</p>
-                <p className="text-xs text-blue-100 capitalize">{user?.role}</p>
-              </div>
+              <TestCredentialsButton />
               <Button
-                variant="outline"
-                size="sm"
                 onClick={logout}
-                className="bg-white/10 border-white/20 text-white hover:bg-white/20 hover:text-white"
+                variant="outline"
+                className="flex items-center space-x-2"
               >
-                <LogOut className="h-4 w-4 mr-2" />
-                Logout
+                <LogOut className="h-4 w-4" />
+                <span>Logout</span>
               </Button>
             </div>
-          </header>
-          
-          <main className="flex-1 p-6">
-            {renderContent()}
-          </main>
-        </SidebarInset>
+          </div>
+        </div>
+
+        <div className="flex-1 overflow-x-hidden overflow-y-auto bg-gray-50">
+          <div className="container mx-auto px-6 py-8">
+            {currentView === 'overview' && (
+              <div>
+                <h2 className="text-xl font-semibold mb-4">Quick Overview</h2>
+                <p>Welcome to the admin dashboard. Use the sidebar to manage various aspects of the system.</p>
+              </div>
+            )}
+            {currentView === 'employees' && <EmployeeManagement />}
+            {currentView === 'enhanced-employees' && <EnhancedEmployeeManagement />}
+            {currentView === 'tasks' && <TaskManagement />}
+            {currentView === 'enhanced-tasks' && <EnhancedTaskManagement />}
+            {currentView === 'zones' && <ZoneManagement />}
+            {currentView === 'inventory' && <InventoryManagement />}
+            {currentView === 'payroll' && <PayrollManagement />}
+            {currentView === 'reports' && <ReportsAndAnalytics />}
+            {currentView === 'settings' && <Settings />}
+          </div>
+        </div>
       </div>
-    </SidebarProvider>
+    </div>
   );
 };
 
