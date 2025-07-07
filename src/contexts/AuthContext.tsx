@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { User } from '@/types';
@@ -27,13 +28,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     // Check for saved user session
     const savedUser = localStorage.getItem('skyway_user');
     if (savedUser) {
-      setUser(JSON.parse(savedUser));
+      try {
+        const parsedUser = JSON.parse(savedUser);
+        setUser(parsedUser);
+        console.log('Loaded saved user:', parsedUser);
+      } catch (error) {
+        console.error('Error parsing saved user:', error);
+        localStorage.removeItem('skyway_user');
+      }
     }
     setIsLoading(false);
   }, []);
 
   const login = async (employeeId: string, password: string): Promise<boolean> => {
     setIsLoading(true);
+    console.log('Attempting login for:', employeeId);
     
     try {
       // Query the employees table directly for authentication
@@ -43,7 +52,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         .eq('employee_id', employeeId)
         .single();
 
+      console.log('Employee query result:', { employee, error });
+
       if (error || !employee) {
+        console.log('No employee found or error:', error);
         setIsLoading(false);
         return false;
       }
@@ -63,12 +75,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           lastLogin: new Date()
         };
         
+        console.log('Login successful for user:', userWithLogin);
         setUser(userWithLogin);
         localStorage.setItem('skyway_user', JSON.stringify(userWithLogin));
         setIsLoading(false);
         return true;
       }
       
+      console.log('Password mismatch');
       setIsLoading(false);
       return false;
     } catch (error) {
@@ -79,6 +93,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const logout = () => {
+    console.log('Logging out user');
     setUser(null);
     localStorage.removeItem('skyway_user');
   };

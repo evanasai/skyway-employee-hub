@@ -26,13 +26,13 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({ currentView, onNavigate }) 
   const menuItems = [
     { id: 'dashboard', label: 'Dashboard', icon: BarChart3 },
     { id: 'employees', label: 'Employee Management', icon: Users },
-    { id: 'zones', label: 'Zone Management', icon: MapPin },
+    { id: 'enhanced-employees', label: 'Enhanced Employees', icon: UserCheck },
     { id: 'tasks', label: 'Task Management', icon: ClipboardList },
-    { id: 'attendance', label: 'Attendance Reports', icon: UserCheck },
-    { id: 'payroll', label: 'Payroll Management', icon: DollarSign },
+    { id: 'enhanced-tasks', label: 'Enhanced Tasks', icon: Calendar },
+    { id: 'zones', label: 'Zone Management', icon: MapPin },
     { id: 'inventory', label: 'Inventory Management', icon: Package },
-    { id: 'leave', label: 'Leave Management', icon: Calendar },
-    { id: 'reports', label: 'Reports', icon: FileText },
+    { id: 'payroll', label: 'Payroll Management', icon: DollarSign },
+    { id: 'reports', label: 'Reports & Analytics', icon: FileText },
     { id: 'settings', label: 'Settings', icon: Settings },
   ];
 
