@@ -61,8 +61,6 @@ const Dashboard = () => {
         return 'Employee Dashboard';
       case 'profile':
         return 'My Profile';
-      case 'kyc-submission':
-        return 'KYC Submission';
       case 'performance':
         return 'Monthly Performance';
       case 'payslips':

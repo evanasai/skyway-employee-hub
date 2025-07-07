@@ -21,8 +21,7 @@ import {
   LogOut,
   TrendingUp,
   FolderOpen,
-  User,
-  Shield
+  User
 } from 'lucide-react';
 
 interface EmployeeSidebarProps {
@@ -43,11 +42,6 @@ const EmployeeSidebar = ({ currentView, onNavigate }: EmployeeSidebarProps) => {
       title: 'My Profile',
       icon: User,
       view: 'profile'
-    },
-    {
-      title: 'KYC Submission',
-      icon: Shield,
-      view: 'kyc-submission'
     },
     {
       title: 'Monthly Performance',

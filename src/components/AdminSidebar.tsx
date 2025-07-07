@@ -18,7 +18,8 @@ import {
   UsersRound,
   UserCog,
   Shield,
-  Building
+  Building,
+  UserPlus
 } from 'lucide-react';
 
 interface AdminSidebarProps {
@@ -31,6 +32,7 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({ currentView, onNavigate }) 
     { id: 'dashboard', label: 'Dashboard', icon: BarChart3 },
     { id: 'employees', label: 'Employee Management', icon: Users },
     { id: 'zones', label: 'Zone Management', icon: MapPin },
+    { id: 'zone-assignment', label: 'Zone Assignment', icon: UserPlus },
     { id: 'team-management', label: 'Team Management', icon: UsersRound },
     { id: 'supervisor-assignment', label: 'Supervisor Allocation', icon: UserCog },
     { id: 'kyc-management', label: 'Employee Verification', icon: Shield },

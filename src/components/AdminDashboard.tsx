@@ -11,6 +11,7 @@ import EnhancedEmployeeManagement from './EnhancedEmployeeManagement';
 import TaskManagement from './TaskManagement';
 import EnhancedTaskManagement from './EnhancedTaskManagement';
 import ZoneManagement from './ZoneManagement';
+import EmployeeZoneAssignment from './EmployeeZoneAssignment';
 import InventoryManagementView from './InventoryManagementView';
 import PayrollManagement from './PayrollManagement';
 import ReportsAnalyticsView from './ReportsAnalyticsView';
@@ -35,6 +36,8 @@ const AdminDashboard = () => {
         return <EnhancedTaskManagement />;
       case 'zones':
         return <ZoneManagement />;
+      case 'zone-assignment':
+        return <EmployeeZoneAssignment />;
       case 'team-management':
         return <TeamManagementView />;
       case 'supervisor-assignment':
@@ -66,6 +69,8 @@ const AdminDashboard = () => {
         return 'Enhanced Task Management';
       case 'zones':
         return 'Zone Management';
+      case 'zone-assignment':
+        return 'Zone Assignment';
       case 'team-management':
         return 'Team Management';
       case 'supervisor-assignment':
