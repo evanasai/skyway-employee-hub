@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -550,20 +549,22 @@ const TeamManagement = () => {
                       </Select>
                     </div>
                     <div>
-                      <Label htmlFor="team_leader">Team Leader</Label>
+                      <Label htmlFor="team_leader">Team Leader *</Label>
                       <Select 
                         value={formData.team_leader_id} 
                         onValueChange={(value) => setFormData({...formData, team_leader_id: value})}
                         disabled={isLoading}
                       >
                         <SelectTrigger>
-                          <SelectValue placeholder="Select team leader" />
+                          <SelectValue placeholder="Select team leader (required)" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="">None</SelectItem>
-                          {employees.filter(emp => emp.role === 'supervisor' || emp.role === 'employee').map((emp) => (
+                          {employees
+                            .filter(emp => emp.role === 'supervisor' || emp.role === 'employee')
+                            .filter(emp => !formData.department_id || emp.department === departments.find(d => d.id === formData.department_id)?.name)
+                            .map((emp) => (
                             <SelectItem key={emp.id} value={emp.id}>
-                              {emp.name} ({emp.employee_id})
+                              {emp.name} ({emp.employee_id}) - {emp.role}
                             </SelectItem>
                           ))}
                         </SelectContent>

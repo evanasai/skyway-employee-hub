@@ -1,4 +1,3 @@
-
 export interface Employee {
   id: string;
   employee_id: string;
@@ -258,4 +257,34 @@ export interface Zone {
   is_active: boolean;
   created_at: string;
   updated_at: string;
+}
+
+export interface DepartmentTaskAssignment {
+  id: string;
+  department_id: string;
+  task_name: string;
+  task_description?: string;
+  task_type: string;
+  priority: string;
+  due_date?: string;
+  assigned_by?: string;
+  assigned_at: string;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface EmployeeDepartmentTask {
+  id: string;
+  task_name: string;
+  task_description: string;
+  task_type: string;
+  priority: string;
+  due_date: string | null;
+  assigned_at: string;
+  is_active: boolean;
+  department_name: string;
+  employee_id: string;
+  employee_name: string;
+  employee_department: string;
 }
