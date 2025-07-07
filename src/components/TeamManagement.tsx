@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -48,6 +47,7 @@ const TeamManagement = () => {
   const [availableEmployees, setAvailableEmployees] = useState<Employee[]>([]);
   const [isCreating, setIsCreating] = useState(false);
   const [editingTeam, setEditingTeam] = useState<Team | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
   
   const [formData, setFormData] = useState({
     name: '',
@@ -81,6 +81,7 @@ const TeamManagement = () => {
 
   const fetchTeams = async () => {
     try {
+      setIsLoading(true);
       const { data, error } = await supabase
         .from('teams')
         .select(`
@@ -92,23 +93,43 @@ const TeamManagement = () => {
         .eq('is_active', true)
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching teams:', error);
+        toast({
+          title: "Error",
+          description: "Failed to fetch teams",
+          variant: "destructive"
+        });
+        return;
+      }
 
       // Get member counts for each team
       const teamsWithCounts = await Promise.all(
         (data || []).map(async (team) => {
-          const { count } = await supabase
-            .from('team_members')
-            .select('*', { count: 'exact', head: true })
-            .eq('team_id', team.id);
-          
-          return { ...team, member_count: count || 0 };
+          try {
+            const { count } = await supabase
+              .from('team_members')
+              .select('*', { count: 'exact', head: true })
+              .eq('team_id', team.id);
+            
+            return { ...team, member_count: count || 0 };
+          } catch (error) {
+            console.error('Error counting team members:', error);
+            return { ...team, member_count: 0 };
+          }
         })
       );
 
       setTeams(teamsWithCounts);
     } catch (error) {
       console.error('Error fetching teams:', error);
+      toast({
+        title: "Error",
+        description: "Failed to fetch teams",
+        variant: "destructive"
+      });
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -120,7 +141,11 @@ const TeamManagement = () => {
         .eq('is_active', true)
         .order('name');
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching employees:', error);
+        return;
+      }
+      
       setEmployees(data || []);
     } catch (error) {
       console.error('Error fetching employees:', error);
@@ -135,7 +160,11 @@ const TeamManagement = () => {
         .eq('is_active', true)
         .order('name');
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching departments:', error);
+        return;
+      }
+      
       setDepartments(data || []);
     } catch (error) {
       console.error('Error fetching departments:', error);
@@ -152,7 +181,10 @@ const TeamManagement = () => {
         `)
         .eq('team_id', selectedTeam);
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching team members:', error);
+        return;
+      }
       
       const members = (data || []).map(item => item.employees).filter(Boolean);
       setTeamMembers(members as Employee[]);
@@ -178,7 +210,7 @@ const TeamManagement = () => {
   };
 
   const createTeam = async () => {
-    if (!formData.name || !formData.category || !formData.department_id) {
+    if (!formData.name.trim() || !formData.category || !formData.department_id) {
       toast({
         title: "Missing Information",
         description: "Name, category, and department are required",
@@ -188,20 +220,38 @@ const TeamManagement = () => {
     }
 
     try {
-      const { error } = await supabase
-        .from('teams')
-        .insert({
-          name: formData.name,
-          category: formData.category,
-          department_id: formData.department_id,
-          team_leader_id: formData.team_leader_id || null,
-          supervisor_id: formData.supervisor_id || null
-        });
+      setIsLoading(true);
+      const teamData = {
+        name: formData.name.trim(),
+        category: formData.category,
+        department_id: formData.department_id,
+        team_leader_id: formData.team_leader_id || null,
+        supervisor_id: formData.supervisor_id || null,
+        is_active: true
+      };
 
-      if (error) throw error;
+      console.log('Creating team with data:', teamData);
+
+      const { data, error } = await supabase
+        .from('teams')
+        .insert(teamData)
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Error creating team:', error);
+        toast({
+          title: "Error",
+          description: `Failed to create team: ${error.message}`,
+          variant: "destructive"
+        });
+        return;
+      }
+
+      console.log('Team created successfully:', data);
 
       resetForm();
-      fetchTeams();
+      await fetchTeams();
       
       toast({
         title: "Team Created",
@@ -214,17 +264,29 @@ const TeamManagement = () => {
         description: "Failed to create team",
         variant: "destructive"
       });
+    } finally {
+      setIsLoading(false);
     }
   };
 
   const updateTeam = async () => {
     if (!editingTeam) return;
 
+    if (!formData.name.trim() || !formData.category || !formData.department_id) {
+      toast({
+        title: "Missing Information",
+        description: "Name, category, and department are required",
+        variant: "destructive"
+      });
+      return;
+    }
+
     try {
+      setIsLoading(true);
       const { error } = await supabase
         .from('teams')
         .update({
-          name: formData.name,
+          name: formData.name.trim(),
           category: formData.category,
           department_id: formData.department_id,
           team_leader_id: formData.team_leader_id || null,
@@ -233,10 +295,18 @@ const TeamManagement = () => {
         })
         .eq('id', editingTeam.id);
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error updating team:', error);
+        toast({
+          title: "Error",
+          description: `Failed to update team: ${error.message}`,
+          variant: "destructive"
+        });
+        return;
+      }
 
       resetForm();
-      fetchTeams();
+      await fetchTeams();
       
       toast({
         title: "Team Updated",
@@ -249,19 +319,30 @@ const TeamManagement = () => {
         description: "Failed to update team",
         variant: "destructive"
       });
+    } finally {
+      setIsLoading(false);
     }
   };
 
   const deleteTeam = async (teamId: string) => {
     try {
+      setIsLoading(true);
       const { error } = await supabase
         .from('teams')
         .update({ is_active: false })
         .eq('id', teamId);
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error deleting team:', error);
+        toast({
+          title: "Error",
+          description: `Failed to delete team: ${error.message}`,
+          variant: "destructive"
+        });
+        return;
+      }
 
-      fetchTeams();
+      await fetchTeams();
       toast({
         title: "Team Deleted",
         description: "Team has been deactivated successfully",
@@ -273,6 +354,8 @@ const TeamManagement = () => {
         description: "Failed to delete team",
         variant: "destructive"
       });
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -285,11 +368,19 @@ const TeamManagement = () => {
           employee_id: employeeId
         });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error adding team member:', error);
+        toast({
+          title: "Error",
+          description: `Failed to add team member: ${error.message}`,
+          variant: "destructive"
+        });
+        return;
+      }
 
-      fetchTeamMembers();
-      fetchAvailableEmployees();
-      fetchTeams(); // Refresh to update member counts
+      await fetchTeamMembers();
+      await fetchAvailableEmployees();
+      await fetchTeams(); // Refresh to update member counts
       
       toast({
         title: "Member Added",
@@ -313,11 +404,19 @@ const TeamManagement = () => {
         .eq('team_id', selectedTeam)
         .eq('employee_id', employeeId);
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error removing team member:', error);
+        toast({
+          title: "Error",
+          description: `Failed to remove team member: ${error.message}`,
+          variant: "destructive"
+        });
+        return;
+      }
 
-      fetchTeamMembers();
-      fetchAvailableEmployees();
-      fetchTeams(); // Refresh to update member counts
+      await fetchTeamMembers();
+      await fetchAvailableEmployees();
+      await fetchTeams(); // Refresh to update member counts
       
       toast({
         title: "Member Removed",
@@ -378,17 +477,22 @@ const TeamManagement = () => {
                 <div className="space-y-4 p-4 border rounded-lg bg-gray-50">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                      <Label htmlFor="team_name">Team Name</Label>
+                      <Label htmlFor="team_name">Team Name *</Label>
                       <Input
                         id="team_name"
                         value={formData.name}
                         onChange={(e) => setFormData({...formData, name: e.target.value})}
                         placeholder="Enter team name"
+                        disabled={isLoading}
                       />
                     </div>
                     <div>
-                      <Label htmlFor="category">Category</Label>
-                      <Select value={formData.category} onValueChange={(value) => setFormData({...formData, category: value})}>
+                      <Label htmlFor="category">Category *</Label>
+                      <Select 
+                        value={formData.category} 
+                        onValueChange={(value) => setFormData({...formData, category: value})}
+                        disabled={isLoading}
+                      >
                         <SelectTrigger>
                           <SelectValue placeholder="Select category" />
                         </SelectTrigger>
@@ -400,8 +504,12 @@ const TeamManagement = () => {
                       </Select>
                     </div>
                     <div>
-                      <Label htmlFor="department">Department</Label>
-                      <Select value={formData.department_id} onValueChange={(value) => setFormData({...formData, department_id: value})}>
+                      <Label htmlFor="department">Department *</Label>
+                      <Select 
+                        value={formData.department_id} 
+                        onValueChange={(value) => setFormData({...formData, department_id: value})}
+                        disabled={isLoading}
+                      >
                         <SelectTrigger>
                           <SelectValue placeholder="Select department" />
                         </SelectTrigger>
@@ -414,7 +522,11 @@ const TeamManagement = () => {
                     </div>
                     <div>
                       <Label htmlFor="team_leader">Team Leader</Label>
-                      <Select value={formData.team_leader_id} onValueChange={(value) => setFormData({...formData, team_leader_id: value})}>
+                      <Select 
+                        value={formData.team_leader_id} 
+                        onValueChange={(value) => setFormData({...formData, team_leader_id: value})}
+                        disabled={isLoading}
+                      >
                         <SelectTrigger>
                           <SelectValue placeholder="Select team leader" />
                         </SelectTrigger>
@@ -430,7 +542,11 @@ const TeamManagement = () => {
                     </div>
                     <div>
                       <Label htmlFor="supervisor">Supervisor</Label>
-                      <Select value={formData.supervisor_id} onValueChange={(value) => setFormData({...formData, supervisor_id: value})}>
+                      <Select 
+                        value={formData.supervisor_id} 
+                        onValueChange={(value) => setFormData({...formData, supervisor_id: value})}
+                        disabled={isLoading}
+                      >
                         <SelectTrigger>
                           <SelectValue placeholder="Select supervisor" />
                         </SelectTrigger>
@@ -447,11 +563,23 @@ const TeamManagement = () => {
                   </div>
 
                   <div className="flex space-x-2">
-                    <Button onClick={editingTeam ? updateTeam : createTeam}>
-                      <Save className="h-4 w-4 mr-2" />
-                      {editingTeam ? 'Update Team' : 'Create Team'}
+                    <Button 
+                      onClick={editingTeam ? updateTeam : createTeam}
+                      disabled={isLoading}
+                    >
+                      {isLoading ? (
+                        <>
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                          {editingTeam ? 'Updating...' : 'Creating...'}
+                        </>
+                      ) : (
+                        <>
+                          <Save className="h-4 w-4 mr-2" />
+                          {editingTeam ? 'Update Team' : 'Create Team'}
+                        </>
+                      )}
                     </Button>
-                    <Button variant="outline" onClick={resetForm}>
+                    <Button variant="outline" onClick={resetForm} disabled={isLoading}>
                       <X className="h-4 w-4 mr-2" />
                       Cancel
                     </Button>
@@ -460,7 +588,7 @@ const TeamManagement = () => {
               )}
 
               {!isCreating && !editingTeam && (
-                <Button onClick={() => setIsCreating(true)}>
+                <Button onClick={() => setIsCreating(true)} disabled={isLoading}>
                   <Plus className="h-4 w-4 mr-2" />
                   Create New Team
                 </Button>
@@ -519,6 +647,7 @@ const TeamManagement = () => {
                               variant="outline"
                               size="sm"
                               onClick={() => startEditing(team)}
+                              disabled={isLoading}
                             >
                               <Edit className="h-4 w-4" />
                             </Button>
@@ -526,6 +655,7 @@ const TeamManagement = () => {
                               variant="destructive"
                               size="sm"
                               onClick={() => deleteTeam(team.id)}
+                              disabled={isLoading}
                             >
                               <Trash2 className="h-4 w-4" />
                             </Button>

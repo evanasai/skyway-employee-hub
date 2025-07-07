@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -45,6 +44,7 @@ const SupervisorAssignmentManagement = () => {
   const [selectedEmployee, setSelectedEmployee] = useState<string>('');
   const [selectedDepartment, setSelectedDepartment] = useState<string>('');
   const [assignmentType, setAssignmentType] = useState<string>('individual');
+  const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
     fetchEmployees();
@@ -60,7 +60,15 @@ const SupervisorAssignmentManagement = () => {
         .eq('is_active', true)
         .order('name');
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching employees:', error);
+        toast({
+          title: "Error",
+          description: "Failed to fetch employees",
+          variant: "destructive"
+        });
+        return;
+      }
       
       const allEmployees = data || [];
       setEmployees(allEmployees);
@@ -72,6 +80,11 @@ const SupervisorAssignmentManagement = () => {
       setSupervisors(supervisorsList);
     } catch (error) {
       console.error('Error fetching employees:', error);
+      toast({
+        title: "Error",
+        description: "Failed to fetch employees",
+        variant: "destructive"
+      });
     }
   };
 
@@ -83,7 +96,11 @@ const SupervisorAssignmentManagement = () => {
         .eq('is_active', true)
         .order('name');
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching departments:', error);
+        return;
+      }
+      
       setDepartments(data || []);
     } catch (error) {
       console.error('Error fetching departments:', error);
@@ -103,7 +120,10 @@ const SupervisorAssignmentManagement = () => {
         .eq('is_active', true)
         .order('assigned_at', { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching assignments:', error);
+        return;
+      }
       
       const formattedAssignments = (data || []).map(assignment => ({
         ...assignment,
@@ -147,25 +167,42 @@ const SupervisorAssignmentManagement = () => {
     }
 
     try {
+      setIsLoading(true);
       const assignmentData = {
         supervisor_id: selectedSupervisor,
         assignment_type: assignmentType,
         employee_id: assignmentType === 'individual' ? selectedEmployee : null,
-        department_id: assignmentType === 'department' ? selectedDepartment : null
+        department_id: assignmentType === 'department' ? selectedDepartment : null,
+        is_active: true
       };
+
+      console.log('Creating assignment with data:', assignmentData);
 
       const { error } = await supabase
         .from('supervisor_assignments')
         .insert(assignmentData);
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error creating assignment:', error);
+        toast({
+          title: "Error",
+          description: `Failed to create assignment: ${error.message}`,
+          variant: "destructive"
+        });
+        return;
+      }
 
       // If individual assignment, update employee's assigned_supervisor
       if (assignmentType === 'individual' && selectedEmployee) {
-        await supabase
+        const { error: updateError } = await supabase
           .from('employees')
           .update({ assigned_supervisor: selectedSupervisor })
           .eq('id', selectedEmployee);
+
+        if (updateError) {
+          console.error('Error updating employee supervisor:', updateError);
+          // Continue anyway as the assignment was created
+        }
       }
 
       // Reset form
@@ -174,8 +211,8 @@ const SupervisorAssignmentManagement = () => {
       setSelectedDepartment('');
       setAssignmentType('individual');
 
-      fetchAssignments();
-      fetchEmployees();
+      await fetchAssignments();
+      await fetchEmployees();
       
       toast({
         title: "Assignment Created",
@@ -188,28 +225,44 @@ const SupervisorAssignmentManagement = () => {
         description: "Failed to create assignment",
         variant: "destructive"
       });
+    } finally {
+      setIsLoading(false);
     }
   };
 
   const removeAssignment = async (assignmentId: string, employeeId?: string) => {
     try {
+      setIsLoading(true);
       const { error } = await supabase
         .from('supervisor_assignments')
         .update({ is_active: false })
         .eq('id', assignmentId);
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error removing assignment:', error);
+        toast({
+          title: "Error",
+          description: `Failed to remove assignment: ${error.message}`,
+          variant: "destructive"
+        });
+        return;
+      }
 
       // If it was an individual assignment, remove from employee record
       if (employeeId) {
-        await supabase
+        const { error: updateError } = await supabase
           .from('employees')
           .update({ assigned_supervisor: null })
           .eq('id', employeeId);
+
+        if (updateError) {
+          console.error('Error updating employee supervisor:', updateError);
+          // Continue anyway as the assignment was removed
+        }
       }
 
-      fetchAssignments();
-      fetchEmployees();
+      await fetchAssignments();
+      await fetchEmployees();
       
       toast({
         title: "Assignment Removed",
@@ -222,6 +275,8 @@ const SupervisorAssignmentManagement = () => {
         description: "Failed to remove assignment",
         variant: "destructive"
       });
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -270,8 +325,12 @@ const SupervisorAssignmentManagement = () => {
                 <CardContent className="space-y-4">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                      <label className="text-sm font-medium">Supervisor</label>
-                      <Select value={selectedSupervisor} onValueChange={setSelectedSupervisor}>
+                      <label className="text-sm font-medium">Supervisor *</label>
+                      <Select 
+                        value={selectedSupervisor} 
+                        onValueChange={setSelectedSupervisor}
+                        disabled={isLoading}
+                      >
                         <SelectTrigger>
                           <SelectValue placeholder="Select supervisor" />
                         </SelectTrigger>
@@ -286,8 +345,12 @@ const SupervisorAssignmentManagement = () => {
                     </div>
 
                     <div>
-                      <label className="text-sm font-medium">Assignment Type</label>
-                      <Select value={assignmentType} onValueChange={setAssignmentType}>
+                      <label className="text-sm font-medium">Assignment Type *</label>
+                      <Select 
+                        value={assignmentType} 
+                        onValueChange={setAssignmentType}
+                        disabled={isLoading}
+                      >
                         <SelectTrigger>
                           <SelectValue placeholder="Select assignment type" />
                         </SelectTrigger>
@@ -300,8 +363,12 @@ const SupervisorAssignmentManagement = () => {
 
                     {assignmentType === 'individual' && (
                       <div>
-                        <label className="text-sm font-medium">Employee</label>
-                        <Select value={selectedEmployee} onValueChange={setSelectedEmployee}>
+                        <label className="text-sm font-medium">Employee *</label>
+                        <Select 
+                          value={selectedEmployee} 
+                          onValueChange={setSelectedEmployee}
+                          disabled={isLoading}
+                        >
                           <SelectTrigger>
                             <SelectValue placeholder="Select employee" />
                           </SelectTrigger>
@@ -318,8 +385,12 @@ const SupervisorAssignmentManagement = () => {
 
                     {assignmentType === 'department' && (
                       <div>
-                        <label className="text-sm font-medium">Department</label>
-                        <Select value={selectedDepartment} onValueChange={setSelectedDepartment}>
+                        <label className="text-sm font-medium">Department *</label>
+                        <Select 
+                          value={selectedDepartment} 
+                          onValueChange={setSelectedDepartment}
+                          disabled={isLoading}
+                        >
                           <SelectTrigger>
                             <SelectValue placeholder="Select department" />
                           </SelectTrigger>
@@ -335,9 +406,22 @@ const SupervisorAssignmentManagement = () => {
                     )}
                   </div>
 
-                  <Button onClick={createAssignment} className="w-full">
-                    <Plus className="h-4 w-4 mr-2" />
-                    Create Assignment
+                  <Button 
+                    onClick={createAssignment} 
+                    className="w-full"
+                    disabled={isLoading}
+                  >
+                    {isLoading ? (
+                      <>
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                        Creating...
+                      </>
+                    ) : (
+                      <>
+                        <Plus className="h-4 w-4 mr-2" />
+                        Create Assignment
+                      </>
+                    )}
                   </Button>
                 </CardContent>
               </Card>
@@ -383,6 +467,7 @@ const SupervisorAssignmentManagement = () => {
                             variant="destructive"
                             size="sm"
                             onClick={() => removeAssignment(assignment.id, assignment.employee_id)}
+                            disabled={isLoading}
                           >
                             <Trash2 className="h-4 w-4" />
                           </Button>

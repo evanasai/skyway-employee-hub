@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -8,7 +7,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from '@/hooks/use-toast';
-import { Camera, MapPin, Clock, Upload, CheckCircle } from 'lucide-react';
+import { Camera, MapPin, Clock, Upload, CheckCircle, AlertTriangle } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
 
 const PREDEFINED_TASK_TYPES = [
   'Fiber Splicing',
@@ -35,8 +35,13 @@ const TaskSubmissionForm = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [taskStatus, setTaskStatus] = useState<'not_started' | 'in_progress' | 'completed'>('not_started');
   const [startTime, setStartTime] = useState<Date | null>(null);
+  const [isCheckedIn, setIsCheckedIn] = useState(false);
+  const [checkingAttendance, setCheckingAttendance] = useState(true);
 
   useEffect(() => {
+    // Check if employee is checked in
+    checkAttendanceStatus();
+    
     // Get current location
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
@@ -59,6 +64,41 @@ const TaskSubmissionForm = () => {
     }
   }, []);
 
+  const checkAttendanceStatus = async () => {
+    if (!user) return;
+
+    try {
+      const { data: employee } = await supabase
+        .from('employees')
+        .select('*')
+        .eq('employee_id', user.employeeId)
+        .single();
+
+      if (employee) {
+        const today = new Date().toISOString().split('T')[0];
+        const { data: attendance } = await supabase
+          .from('attendance')
+          .select('*')
+          .eq('employee_id', employee.id)
+          .gte('check_in_time', today)
+          .order('check_in_time', { ascending: false })
+          .limit(1)
+          .single();
+
+        if (attendance && attendance.status === 'checked_in') {
+          setIsCheckedIn(true);
+        } else {
+          setIsCheckedIn(false);
+        }
+      }
+    } catch (error) {
+      console.log('No attendance record found for today');
+      setIsCheckedIn(false);
+    } finally {
+      setCheckingAttendance(false);
+    }
+  };
+
   const handlePreWorkPhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       setPreWorkPhoto(e.target.files[0]);
@@ -72,6 +112,15 @@ const TaskSubmissionForm = () => {
   };
 
   const handleStartTask = () => {
+    if (!isCheckedIn) {
+      toast({
+        title: "Check-in Required",
+        description: "You must check in first before starting any task.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     if (!taskType || (!taskDescription && taskType !== 'Other') || !preWorkPhoto) {
       toast({
         title: "Missing Information",
@@ -90,6 +139,15 @@ const TaskSubmissionForm = () => {
   };
 
   const handleSubmitTask = async () => {
+    if (!isCheckedIn) {
+      toast({
+        title: "Check-in Required",
+        description: "You must be checked in to submit tasks.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     if (!postWorkPhoto) {
       toast({
         title: "Missing Post-Work Photo",
@@ -149,6 +207,51 @@ const TaskSubmissionForm = () => {
     }
   };
 
+  if (checkingAttendance) {
+    return (
+      <div className="max-w-2xl mx-auto p-4">
+        <Card>
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-center">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+              <span className="ml-2">Checking attendance status...</span>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  if (!isCheckedIn) {
+    return (
+      <div className="max-w-2xl mx-auto p-4">
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5 text-red-500" />
+              Check-in Required
+            </CardTitle>
+            <CardDescription>
+              You must check in first before you can submit any tasks.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="text-center py-8">
+              <AlertTriangle className="h-16 w-16 mx-auto text-red-500 mb-4" />
+              <h3 className="text-lg font-semibold mb-2">Not Checked In</h3>
+              <p className="text-gray-600 mb-4">
+                Please go back to the dashboard and check in before submitting tasks.
+              </p>
+              <Button onClick={() => window.history.back()} variant="outline">
+                Go Back to Dashboard
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   return (
     <div className="max-w-2xl mx-auto p-4 space-y-6">
       <Card>
@@ -171,6 +274,14 @@ const TaskSubmissionForm = () => {
               </span>
             </div>
           )}
+
+          {/* Check-in Status */}
+          <div className="flex items-center gap-2 p-3 bg-green-50 rounded-lg">
+            <CheckCircle className="h-4 w-4 text-green-600" />
+            <span className="text-sm text-green-800">
+              ✓ Checked In - You can submit tasks
+            </span>
+          </div>
 
           {/* Task Type Selection */}
           <div className="space-y-2">
