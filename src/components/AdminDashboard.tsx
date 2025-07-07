@@ -14,6 +14,9 @@ import ZoneManagement from './ZoneManagement';
 import ReportsAndAnalytics from './ReportsAndAnalytics';
 import Settings from './Settings';
 import TestCredentialsButton from './TestCredentialsButton';
+import TeamManagementView from './TeamManagementView';
+import SupervisorAssignmentView from './SupervisorAssignmentView';
+import KYCManagementView from './KYCManagementView';
 import { SidebarProvider, SidebarInset, SidebarTrigger } from '@/components/ui/sidebar';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 
@@ -136,6 +139,25 @@ const AdminDashboard = () => {
     </div>
   );
 
+  const getPageTitle = () => {
+    switch (currentView) {
+      case 'dashboard': return 'Dashboard Overview';
+      case 'employees': return 'Employee Management';
+      case 'enhanced-employees': return 'Enhanced Employee Management';
+      case 'tasks': return 'Task Management';
+      case 'enhanced-tasks': return 'Enhanced Task Management';
+      case 'zones': return 'Zone Management';
+      case 'team-management': return 'Team Management';
+      case 'supervisor-assignment': return 'Supervisor Assignment';
+      case 'kyc-management': return 'KYC Management';
+      case 'inventory': return 'Inventory Management';
+      case 'payroll': return 'Payroll Management';
+      case 'reports': return 'Reports & Analytics';
+      case 'settings': return 'Settings';
+      default: return 'Dashboard';
+    }
+  };
+
   return (
     <SidebarProvider>
       <div className="flex min-h-screen w-full bg-gray-50">
@@ -149,16 +171,7 @@ const AdminDashboard = () => {
                   <SidebarTrigger className="-ml-1" />
                   <div>
                     <h1 className="text-xl lg:text-2xl font-bold text-gray-900">
-                      {currentView === 'dashboard' && 'Dashboard Overview'}
-                      {currentView === 'employees' && 'Employee Management'}
-                      {currentView === 'enhanced-employees' && 'Enhanced Employee Management'}
-                      {currentView === 'tasks' && 'Task Management'}
-                      {currentView === 'enhanced-tasks' && 'Enhanced Task Management'}
-                      {currentView === 'zones' && 'Zone Management'}
-                      {currentView === 'inventory' && 'Inventory Management'}
-                      {currentView === 'payroll' && 'Payroll Management'}
-                      {currentView === 'reports' && 'Reports & Analytics'}
-                      {currentView === 'settings' && 'Settings'}
+                      {getPageTitle()}
                     </h1>
                     <p className="text-sm text-gray-600">
                       Welcome back, {user?.name} ({user?.role})
@@ -187,6 +200,9 @@ const AdminDashboard = () => {
                 {currentView === 'tasks' && <TaskManagement />}
                 {currentView === 'enhanced-tasks' && <EnhancedTaskManagement />}
                 {currentView === 'zones' && <ZoneManagement />}
+                {currentView === 'team-management' && <TeamManagementView />}
+                {currentView === 'supervisor-assignment' && <SupervisorAssignmentView />}
+                {currentView === 'kyc-management' && <KYCManagementView />}
                 {currentView === 'inventory' && <InventoryManagement />}
                 {currentView === 'payroll' && <PayrollManagement />}
                 {currentView === 'reports' && <ReportsAndAnalytics />}
