@@ -6,7 +6,6 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import ErrorBoundary from "@/components/ErrorBoundary";
-import DevDebugger from "@/components/DevDebugger";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 
@@ -47,7 +46,6 @@ const App = () => (
             </BrowserRouter>
           </AuthProvider>
         </ErrorBoundary>
-        <DevDebugger />
       </TooltipProvider>
     </QueryClientProvider>
   </ErrorBoundary>

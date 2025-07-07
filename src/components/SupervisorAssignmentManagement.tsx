@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -160,13 +159,20 @@ const SupervisorAllocationManagement = () => {
           *,
           supervisor:employees!supervisor_assignments_supervisor_id_fkey(name, employee_id, email),
           employee:employees!supervisor_assignments_employee_id_fkey(name, employee_id, email, department),
-          team:teams(name, category),
           department:departments(name)
         `)
         .order('assigned_at', { ascending: false });
 
       if (error) throw error;
-      setAllocations(data || []);
+      
+      // Map the data to include team information if needed
+      const allocationsWithTeams = (data || []).map(allocation => ({
+        ...allocation,
+        team: allocation.assignment_type === 'team' && allocation.team_id ? 
+          teams.find(team => team.id === allocation.team_id) || null : null
+      }));
+      
+      setAllocations(allocationsWithTeams);
     } catch (error) {
       console.error('Error fetching supervisor allocations:', error);
       toast({
