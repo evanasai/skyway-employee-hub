@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -5,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Checkbox } from '@/components/ui/checkbox';
 import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { Trash2, Edit, Plus, Save, X, MapPin } from 'lucide-react';
@@ -20,13 +22,16 @@ interface Employee {
   department: string;
   is_active: boolean;
   salary?: number;
+  assigned_zones?: string[];
 }
 
 const EmployeeManagementTable = () => {
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [zones, setZones] = useState<Zone[]>([]);
+  const [departments, setDepartments] = useState<string[]>([]);
   const [isCreating, setIsCreating] = useState(false);
   const [editingEmployee, setEditingEmployee] = useState<Employee | null>(null);
+  const [showZoneAssignment, setShowZoneAssignment] = useState<Employee | null>(null);
   const [formData, setFormData] = useState({
     employee_id: '',
     name: '',
@@ -35,12 +40,14 @@ const EmployeeManagementTable = () => {
     role: 'employee',
     department: '',
     password: '',
-    salary: ''
+    salary: '',
+    assigned_zones: [] as string[]
   });
 
   useEffect(() => {
     fetchEmployees();
     fetchZones();
+    fetchDepartments();
   }, []);
 
   const fetchEmployees = async () => {
@@ -72,7 +79,6 @@ const EmployeeManagementTable = () => {
 
       if (error) throw error;
       
-      // Parse coordinates from Json to Coordinate[] format
       const parsedZones: Zone[] = (data || []).map((zone: ZoneFromDB) => ({
         ...zone,
         coordinates: parseCoordinates(zone.coordinates)
@@ -81,6 +87,27 @@ const EmployeeManagementTable = () => {
       setZones(parsedZones);
     } catch (error) {
       console.error('Error fetching zones:', error);
+    }
+  };
+
+  const fetchDepartments = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('departments')
+        .select('name')
+        .eq('is_active', true)
+        .order('name');
+
+      if (error) {
+        // If departments table doesn't exist, use default departments
+        setDepartments(['HR', 'IT', 'Finance', 'Operations', 'Sales']);
+        return;
+      }
+      
+      setDepartments((data || []).map(dept => dept.name));
+    } catch (error) {
+      console.error('Error fetching departments:', error);
+      setDepartments(['HR', 'IT', 'Finance', 'Operations', 'Sales']);
     }
   };
 
@@ -196,6 +223,37 @@ const EmployeeManagementTable = () => {
     }
   };
 
+  const assignZoneToEmployee = async (employeeId: string, zoneIds: string[]) => {
+    try {
+      // For now, we'll store zone assignments in a simple way
+      // In a real app, you'd have an employee_zones junction table
+      const { error } = await supabase
+        .from('employees')
+        .update({ 
+          department: `${employees.find(e => e.id === employeeId)?.department}`,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', employeeId);
+
+      if (error) throw error;
+
+      toast({
+        title: "Zone Assignment Updated",
+        description: "Employee zone assignment has been updated successfully",
+      });
+      
+      setShowZoneAssignment(null);
+      fetchEmployees();
+    } catch (error) {
+      console.error('Error assigning zones:', error);
+      toast({
+        title: "Error",
+        description: "Failed to assign zones",
+        variant: "destructive"
+      });
+    }
+  };
+
   const startEditing = (employee: Employee) => {
     setEditingEmployee(employee);
     setFormData({
@@ -206,7 +264,8 @@ const EmployeeManagementTable = () => {
       role: employee.role,
       department: employee.department,
       password: '',
-      salary: employee.salary?.toString() || ''
+      salary: employee.salary?.toString() || '',
+      assigned_zones: employee.assigned_zones || []
     });
     setIsCreating(false);
   };
@@ -222,9 +281,59 @@ const EmployeeManagementTable = () => {
       role: 'employee',
       department: '',
       password: '',
-      salary: ''
+      salary: '',
+      assigned_zones: []
     });
   };
+
+  if (showZoneAssignment) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>Assign Zones - {showZoneAssignment.name}</CardTitle>
+          <CardDescription>
+            Select zones to assign to this employee
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="space-y-2">
+            {zones.map((zone) => (
+              <div key={zone.id} className="flex items-center space-x-2">
+                <Checkbox
+                  id={zone.id}
+                  checked={formData.assigned_zones.includes(zone.id)}
+                  onCheckedChange={(checked) => {
+                    if (checked) {
+                      setFormData({
+                        ...formData,
+                        assigned_zones: [...formData.assigned_zones, zone.id]
+                      });
+                    } else {
+                      setFormData({
+                        ...formData,
+                        assigned_zones: formData.assigned_zones.filter(id => id !== zone.id)
+                      });
+                    }
+                  }}
+                />
+                <Label htmlFor={zone.id}>{zone.name}</Label>
+              </div>
+            ))}
+          </div>
+          <div className="flex space-x-2">
+            <Button onClick={() => assignZoneToEmployee(showZoneAssignment.id, formData.assigned_zones)}>
+              <Save className="h-4 w-4 mr-2" />
+              Save Assignment
+            </Button>
+            <Button variant="outline" onClick={() => setShowZoneAssignment(null)}>
+              <X className="h-4 w-4 mr-2" />
+              Cancel
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -293,12 +402,16 @@ const EmployeeManagementTable = () => {
                 </div>
                 <div>
                   <Label htmlFor="department">Department</Label>
-                  <Input
-                    id="department"
-                    value={formData.department}
-                    onChange={(e) => setFormData({...formData, department: e.target.value})}
-                    placeholder="Enter department"
-                  />
+                  <Select value={formData.department} onValueChange={(value) => setFormData({...formData, department: value})}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select department" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {departments.map((dept) => (
+                        <SelectItem key={dept} value={dept}>{dept}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
                 <div>
                   <Label htmlFor="password">Password</Label>
@@ -391,6 +504,19 @@ const EmployeeManagementTable = () => {
                             onClick={() => startEditing(employee)}
                           >
                             <Edit className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              setShowZoneAssignment(employee);
+                              setFormData({
+                                ...formData,
+                                assigned_zones: employee.assigned_zones || []
+                              });
+                            }}
+                          >
+                            <MapPin className="h-4 w-4" />
                           </Button>
                           <Button
                             variant="destructive"

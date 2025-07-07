@@ -7,6 +7,9 @@ import SimpleZoneEditor from './SimpleZoneEditor';
 import TaskManagement from './TaskManagement';
 import EnhancedReportDownloader from './EnhancedReportDownloader';
 import InventoryManagement from './InventoryManagement';
+import SettingsManagement from './SettingsManagement';
+import PayrollManagement from './PayrollManagement';
+import AdvanceExpenseManagement from './AdvanceExpenseManagement';
 
 const AdminDashboard = () => {
   const [currentView, setCurrentView] = useState('dashboard');
@@ -23,13 +26,18 @@ const AdminDashboard = () => {
         return <EnhancedReportDownloader />;
       case 'inventory':
         return <InventoryManagement />;
+      case 'settings':
+        return <SettingsManagement />;
+      case 'payroll':
+        return <PayrollManagement />;
+      case 'advances':
+        return <AdvanceExpenseManagement />;
       case 'dashboard':
       default:
         return (
           <div className="p-6">
             <h1 className="text-3xl font-bold mb-6">Admin Dashboard</h1>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {/* Dashboard stats and overview */}
               <div className="bg-white p-6 rounded-lg shadow">
                 <h3 className="text-lg font-semibold mb-2">Total Employees</h3>
                 <p className="text-3xl font-bold text-blue-600">--</p>
@@ -41,6 +49,18 @@ const AdminDashboard = () => {
               <div className="bg-white p-6 rounded-lg shadow">
                 <h3 className="text-lg font-semibold mb-2">Pending Tasks</h3>
                 <p className="text-3xl font-bold text-orange-600">--</p>
+              </div>
+              <div className="bg-white p-6 rounded-lg shadow">
+                <h3 className="text-lg font-semibold mb-2">Pending Advances</h3>
+                <p className="text-3xl font-bold text-red-600">--</p>
+              </div>
+              <div className="bg-white p-6 rounded-lg shadow">
+                <h3 className="text-lg font-semibold mb-2">Departments</h3>
+                <p className="text-3xl font-bold text-purple-600">--</p>
+              </div>
+              <div className="bg-white p-6 rounded-lg shadow">
+                <h3 className="text-lg font-semibold mb-2">Active Tasks</h3>
+                <p className="text-3xl font-bold text-indigo-600">--</p>
               </div>
             </div>
           </div>
