@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { LogOut } from 'lucide-react';
@@ -13,6 +12,11 @@ import EmployeeProfile from './EmployeeProfile';
 import PayslipsView from './PayslipsView';
 import MyDocuments from './MyDocuments';
 import SupportView from './SupportView';
+import MonthlyPerformanceView from './MonthlyPerformanceView';
+import LeaveRequestView from './LeaveRequestView';
+import TaskSubmissionView from './TaskSubmissionView';
+import AdvanceRequestView from './AdvanceRequestView';
+import AssetRequestView from './AssetRequestView';
 
 interface Task {
   id: string;
@@ -188,6 +192,59 @@ const Dashboard = () => {
     </div>
   );
 
+  const renderCurrentView = () => {
+    switch (currentView) {
+      case 'dashboard':
+        return renderDashboardOverview();
+      case 'tasks':
+        return (
+          <TasksList 
+            tasks={tasks}
+            onEdit={handleEditTask}
+            onDelete={handleDeleteTask}
+            employeeTypes={employeeTypes}
+          />
+        );
+      case 'profile':
+        return <EmployeeProfile />;
+      case 'payslips':
+        return <PayslipsView onBack={handleBack} />;
+      case 'documents':
+        return <MyDocuments onBack={handleBack} />;
+      case 'support':
+        return <SupportView onBack={handleBack} />;
+      case 'monthly-performance':
+        return <MonthlyPerformanceView onBack={handleBack} />;
+      case 'leave-request':
+        return <LeaveRequestView onBack={handleBack} />;
+      case 'task-submission':
+        return <TaskSubmissionView onBack={handleBack} />;
+      case 'advance-request':
+        return <AdvanceRequestView onBack={handleBack} />;
+      case 'asset-request':
+        return <AssetRequestView onBack={handleBack} />;
+      default:
+        return renderDashboardOverview();
+    }
+  };
+
+  const getViewTitle = () => {
+    switch (currentView) {
+      case 'dashboard': return 'Employee Dashboard';
+      case 'tasks': return 'My Tasks';
+      case 'profile': return 'My Profile';
+      case 'payslips': return 'Payslips';
+      case 'documents': return 'My Documents';
+      case 'support': return 'Support';
+      case 'monthly-performance': return 'Monthly Performance';
+      case 'leave-request': return 'Leave Requests';
+      case 'task-submission': return 'Task Submissions';
+      case 'advance-request': return 'Advance Requests';
+      case 'asset-request': return 'Asset Requests';
+      default: return 'Employee Dashboard';
+    }
+  };
+
   return (
     <SidebarProvider>
       <div className="flex min-h-screen w-full bg-gray-50">
@@ -197,20 +254,20 @@ const Dashboard = () => {
           <div className="flex flex-col h-full w-full">
             <div className="bg-white border-b border-gray-200 px-4 lg:px-6 py-4 w-full">
               <div className="flex items-center justify-between w-full max-w-full">
-                <div className="flex items-center space-x-2">
+                <div className="flex items-center space-x-4">
                   <SidebarTrigger className="-ml-1" />
-                  <div>
-                    <h1 className="text-xl lg:text-2xl font-bold text-gray-900">
-                      {currentView === 'dashboard' && 'Employee Dashboard'}
-                      {currentView === 'tasks' && 'My Tasks'}
-                      {currentView === 'profile' && 'My Profile'}
-                      {currentView === 'payslips' && 'Payslips'}
-                      {currentView === 'documents' && 'My Documents'}
-                      {currentView === 'support' && 'Support'}
-                    </h1>
-                    <p className="text-sm text-gray-600">
-                      Welcome back, {user?.name} ({user?.role})
-                    </p>
+                  <div className="flex items-center space-x-3">
+                    <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
+                      <span className="text-white font-bold text-sm">SW</span>
+                    </div>
+                    <div>
+                      <h1 className="text-xl lg:text-2xl font-bold text-gray-900">
+                        {getViewTitle()}
+                      </h1>
+                      <p className="text-sm text-gray-600">
+                        Welcome back, {user?.name} ({user?.role})
+                      </p>
+                    </div>
                   </div>
                 </div>
                 <div className="flex items-center space-x-2 lg:space-x-4">
@@ -228,19 +285,7 @@ const Dashboard = () => {
 
             <div className="flex-1 overflow-x-hidden overflow-y-auto bg-gray-50 w-full">
               <div className="w-full max-w-full px-4 lg:px-6 py-6 lg:py-8">
-                {currentView === 'dashboard' && renderDashboardOverview()}
-                {currentView === 'tasks' && (
-                  <TasksList 
-                    tasks={tasks}
-                    onEdit={handleEditTask}
-                    onDelete={handleDeleteTask}
-                    employeeTypes={employeeTypes}
-                  />
-                )}
-                {currentView === 'profile' && <EmployeeProfile />}
-                {currentView === 'payslips' && <PayslipsView onBack={handleBack} />}
-                {currentView === 'documents' && <MyDocuments onBack={handleBack} />}
-                {currentView === 'support' && <SupportView onBack={handleBack} />}
+                {renderCurrentView()}
               </div>
             </div>
           </div>

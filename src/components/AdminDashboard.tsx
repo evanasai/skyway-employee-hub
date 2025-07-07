@@ -11,10 +11,10 @@ import EnhancedEmployeeManagement from './EnhancedEmployeeManagement';
 import TaskManagement from './TaskManagement';
 import EnhancedTaskManagement from './EnhancedTaskManagement';
 import ZoneManagement from './ZoneManagement';
-import InventoryManagement from './InventoryManagement';
+import InventoryManagementView from './InventoryManagementView';
 import PayrollManagement from './PayrollManagement';
-import ReportsAndAnalytics from './ReportsAndAnalytics';
-import Settings from './Settings';
+import ReportsAnalyticsView from './ReportsAnalyticsView';
+import SettingsView from './SettingsView';
 import KYCManagementView from './KYCManagementView';
 import TeamManagementView from './TeamManagementView';
 import SupervisorAssignmentView from './SupervisorAssignmentView';
@@ -44,13 +44,13 @@ const AdminDashboard = () => {
       case 'kyc-management':
         return <KYCManagementView />;
       case 'inventory':
-        return <InventoryManagement />;
+        return <InventoryManagementView />;
       case 'payroll':
         return <PayrollManagement />;
       case 'reports':
-        return <ReportsAndAnalytics />;
+        return <ReportsAnalyticsView />;
       case 'settings':
-        return <Settings />;
+        return <SettingsView />;
       default:
         return <AdminDashboardOverview />;
     }

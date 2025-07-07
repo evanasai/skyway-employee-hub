@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { LogOut } from 'lucide-react';
@@ -9,7 +8,7 @@ import SupervisorSidebar from './SupervisorSidebar';
 import TeamManagement from './TeamManagement';
 import TaskManagement from './TaskManagement';
 import SupervisorAssignmentManagement from './SupervisorAssignmentManagement';
-import ReportsAndAnalytics from './ReportsAndAnalytics';
+import ReportsAnalyticsView from './ReportsAnalyticsView';
 
 const SupervisorDashboard = () => {
   const { logout, user } = useAuth();
@@ -103,6 +102,34 @@ const SupervisorDashboard = () => {
     </div>
   );
 
+  const renderCurrentView = () => {
+    switch (currentView) {
+      case 'dashboard':
+        return renderDashboardOverview();
+      case 'team':
+        return <TeamManagement />;
+      case 'tasks':
+        return <TaskManagement />;
+      case 'assignments':
+        return <SupervisorAssignmentManagement />;
+      case 'reports':
+        return <ReportsAnalyticsView />;
+      default:
+        return renderDashboardOverview();
+    }
+  };
+
+  const getViewTitle = () => {
+    switch (currentView) {
+      case 'dashboard': return 'Supervisor Dashboard';
+      case 'team': return 'Team Management';
+      case 'tasks': return 'Task Management';
+      case 'assignments': return 'Assignment Management';
+      case 'reports': return 'Reports & Analytics';
+      default: return 'Supervisor Dashboard';
+    }
+  };
+
   return (
     <SidebarProvider>
       <div className="flex min-h-screen w-full bg-gray-50">
@@ -112,19 +139,20 @@ const SupervisorDashboard = () => {
           <div className="flex flex-col h-full w-full">
             <div className="bg-white border-b border-gray-200 px-4 lg:px-6 py-4 w-full">
               <div className="flex items-center justify-between w-full max-w-full">
-                <div className="flex items-center space-x-2">
+                <div className="flex items-center space-x-4">
                   <SidebarTrigger className="-ml-1" />
-                  <div>
-                    <h1 className="text-xl lg:text-2xl font-bold text-gray-900">
-                      {currentView === 'dashboard' && 'Supervisor Dashboard'}
-                      {currentView === 'team' && 'Team Management'}
-                      {currentView === 'tasks' && 'Task Management'}
-                      {currentView === 'assignments' && 'Assignment Management'}
-                      {currentView === 'reports' && 'Reports & Analytics'}
-                    </h1>
-                    <p className="text-sm text-gray-600">
-                      Welcome back, {user?.name} ({user?.role})
-                    </p>
+                  <div className="flex items-center space-x-3">
+                    <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
+                      <span className="text-white font-bold text-sm">SW</span>
+                    </div>
+                    <div>
+                      <h1 className="text-xl lg:text-2xl font-bold text-gray-900">
+                        {getViewTitle()}
+                      </h1>
+                      <p className="text-sm text-gray-600">
+                        Welcome back, {user?.name} ({user?.role})
+                      </p>
+                    </div>
                   </div>
                 </div>
                 <div className="flex items-center space-x-2 lg:space-x-4">
@@ -142,11 +170,7 @@ const SupervisorDashboard = () => {
 
             <div className="flex-1 overflow-x-hidden overflow-y-auto bg-gray-50 w-full">
               <div className="w-full max-w-full px-4 lg:px-6 py-6 lg:py-8">
-                {currentView === 'dashboard' && renderDashboardOverview()}
-                {currentView === 'team' && <TeamManagement />}
-                {currentView === 'tasks' && <TaskManagement />}
-                {currentView === 'assignments' && <SupervisorAssignmentManagement />}
-                {currentView === 'reports' && <ReportsAndAnalytics />}
+                {renderCurrentView()}
               </div>
             </div>
           </div>
