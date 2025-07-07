@@ -10,34 +10,26 @@ import { ArrowLeft, Plus, Package } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
+import type { Asset, AssetRequest } from '@/types/database';
 
 interface AssetRequestViewProps {
   onBack: () => void;
 }
 
-interface Asset {
-  id: string;
-  name: string;
-  category: string;
-  price: number;
-  available_quantity: number;
-}
-
-interface AssetRequest {
-  id: string;
-  quantity: number;
-  reason: string;
-  status: string;
-  request_date: string;
-  total_amount: number;
-  payment_type: string;
-  asset: Asset;
+interface AssetRequestWithAsset extends AssetRequest {
+  assets?: {
+    id: string;
+    name: string;
+    category: string;
+    price: number;
+    available_quantity: number;
+  } | null;
 }
 
 const AssetRequestView = ({ onBack }: AssetRequestViewProps) => {
   const { user } = useAuth();
   const [showForm, setShowForm] = useState(false);
-  const [requests, setRequests] = useState<AssetRequest[]>([]);
+  const [requests, setRequests] = useState<AssetRequestWithAsset[]>([]);
   const [assets, setAssets] = useState<Asset[]>([]);
   const [formData, setFormData] = useState({
     asset_id: '',
@@ -81,7 +73,7 @@ const AssetRequestView = ({ onBack }: AssetRequestViewProps) => {
           .from('asset_requests')
           .select(`
             *,
-            asset:assets(name, category, price)
+            assets(id, name, category, price, available_quantity)
           `)
           .eq('employee_id', employee.id)
           .order('request_date', { ascending: false });
@@ -252,7 +244,7 @@ const AssetRequestView = ({ onBack }: AssetRequestViewProps) => {
                 <div>
                   <div className="flex items-center space-x-2 mb-2">
                     <Package className="h-4 w-4" />
-                    <h3 className="font-semibold">{request.asset?.name}</h3>
+                    <h3 className="font-semibold">{request.assets?.name || 'Unknown Asset'}</h3>
                   </div>
                   <p className="text-sm text-gray-600 mb-1">
                     Quantity: {request.quantity} | Total: ₹{request.total_amount}
