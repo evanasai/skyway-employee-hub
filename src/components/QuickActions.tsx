@@ -51,22 +51,24 @@ const QuickActions = ({ onNavigate }: QuickActionsProps) => {
         <CardTitle className="text-primary">Quick Actions</CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-2 gap-3">
           {actions.map((action, index) => {
             const Icon = action.icon;
             return (
               <Button
                 key={index}
                 variant="outline"
-                className="h-24 flex flex-col items-center justify-center space-y-2 hover:shadow-md transition-shadow"
+                className="h-auto min-h-[80px] flex flex-col items-center justify-center space-y-2 hover:shadow-md transition-shadow p-3"
                 onClick={action.action}
               >
                 <div className={`p-2 rounded-lg ${action.color}`}>
-                  <Icon className="h-5 w-5" />
+                  <Icon className="h-4 w-4" />
                 </div>
                 <div className="text-center">
-                  <div className="text-sm font-medium">{action.title}</div>
-                  <div className="text-xs text-muted-foreground">{action.description}</div>
+                  <div className="text-xs font-medium leading-tight">{action.title}</div>
+                  <div className="text-[10px] text-muted-foreground leading-tight mt-1 line-clamp-2">
+                    {action.description}
+                  </div>
                 </div>
               </Button>
             );

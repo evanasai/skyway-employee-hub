@@ -33,12 +33,9 @@ const CheckInButton: React.FC<CheckInButtonProps> = ({ isCheckedIn, onCheckIn, o
         title: "Checked In Successfully",
         description: "Photo and location captured successfully!",
       });
-    } catch (error) {
-      toast({
-        title: "Check-in Failed",
-        description: "Please try again",
-        variant: "destructive"
-      });
+    } catch (error: any) {
+      // Don't show success toast if there was an error
+      console.error('Check-in error:', error);
     } finally {
       setIsLoading(false);
     }

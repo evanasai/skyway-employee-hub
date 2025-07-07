@@ -13,6 +13,7 @@ import CheckInButton from './CheckInButton';
 import MonthlyStatsCard from './MonthlyStatsCard';
 import QuickActions from './QuickActions';
 import ContactCard from './ContactCard';
+import AssignedZones from './AssignedZones';
 import TaskSubmissionForm from './TaskSubmissionForm';
 import LeaveRequestForm from './LeaveRequestForm';
 import AdvanceRequestForm from './AdvanceRequestForm';
@@ -35,7 +36,7 @@ const Dashboard = () => {
   const isMobile = useIsMobile();
   
   // Custom hooks for data management
-  const { isCheckedIn, currentAttendance, currentZone, handleCheckIn, handleCheckOut } = useAttendance(user);
+  const { isCheckedIn, currentAttendance, currentZone, assignedZones, handleCheckIn, handleCheckOut } = useAttendance(user);
   const { monthlyStats } = useMonthlyStats(user);
 
   const handleNavigate = (view: string) => {
@@ -181,6 +182,9 @@ const Dashboard = () => {
                 onCheckIn={handleCheckIn}
                 onCheckOut={handleCheckOut}
               />
+
+              {/* Assigned Zones */}
+              <AssignedZones zones={assignedZones} />
 
               {/* Monthly Stats */}
               <MonthlyStatsCard 

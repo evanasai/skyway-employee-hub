@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
@@ -19,12 +18,39 @@ export const useAttendance = (user: User | null) => {
   const [isCheckedIn, setIsCheckedIn] = useState(false);
   const [currentAttendance, setCurrentAttendance] = useState<any>(null);
   const [currentZone, setCurrentZone] = useState<string | null>(null);
+  const [assignedZones, setAssignedZones] = useState<any[]>([]);
 
   useEffect(() => {
     if (user) {
       checkAttendanceStatus();
+      fetchAssignedZones();
     }
   }, [user]);
+
+  const fetchAssignedZones = async () => {
+    if (!user) return;
+
+    try {
+      const { data: employee } = await supabase
+        .from('employees')
+        .select('*')
+        .eq('employee_id', user.employeeId)
+        .single();
+
+      if (employee) {
+        // For now, fetch all active zones as assigned zones
+        // In future, this should be based on actual zone assignments
+        const { data: zones } = await supabase
+          .from('zones')
+          .select('*')
+          .eq('is_active', true);
+
+        setAssignedZones(zones || []);
+      }
+    } catch (error) {
+      console.error('Error fetching assigned zones:', error);
+    }
+  };
 
   const checkAttendanceStatus = async () => {
     if (!user) return;
@@ -85,12 +111,11 @@ export const useAttendance = (user: User | null) => {
 
       if (error) {
         console.error('Error fetching zones:', error);
-        return { isValid: true }; // Allow check-in if zone check fails
+        return { isValid: false };
       }
 
       if (!zones || zones.length === 0) {
-        // If no zones are configured, allow check-in anywhere
-        return { isValid: true };
+        return { isValid: false };
       }
 
       const currentPoint = {
@@ -99,7 +124,6 @@ export const useAttendance = (user: User | null) => {
       };
 
       for (const zone of zones) {
-        // Safely handle coordinates with type checking
         const coordinates = isValidCoordinates(zone.coordinates) ? zone.coordinates : [];
         if (coordinates.length > 0 && isPointInPolygon(currentPoint, coordinates)) {
           return { isValid: true, zoneName: zone.name };
@@ -109,7 +133,7 @@ export const useAttendance = (user: User | null) => {
       return { isValid: false };
     } catch (error) {
       console.error('Error checking zone validation:', error);
-      return { isValid: true }; // Allow check-in if zone check fails
+      return { isValid: false };
     }
   };
 
@@ -122,7 +146,7 @@ export const useAttendance = (user: User | null) => {
         description: "Location access is required for check-in",
         variant: "destructive"
       });
-      return;
+      throw new Error("Location required");
     }
 
     // Check zone validation
@@ -130,10 +154,10 @@ export const useAttendance = (user: User | null) => {
     if (!zoneValidation.isValid) {
       toast({
         title: "Outside Authorized Zone",
-        description: "You can only check in from authorized work zones",
+        description: "You are not in the zone. Please come to the zone and then check in.",
         variant: "destructive"
       });
-      return;
+      throw new Error("Outside authorized zone");
     }
 
     if (zoneValidation.zoneName) {
@@ -168,7 +192,6 @@ export const useAttendance = (user: User | null) => {
         // Store photo if provided
         if (photoData && attendance) {
           try {
-            // Convert base64 to blob
             const base64Data = photoData.split(',')[1];
             const byteCharacters = atob(base64Data);
             const byteNumbers = new Array(byteCharacters.length);
@@ -234,6 +257,7 @@ export const useAttendance = (user: User | null) => {
     isCheckedIn,
     currentAttendance,
     currentZone,
+    assignedZones,
     handleCheckIn,
     handleCheckOut,
     checkAttendanceStatus
