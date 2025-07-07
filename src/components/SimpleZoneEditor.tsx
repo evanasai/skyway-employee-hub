@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -7,7 +6,7 @@ import { Label } from '@/components/ui/label';
 import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { Plus, Edit, Trash2, MapPin } from 'lucide-react';
-import { Zone } from '@/types/zone';
+import { Zone, parseCoordinates } from '@/types/zone';
 
 const SimpleZoneEditor = () => {
   const [zones, setZones] = useState<Zone[]>([]);
@@ -32,7 +31,14 @@ const SimpleZoneEditor = () => {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setZones(data || []);
+      
+      // Parse coordinates from Json to Coordinate[] format
+      const parsedZones: Zone[] = (data || []).map(zone => ({
+        ...zone,
+        coordinates: parseCoordinates(zone.coordinates)
+      }));
+      
+      setZones(parsedZones);
     } catch (error) {
       console.error('Error fetching zones:', error);
       toast({

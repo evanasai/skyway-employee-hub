@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -9,7 +8,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { Trash2, Edit, Plus, Save, X, MapPin } from 'lucide-react';
-import { Zone } from '@/types/zone';
+import { Zone, parseCoordinates } from '@/types/zone';
 
 interface Employee {
   id: string;
@@ -72,7 +71,14 @@ const EmployeeManagementTable = () => {
         .order('name');
 
       if (error) throw error;
-      setZones(data || []);
+      
+      // Parse coordinates from Json to Coordinate[] format
+      const parsedZones: Zone[] = (data || []).map(zone => ({
+        ...zone,
+        coordinates: parseCoordinates(zone.coordinates)
+      }));
+      
+      setZones(parsedZones);
     } catch (error) {
       console.error('Error fetching zones:', error);
     }
