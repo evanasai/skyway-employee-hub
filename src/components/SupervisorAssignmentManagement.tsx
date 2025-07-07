@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -23,7 +24,7 @@ interface Department {
   name: string;
 }
 
-interface SupervisorAssignment {
+interface SupervisorAllocation {
   id: string;
   supervisor_id: string;
   employee_id?: string;
@@ -35,25 +36,26 @@ interface SupervisorAssignment {
   department_name?: string;
 }
 
-const SupervisorAssignmentManagement = () => {
+const SupervisorAllocationManagement = () => {
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [supervisors, setSupervisors] = useState<Employee[]>([]);
   const [departments, setDepartments] = useState<Department[]>([]);
-  const [assignments, setAssignments] = useState<SupervisorAssignment[]>([]);
+  const [allocations, setAllocations] = useState<SupervisorAllocation[]>([]);
   const [selectedSupervisor, setSelectedSupervisor] = useState<string>('');
   const [selectedEmployee, setSelectedEmployee] = useState<string>('');
   const [selectedDepartment, setSelectedDepartment] = useState<string>('');
-  const [assignmentType, setAssignmentType] = useState<string>('individual');
+  const [allocationType, setAllocationType] = useState<string>('individual');
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
     fetchEmployees();
     fetchDepartments();
-    fetchAssignments();
+    fetchAllocations();
   }, []);
 
   const fetchEmployees = async () => {
     try {
+      console.log('Fetching employees for supervisor allocation...');
       const { data, error } = await supabase
         .from('employees')
         .select('id, employee_id, name, role, department, assigned_supervisor')
@@ -64,7 +66,7 @@ const SupervisorAssignmentManagement = () => {
         console.error('Error fetching employees:', error);
         toast({
           title: "Error",
-          description: "Failed to fetch employees",
+          description: "Failed to fetch employees: " + error.message,
           variant: "destructive"
         });
         return;
@@ -78,6 +80,7 @@ const SupervisorAssignmentManagement = () => {
         ['supervisor', 'sub_admin', 'admin', 'super_admin'].includes(emp.role)
       );
       setSupervisors(supervisorsList);
+      console.log('Supervisors found:', supervisorsList);
     } catch (error) {
       console.error('Error fetching employees:', error);
       toast({
@@ -90,6 +93,7 @@ const SupervisorAssignmentManagement = () => {
 
   const fetchDepartments = async () => {
     try {
+      console.log('Fetching departments for supervisor allocation...');
       const { data, error } = await supabase
         .from('departments')
         .select('id, name')
@@ -101,44 +105,47 @@ const SupervisorAssignmentManagement = () => {
         return;
       }
       
+      console.log('Departments found:', data);
       setDepartments(data || []);
     } catch (error) {
       console.error('Error fetching departments:', error);
     }
   };
 
-  const fetchAssignments = async () => {
+  const fetchAllocations = async () => {
     try {
+      console.log('Fetching supervisor allocations...');
       const { data, error } = await supabase
         .from('supervisor_assignments')
         .select(`
           *,
-          supervisor:employees!supervisor_id(name, employee_id),
-          employee:employees!employee_id(name, employee_id),
-          department:departments(name)
+          supervisor:employees!supervisor_assignments_supervisor_id_fkey(name, employee_id),
+          employee:employees!supervisor_assignments_employee_id_fkey(name, employee_id),
+          department:departments!supervisor_assignments_department_id_fkey(name)
         `)
         .eq('is_active', true)
         .order('assigned_at', { ascending: false });
 
       if (error) {
-        console.error('Error fetching assignments:', error);
+        console.error('Error fetching allocations:', error);
         return;
       }
       
-      const formattedAssignments = (data || []).map(assignment => ({
-        ...assignment,
-        supervisor_name: assignment.supervisor?.name,
-        employee_name: assignment.employee?.name,
-        department_name: assignment.department?.name
+      const formattedAllocations = (data || []).map(allocation => ({
+        ...allocation,
+        supervisor_name: allocation.supervisor?.name,
+        employee_name: allocation.employee?.name,
+        department_name: allocation.department?.name
       }));
       
-      setAssignments(formattedAssignments);
+      console.log('Allocations found:', formattedAllocations);
+      setAllocations(formattedAllocations);
     } catch (error) {
-      console.error('Error fetching assignments:', error);
+      console.error('Error fetching allocations:', error);
     }
   };
 
-  const createAssignment = async () => {
+  const createAllocation = async () => {
     if (!selectedSupervisor) {
       toast({
         title: "Missing Information",
@@ -148,19 +155,19 @@ const SupervisorAssignmentManagement = () => {
       return;
     }
 
-    if (assignmentType === 'individual' && !selectedEmployee) {
+    if (allocationType === 'individual' && !selectedEmployee) {
       toast({
         title: "Missing Information",
-        description: "Please select an employee for individual assignment",
+        description: "Please select an employee for individual allocation",
         variant: "destructive"
       });
       return;
     }
 
-    if (assignmentType === 'department' && !selectedDepartment) {
+    if (allocationType === 'department' && !selectedDepartment) {
       toast({
         title: "Missing Information",
-        description: "Please select a department for department assignment",
+        description: "Please select a department for department allocation",
         variant: "destructive"
       });
       return;
@@ -168,32 +175,32 @@ const SupervisorAssignmentManagement = () => {
 
     try {
       setIsLoading(true);
-      const assignmentData = {
+      const allocationData = {
         supervisor_id: selectedSupervisor,
-        assignment_type: assignmentType,
-        employee_id: assignmentType === 'individual' ? selectedEmployee : null,
-        department_id: assignmentType === 'department' ? selectedDepartment : null,
+        assignment_type: allocationType,
+        employee_id: allocationType === 'individual' ? selectedEmployee : null,
+        department_id: allocationType === 'department' ? selectedDepartment : null,
         is_active: true
       };
 
-      console.log('Creating assignment with data:', assignmentData);
+      console.log('Creating allocation with data:', allocationData);
 
       const { error } = await supabase
         .from('supervisor_assignments')
-        .insert(assignmentData);
+        .insert(allocationData);
 
       if (error) {
-        console.error('Error creating assignment:', error);
+        console.error('Error creating allocation:', error);
         toast({
           title: "Error",
-          description: `Failed to create assignment: ${error.message}`,
+          description: `Failed to create allocation: ${error.message}`,
           variant: "destructive"
         });
         return;
       }
 
-      // If individual assignment, update employee's assigned_supervisor
-      if (assignmentType === 'individual' && selectedEmployee) {
+      // If individual allocation, update employee's assigned_supervisor
+      if (allocationType === 'individual' && selectedEmployee) {
         const { error: updateError } = await supabase
           .from('employees')
           .update({ assigned_supervisor: selectedSupervisor })
@@ -201,7 +208,7 @@ const SupervisorAssignmentManagement = () => {
 
         if (updateError) {
           console.error('Error updating employee supervisor:', updateError);
-          // Continue anyway as the assignment was created
+          // Continue anyway as the allocation was created
         }
       }
 
@@ -209,20 +216,20 @@ const SupervisorAssignmentManagement = () => {
       setSelectedSupervisor('');
       setSelectedEmployee('');
       setSelectedDepartment('');
-      setAssignmentType('individual');
+      setAllocationType('individual');
 
-      await fetchAssignments();
+      await fetchAllocations();
       await fetchEmployees();
       
       toast({
-        title: "Assignment Created",
-        description: "Supervisor assignment has been created successfully",
+        title: "Allocation Created",
+        description: "Supervisor allocation has been created successfully",
       });
     } catch (error) {
-      console.error('Error creating assignment:', error);
+      console.error('Error creating allocation:', error);
       toast({
         title: "Error",
-        description: "Failed to create assignment",
+        description: "Failed to create allocation",
         variant: "destructive"
       });
     } finally {
@@ -230,25 +237,25 @@ const SupervisorAssignmentManagement = () => {
     }
   };
 
-  const removeAssignment = async (assignmentId: string, employeeId?: string) => {
+  const removeAllocation = async (allocationId: string, employeeId?: string) => {
     try {
       setIsLoading(true);
       const { error } = await supabase
         .from('supervisor_assignments')
         .update({ is_active: false })
-        .eq('id', assignmentId);
+        .eq('id', allocationId);
 
       if (error) {
-        console.error('Error removing assignment:', error);
+        console.error('Error removing allocation:', error);
         toast({
           title: "Error",
-          description: `Failed to remove assignment: ${error.message}`,
+          description: `Failed to remove allocation: ${error.message}`,
           variant: "destructive"
         });
         return;
       }
 
-      // If it was an individual assignment, remove from employee record
+      // If it was an individual allocation, remove from employee record
       if (employeeId) {
         const { error: updateError } = await supabase
           .from('employees')
@@ -257,22 +264,22 @@ const SupervisorAssignmentManagement = () => {
 
         if (updateError) {
           console.error('Error updating employee supervisor:', updateError);
-          // Continue anyway as the assignment was removed
+          // Continue anyway as the allocation was removed
         }
       }
 
-      await fetchAssignments();
+      await fetchAllocations();
       await fetchEmployees();
       
       toast({
-        title: "Assignment Removed",
-        description: "Supervisor assignment has been removed successfully",
+        title: "Allocation Removed",
+        description: "Supervisor allocation has been removed successfully",
       });
     } catch (error) {
-      console.error('Error removing assignment:', error);
+      console.error('Error removing allocation:', error);
       toast({
         title: "Error",
-        description: "Failed to remove assignment",
+        description: "Failed to remove allocation",
         variant: "destructive"
       });
     } finally {
@@ -280,7 +287,7 @@ const SupervisorAssignmentManagement = () => {
     }
   };
 
-  const getAssignmentBadge = (type: string) => {
+  const getAllocationBadge = (type: string) => {
     return type === 'individual' ? (
       <Badge variant="outline">
         <UserCheck className="h-3 w-3 mr-1" />
@@ -304,23 +311,23 @@ const SupervisorAssignmentManagement = () => {
     <div className="space-y-6">
       <Card>
         <CardHeader>
-          <CardTitle>Supervisor Assignment Management</CardTitle>
+          <CardTitle>Supervisor Allocation Management</CardTitle>
           <CardDescription>
-            Assign supervisors to individual employees or entire departments
+            Allocate supervisors to individual employees or entire departments
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <Tabs defaultValue="assign">
+          <Tabs defaultValue="allocate">
             <TabsList>
-              <TabsTrigger value="assign">Create Assignment</TabsTrigger>
-              <TabsTrigger value="current">Current Assignments</TabsTrigger>
+              <TabsTrigger value="allocate">Create Allocation</TabsTrigger>
+              <TabsTrigger value="current">Current Allocations</TabsTrigger>
               <TabsTrigger value="unassigned">Unassigned Employees</TabsTrigger>
             </TabsList>
 
-            <TabsContent value="assign" className="space-y-4">
+            <TabsContent value="allocate" className="space-y-4">
               <Card>
                 <CardHeader>
-                  <CardTitle className="text-lg">New Assignment</CardTitle>
+                  <CardTitle className="text-lg">New Allocation</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -345,14 +352,14 @@ const SupervisorAssignmentManagement = () => {
                     </div>
 
                     <div>
-                      <label className="text-sm font-medium">Assignment Type *</label>
+                      <label className="text-sm font-medium">Allocation Type *</label>
                       <Select 
-                        value={assignmentType} 
-                        onValueChange={setAssignmentType}
+                        value={allocationType} 
+                        onValueChange={setAllocationType}
                         disabled={isLoading}
                       >
                         <SelectTrigger>
-                          <SelectValue placeholder="Select assignment type" />
+                          <SelectValue placeholder="Select allocation type" />
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="individual">Individual Employee</SelectItem>
@@ -361,7 +368,7 @@ const SupervisorAssignmentManagement = () => {
                       </Select>
                     </div>
 
-                    {assignmentType === 'individual' && (
+                    {allocationType === 'individual' && (
                       <div>
                         <label className="text-sm font-medium">Employee *</label>
                         <Select 
@@ -383,7 +390,7 @@ const SupervisorAssignmentManagement = () => {
                       </div>
                     )}
 
-                    {assignmentType === 'department' && (
+                    {allocationType === 'department' && (
                       <div>
                         <label className="text-sm font-medium">Department *</label>
                         <Select 
@@ -407,7 +414,7 @@ const SupervisorAssignmentManagement = () => {
                   </div>
 
                   <Button 
-                    onClick={createAssignment} 
+                    onClick={createAllocation} 
                     className="w-full"
                     disabled={isLoading}
                   >
@@ -419,7 +426,7 @@ const SupervisorAssignmentManagement = () => {
                     ) : (
                       <>
                         <Plus className="h-4 w-4 mr-2" />
-                        Create Assignment
+                        Create Allocation
                       </>
                     )}
                   </Button>
@@ -433,40 +440,40 @@ const SupervisorAssignmentManagement = () => {
                   <TableHeader>
                     <TableRow>
                       <TableHead>Supervisor</TableHead>
-                      <TableHead>Assignment Type</TableHead>
-                      <TableHead>Assigned To</TableHead>
-                      <TableHead>Assigned Date</TableHead>
+                      <TableHead>Allocation Type</TableHead>
+                      <TableHead>Allocated To</TableHead>
+                      <TableHead>Allocated Date</TableHead>
                       <TableHead>Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {assignments.map((assignment) => (
-                      <TableRow key={assignment.id}>
+                    {allocations.map((allocation) => (
+                      <TableRow key={allocation.id}>
                         <TableCell>
-                          <div className="font-medium">{assignment.supervisor_name}</div>
+                          <div className="font-medium">{allocation.supervisor_name}</div>
                         </TableCell>
-                        <TableCell>{getAssignmentBadge(assignment.assignment_type)}</TableCell>
+                        <TableCell>{getAllocationBadge(allocation.assignment_type)}</TableCell>
                         <TableCell>
-                          {assignment.assignment_type === 'individual' ? (
+                          {allocation.assignment_type === 'individual' ? (
                             <div>
-                              <div className="font-medium">{assignment.employee_name}</div>
+                              <div className="font-medium">{allocation.employee_name}</div>
                               <div className="text-sm text-gray-500">Employee</div>
                             </div>
                           ) : (
                             <div>
-                              <div className="font-medium">{assignment.department_name}</div>
+                              <div className="font-medium">{allocation.department_name}</div>
                               <div className="text-sm text-gray-500">Department</div>
                             </div>
                           )}
                         </TableCell>
                         <TableCell>
-                          {new Date(assignment.assigned_at).toLocaleDateString()}
+                          {new Date(allocation.assigned_at).toLocaleDateString()}
                         </TableCell>
                         <TableCell>
                           <Button
                             variant="destructive"
                             size="sm"
-                            onClick={() => removeAssignment(assignment.id, assignment.employee_id)}
+                            onClick={() => removeAllocation(allocation.id, allocation.employee_id)}
                             disabled={isLoading}
                           >
                             <Trash2 className="h-4 w-4" />
@@ -484,14 +491,14 @@ const SupervisorAssignmentManagement = () => {
                 <CardHeader>
                   <CardTitle className="text-lg">Unassigned Employees</CardTitle>
                   <CardDescription>
-                    Employees who don't have a supervisor assigned
+                    Employees who don't have a supervisor allocated
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
                   {getUnassignedEmployees().length === 0 ? (
                     <div className="text-center py-8">
                       <Users className="h-12 w-12 mx-auto text-gray-400 mb-4" />
-                      <p className="text-gray-500">All employees have been assigned to supervisors</p>
+                      <p className="text-gray-500">All employees have been allocated to supervisors</p>
                     </div>
                   ) : (
                     <div className="space-y-2">
@@ -520,4 +527,4 @@ const SupervisorAssignmentManagement = () => {
   );
 };
 
-export default SupervisorAssignmentManagement;
+export default SupervisorAllocationManagement;

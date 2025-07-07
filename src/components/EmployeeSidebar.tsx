@@ -9,8 +9,6 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
-  SidebarProvider,
-  SidebarTrigger,
 } from '@/components/ui/sidebar';
 import {
   Home,
@@ -23,7 +21,8 @@ import {
   LogOut,
   TrendingUp,
   FolderOpen,
-  User
+  User,
+  Shield
 } from 'lucide-react';
 
 interface EmployeeSidebarProps {
@@ -44,6 +43,11 @@ const EmployeeSidebar = ({ currentView, onNavigate }: EmployeeSidebarProps) => {
       title: 'My Profile',
       icon: User,
       view: 'profile'
+    },
+    {
+      title: 'KYC Submission',
+      icon: Shield,
+      view: 'kyc-submission'
     },
     {
       title: 'Monthly Performance',
@@ -88,7 +92,7 @@ const EmployeeSidebar = ({ currentView, onNavigate }: EmployeeSidebarProps) => {
   ];
 
   return (
-    <Sidebar>
+    <Sidebar className="w-64 bg-white border-r border-gray-200">
       <SidebarHeader>
         <div className="flex items-center space-x-2 p-4">
           <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
@@ -107,7 +111,7 @@ const EmployeeSidebar = ({ currentView, onNavigate }: EmployeeSidebarProps) => {
                 <SidebarMenuButton
                   onClick={() => onNavigate(item.view)}
                   isActive={currentView === item.view}
-                  className="w-full justify-start"
+                  className="w-full justify-start hover:bg-gray-100"
                 >
                   <Icon className="h-5 w-5 mr-3" />
                   {item.title}

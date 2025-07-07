@@ -32,7 +32,7 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({ currentView, onNavigate }) 
     { id: 'employees', label: 'Employee Management', icon: Users },
     { id: 'zones', label: 'Zone Management', icon: MapPin },
     { id: 'team-management', label: 'Team Management', icon: UsersRound },
-    { id: 'supervisor-assignment', label: 'Supervisor Assignment', icon: UserCog },
+    { id: 'supervisor-assignment', label: 'Supervisor Allocation', icon: UserCog },
     { id: 'kyc-management', label: 'Employee Verification', icon: Shield },
     { id: 'tasks', label: 'Task Management', icon: ClipboardList },
     { id: 'enhanced-tasks', label: 'Department Tasks', icon: Calendar },

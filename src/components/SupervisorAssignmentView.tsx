@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { supabase } from '@/integrations/supabase/client';
 import { Plus, UserCog, Users, Building } from 'lucide-react';
 
-interface SupervisorAssignment {
+interface SupervisorAllocation {
   id: string;
   assignment_type: string;
   assigned_at: string;
@@ -27,15 +27,15 @@ interface SupervisorAssignment {
   } | null;
 }
 
-const SupervisorAssignmentView = () => {
-  const [assignments, setAssignments] = useState<SupervisorAssignment[]>([]);
+const SupervisorAllocationView = () => {
+  const [allocations, setAllocations] = useState<SupervisorAllocation[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetchAssignments();
+    fetchAllocations();
   }, []);
 
-  const fetchAssignments = async () => {
+  const fetchAllocations = async () => {
     try {
       const { data, error } = await supabase
         .from('supervisor_assignments')
@@ -48,15 +48,15 @@ const SupervisorAssignmentView = () => {
         .order('assigned_at', { ascending: false });
 
       if (error) throw error;
-      setAssignments(data || []);
+      setAllocations(data || []);
     } catch (error) {
-      console.error('Error fetching supervisor assignments:', error);
+      console.error('Error fetching supervisor allocations:', error);
     } finally {
       setLoading(false);
     }
   };
 
-  const getAssignmentTypeBadge = (type: string) => {
+  const getAllocationTypeBadge = (type: string) => {
     switch (type) {
       case 'individual':
         return <Badge variant="default"><Users className="w-3 h-3 mr-1" />Individual</Badge>;
@@ -76,39 +76,39 @@ const SupervisorAssignmentView = () => {
   };
 
   if (loading) {
-    return <div className="flex justify-center items-center h-64">Loading supervisor assignments...</div>;
+    return <div className="flex justify-center items-center h-64">Loading supervisor allocations...</div>;
   }
 
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h2 className="text-2xl font-bold">Supervisor Assignment</h2>
+          <h2 className="text-2xl font-bold">Supervisor Allocation</h2>
           <p className="text-gray-600">Manage supervisor-employee relationships</p>
         </div>
         <Button>
           <Plus className="w-4 h-4 mr-2" />
-          New Assignment
+          New Allocation
         </Button>
       </div>
 
       <div className="grid gap-4">
-        {assignments.map((assignment) => (
-          <Card key={assignment.id}>
+        {allocations.map((allocation) => (
+          <Card key={allocation.id}>
             <CardHeader>
               <div className="flex justify-between items-start">
                 <div>
                   <CardTitle className="text-lg">
-                    {assignment.supervisor?.name || 'Unknown Supervisor'}
+                    {allocation.supervisor?.name || 'Unknown Supervisor'}
                   </CardTitle>
                   <CardDescription>
-                    Supervisor ID: {assignment.supervisor?.employee_id} | 
-                    Assigned: {new Date(assignment.assigned_at).toLocaleDateString()}
+                    Supervisor ID: {allocation.supervisor?.employee_id} | 
+                    Allocated: {new Date(allocation.assigned_at).toLocaleDateString()}
                   </CardDescription>
                 </div>
                 <div className="flex space-x-2">
-                  {getAssignmentTypeBadge(assignment.assignment_type)}
-                  {getStatusBadge(assignment.is_active)}
+                  {getAllocationTypeBadge(allocation.assignment_type)}
+                  {getStatusBadge(allocation.is_active)}
                 </div>
               </div>
             </CardHeader>
@@ -118,25 +118,25 @@ const SupervisorAssignmentView = () => {
                   <div>
                     <p className="text-sm font-medium text-gray-700">Supervisor</p>
                     <p className="text-sm text-gray-600">
-                      {assignment.supervisor?.name} ({assignment.supervisor?.employee_id})
+                      {allocation.supervisor?.name} ({allocation.supervisor?.employee_id})
                     </p>
-                    <p className="text-xs text-gray-500">{assignment.supervisor?.email}</p>
+                    <p className="text-xs text-gray-500">{allocation.supervisor?.email}</p>
                   </div>
                   
-                  {assignment.assignment_type === 'individual' && assignment.employee && (
+                  {allocation.assignment_type === 'individual' && allocation.employee && (
                     <div>
-                      <p className="text-sm font-medium text-gray-700">Assigned Employee</p>
+                      <p className="text-sm font-medium text-gray-700">Allocated Employee</p>
                       <p className="text-sm text-gray-600">
-                        {assignment.employee.name} ({assignment.employee.employee_id})
+                        {allocation.employee.name} ({allocation.employee.employee_id})
                       </p>
-                      <p className="text-xs text-gray-500">{assignment.employee.email}</p>
+                      <p className="text-xs text-gray-500">{allocation.employee.email}</p>
                     </div>
                   )}
                   
-                  {assignment.assignment_type === 'department' && assignment.department && (
+                  {allocation.assignment_type === 'department' && allocation.department && (
                     <div>
-                      <p className="text-sm font-medium text-gray-700">Assigned Department</p>
-                      <p className="text-sm text-gray-600">{assignment.department.name}</p>
+                      <p className="text-sm font-medium text-gray-700">Allocated Department</p>
+                      <p className="text-sm text-gray-600">{allocation.department.name}</p>
                     </div>
                   )}
                 </div>
@@ -144,13 +144,13 @@ const SupervisorAssignmentView = () => {
                 <div className="flex space-x-2 pt-2">
                   <Button variant="outline" size="sm">
                     <UserCog className="w-4 h-4 mr-1" />
-                    Edit Assignment
+                    Edit Allocation
                   </Button>
                   <Button 
-                    variant={assignment.is_active ? "destructive" : "default"} 
+                    variant={allocation.is_active ? "destructive" : "default"} 
                     size="sm"
                   >
-                    {assignment.is_active ? "Deactivate" : "Activate"}
+                    {allocation.is_active ? "Deactivate" : "Activate"}
                   </Button>
                 </div>
               </div>
@@ -159,13 +159,13 @@ const SupervisorAssignmentView = () => {
         ))}
       </div>
 
-      {assignments.length === 0 && (
+      {allocations.length === 0 && (
         <Card>
           <CardContent className="text-center py-8">
-            <p className="text-gray-500">No supervisor assignments found</p>
+            <p className="text-gray-500">No supervisor allocations found</p>
             <Button className="mt-4">
               <Plus className="w-4 h-4 mr-2" />
-              Create First Assignment
+              Create First Allocation
             </Button>
           </CardContent>
         </Card>
@@ -174,4 +174,4 @@ const SupervisorAssignmentView = () => {
   );
 };
 
-export default SupervisorAssignmentView;
+export default SupervisorAllocationView;

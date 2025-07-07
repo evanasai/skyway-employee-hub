@@ -82,13 +82,14 @@ const TeamManagement = () => {
   const fetchTeams = async () => {
     try {
       setIsLoading(true);
+      console.log('Fetching teams...');
       const { data, error } = await supabase
         .from('teams')
         .select(`
           *,
-          team_leader:employees!team_leader_id(name, employee_id),
-          supervisor:employees!supervisor_id(name, employee_id),
-          department:departments(name)
+          team_leader:employees!teams_team_leader_id_fkey(name, employee_id),
+          supervisor:employees!teams_supervisor_id_fkey(name, employee_id),
+          department:departments!teams_department_id_fkey(name)
         `)
         .eq('is_active', true)
         .order('created_at', { ascending: false });
@@ -97,11 +98,13 @@ const TeamManagement = () => {
         console.error('Error fetching teams:', error);
         toast({
           title: "Error",
-          description: "Failed to fetch teams",
+          description: "Failed to fetch teams: " + error.message,
           variant: "destructive"
         });
         return;
       }
+
+      console.log('Teams fetched successfully:', data);
 
       // Get member counts for each team
       const teamsWithCounts = await Promise.all(
@@ -135,6 +138,7 @@ const TeamManagement = () => {
 
   const fetchEmployees = async () => {
     try {
+      console.log('Fetching employees...');
       const { data, error } = await supabase
         .from('employees')
         .select('id, employee_id, name, role, department')
@@ -146,6 +150,7 @@ const TeamManagement = () => {
         return;
       }
       
+      console.log('Employees fetched:', data);
       setEmployees(data || []);
     } catch (error) {
       console.error('Error fetching employees:', error);
@@ -154,6 +159,7 @@ const TeamManagement = () => {
 
   const fetchDepartments = async () => {
     try {
+      console.log('Fetching departments...');
       const { data, error } = await supabase
         .from('departments')
         .select('id, name')
@@ -165,47 +171,10 @@ const TeamManagement = () => {
         return;
       }
       
+      console.log('Departments fetched:', data);
       setDepartments(data || []);
     } catch (error) {
       console.error('Error fetching departments:', error);
-    }
-  };
-
-  const fetchTeamMembers = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('team_members')
-        .select(`
-          employee_id,
-          employees!inner(id, employee_id, name, role, department)
-        `)
-        .eq('team_id', selectedTeam);
-
-      if (error) {
-        console.error('Error fetching team members:', error);
-        return;
-      }
-      
-      const members = (data || []).map(item => item.employees).filter(Boolean);
-      setTeamMembers(members as Employee[]);
-    } catch (error) {
-      console.error('Error fetching team members:', error);
-    }
-  };
-
-  const fetchAvailableEmployees = async () => {
-    try {
-      // Get employees not in the selected team
-      const { data: teamMemberData } = await supabase
-        .from('team_members')
-        .select('employee_id')
-        .eq('team_id', selectedTeam);
-
-      const memberIds = (teamMemberData || []).map(m => m.employee_id);
-      const available = employees.filter(emp => !memberIds.includes(emp.id));
-      setAvailableEmployees(available);
-    } catch (error) {
-      console.error('Error fetching available employees:', error);
     }
   };
 
@@ -221,6 +190,8 @@ const TeamManagement = () => {
 
     try {
       setIsLoading(true);
+      console.log('Creating team with data:', formData);
+      
       const teamData = {
         name: formData.name.trim(),
         category: formData.category,
@@ -229,8 +200,6 @@ const TeamManagement = () => {
         supervisor_id: formData.supervisor_id || null,
         is_active: true
       };
-
-      console.log('Creating team with data:', teamData);
 
       const { data, error } = await supabase
         .from('teams')
@@ -359,6 +328,43 @@ const TeamManagement = () => {
     }
   };
 
+  const fetchTeamMembers = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('team_members')
+        .select(`
+          employee_id,
+          employees!inner(id, employee_id, name, role, department)
+        `)
+        .eq('team_id', selectedTeam);
+
+      if (error) {
+        console.error('Error fetching team members:', error);
+        return;
+      }
+      
+      const members = (data || []).map(item => item.employees).filter(Boolean);
+      setTeamMembers(members as Employee[]);
+    } catch (error) {
+      console.error('Error fetching team members:', error);
+    }
+  };
+
+  const fetchAvailableEmployees = async () => {
+    try {
+      const { data: teamMemberData } = await supabase
+        .from('team_members')
+        .select('employee_id')
+        .eq('team_id', selectedTeam);
+
+      const memberIds = (teamMemberData || []).map(m => m.employee_id);
+      const available = employees.filter(emp => !memberIds.includes(emp.id));
+      setAvailableEmployees(available);
+    } catch (error) {
+      console.error('Error fetching available employees:', error);
+    }
+  };
+
   const addTeamMember = async (employeeId: string) => {
     try {
       const { error } = await supabase
@@ -380,7 +386,7 @@ const TeamManagement = () => {
 
       await fetchTeamMembers();
       await fetchAvailableEmployees();
-      await fetchTeams(); // Refresh to update member counts
+      await fetchTeams();
       
       toast({
         title: "Member Added",
@@ -416,7 +422,7 @@ const TeamManagement = () => {
 
       await fetchTeamMembers();
       await fetchAvailableEmployees();
-      await fetchTeams(); // Refresh to update member counts
+      await fetchTeams();
       
       toast({
         title: "Member Removed",

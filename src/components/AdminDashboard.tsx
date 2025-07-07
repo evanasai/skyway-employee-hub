@@ -17,7 +17,7 @@ import ReportsAnalyticsView from './ReportsAnalyticsView';
 import SettingsView from './SettingsView';
 import KYCManagementView from './KYCManagementView';
 import TeamManagementView from './TeamManagementView';
-import SupervisorAssignmentView from './SupervisorAssignmentView';
+import SupervisorAllocationManagement from './SupervisorAssignmentManagement';
 
 const AdminDashboard = () => {
   const { logout, user } = useAuth();
@@ -28,8 +28,6 @@ const AdminDashboard = () => {
       case 'dashboard':
         return <AdminDashboardOverview />;
       case 'employees':
-        return <EmployeeManagement />;
-      case 'enhanced-employees':
         return <EnhancedEmployeeManagement />;
       case 'tasks':
         return <TaskManagement />;
@@ -40,7 +38,7 @@ const AdminDashboard = () => {
       case 'team-management':
         return <TeamManagementView />;
       case 'supervisor-assignment':
-        return <SupervisorAssignmentView />;
+        return <SupervisorAllocationManagement />;
       case 'kyc-management':
         return <KYCManagementView />;
       case 'inventory':
@@ -62,8 +60,6 @@ const AdminDashboard = () => {
         return 'Admin Dashboard';
       case 'employees':
         return 'Employee Management';
-      case 'enhanced-employees':
-        return 'Enhanced Employee Management';
       case 'tasks':
         return 'Task Management';
       case 'enhanced-tasks':
@@ -73,7 +69,7 @@ const AdminDashboard = () => {
       case 'team-management':
         return 'Team Management';
       case 'supervisor-assignment':
-        return 'Supervisor Assignment';
+        return 'Supervisor Allocation';
       case 'kyc-management':
         return 'Employee Verification (KYC)';
       case 'inventory':
