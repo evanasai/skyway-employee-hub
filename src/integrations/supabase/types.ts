@@ -68,8 +68,22 @@ export type Database = {
             foreignKeyName: "advance_requests_approved_by_fkey"
             columns: ["approved_by"]
             isOneToOne: false
+            referencedRelation: "employee_department_tasks"
+            referencedColumns: ["employee_id"]
+          },
+          {
+            foreignKeyName: "advance_requests_approved_by_fkey"
+            columns: ["approved_by"]
+            isOneToOne: false
             referencedRelation: "employees"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "advance_requests_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employee_department_tasks"
+            referencedColumns: ["employee_id"]
           },
           {
             foreignKeyName: "advance_requests_employee_id_fkey"
@@ -82,8 +96,22 @@ export type Database = {
             foreignKeyName: "advance_requests_final_approved_by_fkey"
             columns: ["final_approved_by"]
             isOneToOne: false
+            referencedRelation: "employee_department_tasks"
+            referencedColumns: ["employee_id"]
+          },
+          {
+            foreignKeyName: "advance_requests_final_approved_by_fkey"
+            columns: ["final_approved_by"]
+            isOneToOne: false
             referencedRelation: "employees"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "advance_requests_supervisor_approved_by_fkey"
+            columns: ["supervisor_approved_by"]
+            isOneToOne: false
+            referencedRelation: "employee_department_tasks"
+            referencedColumns: ["employee_id"]
           },
           {
             foreignKeyName: "advance_requests_supervisor_approved_by_fkey"
@@ -163,6 +191,13 @@ export type Database = {
             foreignKeyName: "asset_requests_approved_by_fkey"
             columns: ["approved_by"]
             isOneToOne: false
+            referencedRelation: "employee_department_tasks"
+            referencedColumns: ["employee_id"]
+          },
+          {
+            foreignKeyName: "asset_requests_approved_by_fkey"
+            columns: ["approved_by"]
+            isOneToOne: false
             referencedRelation: "employees"
             referencedColumns: ["id"]
           },
@@ -177,8 +212,22 @@ export type Database = {
             foreignKeyName: "asset_requests_employee_id_fkey"
             columns: ["employee_id"]
             isOneToOne: false
+            referencedRelation: "employee_department_tasks"
+            referencedColumns: ["employee_id"]
+          },
+          {
+            foreignKeyName: "asset_requests_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
             referencedRelation: "employees"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "asset_requests_issued_by_fkey"
+            columns: ["issued_by"]
+            isOneToOne: false
+            referencedRelation: "employee_department_tasks"
+            referencedColumns: ["employee_id"]
           },
           {
             foreignKeyName: "asset_requests_issued_by_fkey"
@@ -267,7 +316,81 @@ export type Database = {
             foreignKeyName: "attendance_employee_id_fkey"
             columns: ["employee_id"]
             isOneToOne: false
+            referencedRelation: "employee_department_tasks"
+            referencedColumns: ["employee_id"]
+          },
+          {
+            foreignKeyName: "attendance_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
             referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      department_task_assignments: {
+        Row: {
+          assigned_at: string | null
+          assigned_by: string | null
+          created_at: string | null
+          department_id: string
+          due_date: string | null
+          id: string
+          is_active: boolean | null
+          priority: string | null
+          task_description: string | null
+          task_name: string
+          task_type: string
+          updated_at: string | null
+        }
+        Insert: {
+          assigned_at?: string | null
+          assigned_by?: string | null
+          created_at?: string | null
+          department_id: string
+          due_date?: string | null
+          id?: string
+          is_active?: boolean | null
+          priority?: string | null
+          task_description?: string | null
+          task_name: string
+          task_type: string
+          updated_at?: string | null
+        }
+        Update: {
+          assigned_at?: string | null
+          assigned_by?: string | null
+          created_at?: string | null
+          department_id?: string
+          due_date?: string | null
+          id?: string
+          is_active?: boolean | null
+          priority?: string | null
+          task_description?: string | null
+          task_name?: string
+          task_type?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "department_task_assignments_assigned_by_fkey"
+            columns: ["assigned_by"]
+            isOneToOne: false
+            referencedRelation: "employee_department_tasks"
+            referencedColumns: ["employee_id"]
+          },
+          {
+            foreignKeyName: "department_task_assignments_assigned_by_fkey"
+            columns: ["assigned_by"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "department_task_assignments_department_id_fkey"
+            columns: ["department_id"]
+            isOneToOne: false
+            referencedRelation: "departments"
             referencedColumns: ["id"]
           },
         ]
@@ -377,6 +500,13 @@ export type Database = {
             foreignKeyName: "employee_deductions_employee_id_fkey"
             columns: ["employee_id"]
             isOneToOne: false
+            referencedRelation: "employee_department_tasks"
+            referencedColumns: ["employee_id"]
+          },
+          {
+            foreignKeyName: "employee_deductions_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
             referencedRelation: "employees"
             referencedColumns: ["id"]
           },
@@ -442,6 +572,13 @@ export type Database = {
             foreignKeyName: "employees_assigned_supervisor_fkey"
             columns: ["assigned_supervisor"]
             isOneToOne: false
+            referencedRelation: "employee_department_tasks"
+            referencedColumns: ["employee_id"]
+          },
+          {
+            foreignKeyName: "employees_assigned_supervisor_fkey"
+            columns: ["assigned_supervisor"]
+            isOneToOne: false
             referencedRelation: "employees"
             referencedColumns: ["id"]
           },
@@ -489,8 +626,22 @@ export type Database = {
             foreignKeyName: "kyc_details_employee_id_fkey"
             columns: ["employee_id"]
             isOneToOne: true
+            referencedRelation: "employee_department_tasks"
+            referencedColumns: ["employee_id"]
+          },
+          {
+            foreignKeyName: "kyc_details_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: true
             referencedRelation: "employees"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "kyc_details_verified_by_fkey"
+            columns: ["verified_by"]
+            isOneToOne: false
+            referencedRelation: "employee_department_tasks"
+            referencedColumns: ["employee_id"]
           },
           {
             foreignKeyName: "kyc_details_verified_by_fkey"
@@ -561,8 +712,22 @@ export type Database = {
             foreignKeyName: "leave_requests_approved_by_fkey"
             columns: ["approved_by"]
             isOneToOne: false
+            referencedRelation: "employee_department_tasks"
+            referencedColumns: ["employee_id"]
+          },
+          {
+            foreignKeyName: "leave_requests_approved_by_fkey"
+            columns: ["approved_by"]
+            isOneToOne: false
             referencedRelation: "employees"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "leave_requests_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employee_department_tasks"
+            referencedColumns: ["employee_id"]
           },
           {
             foreignKeyName: "leave_requests_employee_id_fkey"
@@ -575,8 +740,22 @@ export type Database = {
             foreignKeyName: "leave_requests_final_approved_by_fkey"
             columns: ["final_approved_by"]
             isOneToOne: false
+            referencedRelation: "employee_department_tasks"
+            referencedColumns: ["employee_id"]
+          },
+          {
+            foreignKeyName: "leave_requests_final_approved_by_fkey"
+            columns: ["final_approved_by"]
+            isOneToOne: false
             referencedRelation: "employees"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "leave_requests_supervisor_approved_by_fkey"
+            columns: ["supervisor_approved_by"]
+            isOneToOne: false
+            referencedRelation: "employee_department_tasks"
+            referencedColumns: ["employee_id"]
           },
           {
             foreignKeyName: "leave_requests_supervisor_approved_by_fkey"
@@ -641,6 +820,13 @@ export type Database = {
             foreignKeyName: "payroll_employee_id_fkey"
             columns: ["employee_id"]
             isOneToOne: false
+            referencedRelation: "employee_department_tasks"
+            referencedColumns: ["employee_id"]
+          },
+          {
+            foreignKeyName: "payroll_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
             referencedRelation: "employees"
             referencedColumns: ["id"]
           },
@@ -685,6 +871,13 @@ export type Database = {
             foreignKeyName: "supervisor_assignments_assigned_by_fkey"
             columns: ["assigned_by"]
             isOneToOne: false
+            referencedRelation: "employee_department_tasks"
+            referencedColumns: ["employee_id"]
+          },
+          {
+            foreignKeyName: "supervisor_assignments_assigned_by_fkey"
+            columns: ["assigned_by"]
+            isOneToOne: false
             referencedRelation: "employees"
             referencedColumns: ["id"]
           },
@@ -699,8 +892,22 @@ export type Database = {
             foreignKeyName: "supervisor_assignments_employee_id_fkey"
             columns: ["employee_id"]
             isOneToOne: false
+            referencedRelation: "employee_department_tasks"
+            referencedColumns: ["employee_id"]
+          },
+          {
+            foreignKeyName: "supervisor_assignments_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
             referencedRelation: "employees"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "supervisor_assignments_supervisor_id_fkey"
+            columns: ["supervisor_id"]
+            isOneToOne: false
+            referencedRelation: "employee_department_tasks"
+            referencedColumns: ["employee_id"]
           },
           {
             foreignKeyName: "supervisor_assignments_supervisor_id_fkey"
@@ -784,8 +991,22 @@ export type Database = {
             foreignKeyName: "task_submissions_employee_id_fkey"
             columns: ["employee_id"]
             isOneToOne: false
+            referencedRelation: "employee_department_tasks"
+            referencedColumns: ["employee_id"]
+          },
+          {
+            foreignKeyName: "task_submissions_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
             referencedRelation: "employees"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "task_submissions_reviewed_by_fkey"
+            columns: ["reviewed_by"]
+            isOneToOne: false
+            referencedRelation: "employee_department_tasks"
+            referencedColumns: ["employee_id"]
           },
           {
             foreignKeyName: "task_submissions_reviewed_by_fkey"
@@ -846,6 +1067,13 @@ export type Database = {
           team_id?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "team_members_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employee_department_tasks"
+            referencedColumns: ["employee_id"]
+          },
           {
             foreignKeyName: "team_members_employee_id_fkey"
             columns: ["employee_id"]
@@ -931,8 +1159,22 @@ export type Database = {
             foreignKeyName: "team_task_submissions_reviewed_by_fkey"
             columns: ["reviewed_by"]
             isOneToOne: false
+            referencedRelation: "employee_department_tasks"
+            referencedColumns: ["employee_id"]
+          },
+          {
+            foreignKeyName: "team_task_submissions_reviewed_by_fkey"
+            columns: ["reviewed_by"]
+            isOneToOne: false
             referencedRelation: "employees"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "team_task_submissions_submitted_by_fkey"
+            columns: ["submitted_by"]
+            isOneToOne: false
+            referencedRelation: "employee_department_tasks"
+            referencedColumns: ["employee_id"]
           },
           {
             foreignKeyName: "team_task_submissions_submitted_by_fkey"
@@ -996,8 +1238,22 @@ export type Database = {
             foreignKeyName: "teams_supervisor_id_fkey"
             columns: ["supervisor_id"]
             isOneToOne: false
+            referencedRelation: "employee_department_tasks"
+            referencedColumns: ["employee_id"]
+          },
+          {
+            foreignKeyName: "teams_supervisor_id_fkey"
+            columns: ["supervisor_id"]
+            isOneToOne: false
             referencedRelation: "employees"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "teams_team_leader_id_fkey"
+            columns: ["team_leader_id"]
+            isOneToOne: false
+            referencedRelation: "employee_department_tasks"
+            referencedColumns: ["employee_id"]
           },
           {
             foreignKeyName: "teams_team_leader_id_fkey"
@@ -1041,6 +1297,13 @@ export type Database = {
             foreignKeyName: "zone_assignments_assigned_by_fkey"
             columns: ["assigned_by"]
             isOneToOne: false
+            referencedRelation: "employee_department_tasks"
+            referencedColumns: ["employee_id"]
+          },
+          {
+            foreignKeyName: "zone_assignments_assigned_by_fkey"
+            columns: ["assigned_by"]
+            isOneToOne: false
             referencedRelation: "employees"
             referencedColumns: ["id"]
           },
@@ -1050,6 +1313,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "departments"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "zone_assignments_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employee_department_tasks"
+            referencedColumns: ["employee_id"]
           },
           {
             foreignKeyName: "zone_assignments_employee_id_fkey"
@@ -1096,7 +1366,23 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      employee_department_tasks: {
+        Row: {
+          assigned_at: string | null
+          department_name: string | null
+          due_date: string | null
+          employee_department: string | null
+          employee_id: string | null
+          employee_name: string | null
+          id: string | null
+          is_active: boolean | null
+          priority: string | null
+          task_description: string | null
+          task_name: string | null
+          task_type: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       [_ in never]: never

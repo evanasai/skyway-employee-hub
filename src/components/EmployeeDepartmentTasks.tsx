@@ -2,7 +2,6 @@
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
 import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { Calendar, Clock, AlertCircle } from 'lucide-react';
@@ -34,14 +33,60 @@ const EmployeeDepartmentTasks = ({ employeeId, employeeDepartment }: EmployeeDep
   const fetchDepartmentTasks = async () => {
     try {
       setIsLoading(true);
-      const { data, error } = await supabase
+      
+      // Try to fetch from the view first
+      const { data, error } = await (supabase as any)
         .from('employee_department_tasks')
         .select('*')
         .eq('employee_id', employeeId)
         .order('assigned_at', { ascending: false });
 
-      if (error) throw error;
-      setDepartmentTasks(data || []);
+      if (error) {
+        // Fallback to joining tables manually
+        const { data: fallbackData, error: fallbackError } = await supabase
+          .from('departments')
+          .select(`
+            id,
+            name,
+            department_task_assignments!inner(
+              id,
+              task_name,
+              task_description,
+              task_type,
+              priority,
+              due_date,
+              assigned_at,
+              is_active
+            )
+          `)
+          .eq('name', employeeDepartment)
+          .eq('department_task_assignments.is_active', true);
+
+        if (fallbackError) throw fallbackError;
+
+        // Transform the data
+        const transformedTasks: EmployeeDepartmentTask[] = [];
+        (fallbackData || []).forEach((dept: any) => {
+          if (dept.department_task_assignments) {
+            dept.department_task_assignments.forEach((task: any) => {
+              transformedTasks.push({
+                id: task.id,
+                task_name: task.task_name,
+                task_description: task.task_description,
+                task_type: task.task_type,
+                priority: task.priority,
+                due_date: task.due_date,
+                assigned_at: task.assigned_at,
+                department_name: dept.name
+              });
+            });
+          }
+        });
+
+        setDepartmentTasks(transformedTasks);
+      } else {
+        setDepartmentTasks(data || []);
+      }
     } catch (error) {
       console.error('Error fetching department tasks:', error);
       toast({
