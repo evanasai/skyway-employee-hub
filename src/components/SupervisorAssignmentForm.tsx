@@ -304,13 +304,19 @@ export const SupervisorAssignmentForm = ({
                   <SelectValue placeholder="Select team" />
                 </SelectTrigger>
                 <SelectContent>
-                  {teams
-                    .filter(team => !formData.department_id || team.department?.name === departments.find(d => d.id === formData.department_id)?.name)
-                    .map((team) => (
-                    <SelectItem key={team.id} value={team.id}>
-                      {team.name} - {team.category}
+                  {teams.length === 0 ? (
+                    <SelectItem value="" disabled>
+                      No teams available - Create teams first in Team Management
                     </SelectItem>
-                  ))}
+                  ) : (
+                    teams
+                      .filter(team => !formData.department_id || team.department?.name === departments.find(d => d.id === formData.department_id)?.name)
+                      .map((team) => (
+                      <SelectItem key={team.id} value={team.id}>
+                        {team.name} - {team.category}
+                      </SelectItem>
+                    ))
+                  )}
                 </SelectContent>
               </Select>
             </div>

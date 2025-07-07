@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -179,10 +180,28 @@ const TeamManagement = () => {
   };
 
   const createTeam = async () => {
-    if (!formData.name.trim() || !formData.category || !formData.department_id) {
+    if (!formData.name.trim()) {
       toast({
         title: "Missing Information",
-        description: "Name, category, and department are required",
+        description: "Team name is required",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (!formData.category) {
+      toast({
+        title: "Missing Information",
+        description: "Team category is required",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (!formData.department_id) {
+      toast({
+        title: "Missing Information",
+        description: "Department is required",
         variant: "destructive"
       });
       return;
@@ -224,7 +243,7 @@ const TeamManagement = () => {
       
       toast({
         title: "Team Created",
-        description: "New team has been created successfully",
+        description: `Team "${formData.name}" has been created successfully`,
       });
     } catch (error) {
       console.error('Error creating team:', error);
@@ -462,13 +481,17 @@ const TeamManagement = () => {
     setIsCreating(false);
   };
 
+  if (isLoading && teams.length === 0) {
+    return <div className="flex justify-center items-center h-64">Loading teams...</div>;
+  }
+
   return (
     <div className="space-y-6">
       <Card>
         <CardHeader>
           <CardTitle>Team Management</CardTitle>
           <CardDescription>
-            Manage teams, assign team leaders, and organize team members
+            Create and manage teams, assign team leaders, and organize team members
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -614,61 +637,72 @@ const TeamManagement = () => {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {teams.map((team) => (
-                      <TableRow key={team.id}>
-                        <TableCell className="font-medium">{team.name}</TableCell>
-                        <TableCell>
-                          <Badge variant="outline">{team.category}</Badge>
-                        </TableCell>
-                        <TableCell>{team.department?.name}</TableCell>
-                        <TableCell>
-                          {team.team_leader ? (
-                            <div className="text-sm">
-                              <div>{team.team_leader.name}</div>
-                              <div className="text-gray-500">({team.team_leader.employee_id})</div>
-                            </div>
-                          ) : (
-                            <span className="text-gray-400">Not assigned</span>
-                          )}
-                        </TableCell>
-                        <TableCell>
-                          {team.supervisor ? (
-                            <div className="text-sm">
-                              <div>{team.supervisor.name}</div>
-                              <div className="text-gray-500">({team.supervisor.employee_id})</div>
-                            </div>
-                          ) : (
-                            <span className="text-gray-400">Not assigned</span>
-                          )}
-                        </TableCell>
-                        <TableCell>
-                          <Badge variant="secondary">
-                            <Users className="h-3 w-3 mr-1" />
-                            {team.member_count}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex space-x-2">
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => startEditing(team)}
-                              disabled={isLoading}
-                            >
-                              <Edit className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              variant="destructive"
-                              size="sm"
-                              onClick={() => deleteTeam(team.id)}
-                              disabled={isLoading}
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
+                    {teams.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={7} className="text-center py-8">
+                          <div className="text-gray-500">
+                            <p>No teams created yet</p>
+                            <p className="text-sm">Click "Create New Team" to get started</p>
                           </div>
                         </TableCell>
                       </TableRow>
-                    ))}
+                    ) : (
+                      teams.map((team) => (
+                        <TableRow key={team.id}>
+                          <TableCell className="font-medium">{team.name}</TableCell>
+                          <TableCell>
+                            <Badge variant="outline">{team.category}</Badge>
+                          </TableCell>
+                          <TableCell>{team.department?.name}</TableCell>
+                          <TableCell>
+                            {team.team_leader ? (
+                              <div className="text-sm">
+                                <div>{team.team_leader.name}</div>
+                                <div className="text-gray-500">({team.team_leader.employee_id})</div>
+                              </div>
+                            ) : (
+                              <span className="text-gray-400">Not assigned</span>
+                            )}
+                          </TableCell>
+                          <TableCell>
+                            {team.supervisor ? (
+                              <div className="text-sm">
+                                <div>{team.supervisor.name}</div>
+                                <div className="text-gray-500">({team.supervisor.employee_id})</div>
+                              </div>
+                            ) : (
+                              <span className="text-gray-400">Not assigned</span>
+                            )}
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant="secondary">
+                              <Users className="h-3 w-3 mr-1" />
+                              {team.member_count}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex space-x-2">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => startEditing(team)}
+                                disabled={isLoading}
+                              >
+                                <Edit className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                variant="destructive"
+                                size="sm"
+                                onClick={() => deleteTeam(team.id)}
+                                disabled={isLoading}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    )}
                   </TableBody>
                 </Table>
               </div>
