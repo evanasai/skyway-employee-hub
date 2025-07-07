@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { LogOut } from 'lucide-react';
@@ -5,6 +6,8 @@ import { useAuth } from '@/contexts/AuthContext';
 import { SidebarProvider, SidebarInset, SidebarTrigger } from '@/components/ui/sidebar';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { supabase } from '@/integrations/supabase/client';
+import { useAttendance } from '@/hooks/useAttendance';
+import { useMonthlyStats } from '@/hooks/useMonthlyStats';
 import EmployeeSidebar from './EmployeeSidebar';
 import DashboardContent from './DashboardContent';
 import TasksList from './TasksList';
@@ -36,6 +39,20 @@ const Dashboard = () => {
   const [currentView, setCurrentView] = useState('dashboard');
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(false);
+  const [teamInfo, setTeamInfo] = useState<any>(null);
+
+  // Use attendance hook for check-in/out functionality
+  const {
+    isCheckedIn,
+    currentAttendance,
+    currentZone,
+    assignedZones,
+    handleCheckIn,
+    handleCheckOut
+  } = useAttendance(user);
+
+  // Use monthly stats hook
+  const { monthlyStats } = useMonthlyStats(user);
 
   const employeeTypes = [
     { value: 'all', label: 'All Employees' },
@@ -47,8 +64,46 @@ const Dashboard = () => {
   useEffect(() => {
     if (user) {
       fetchTasks();
+      fetchTeamInfo();
     }
   }, [user]);
+
+  const fetchTeamInfo = async () => {
+    if (!user) return;
+    
+    try {
+      const { data: employee } = await supabase
+        .from('employees')
+        .select('*')
+        .eq('employee_id', user.employeeId)
+        .single();
+
+      if (employee) {
+        // Check if employee is part of any team
+        const { data: teamMember } = await supabase
+          .from('team_members')
+          .select(`
+            *,
+            teams (
+              id,
+              name,
+              category,
+              departments (
+                name
+              )
+            )
+          `)
+          .eq('employee_id', employee.id)
+          .single();
+
+        if (teamMember) {
+          setTeamInfo(teamMember.teams);
+        }
+      }
+    } catch (error) {
+      console.log('No team assignment found for employee');
+    }
+  };
 
   const fetchTasks = async () => {
     if (!user) return;
@@ -104,98 +159,36 @@ const Dashboard = () => {
     setCurrentView('dashboard');
   };
 
-  const renderDashboardOverview = () => (
-    <div className="space-y-6">
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Tasks Today</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{tasks.length}</div>
-            <p className="text-xs text-muted-foreground">{tasks.filter(t => t.status === 'active').length} active</p>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Hours Worked</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">7.5</div>
-            <p className="text-xs text-muted-foreground">Today</p>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Performance</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">95%</div>
-            <p className="text-xs text-muted-foreground">This month</p>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Leave Balance</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">12</div>
-            <p className="text-xs text-muted-foreground">Days remaining</p>
-          </CardContent>
-        </Card>
-      </div>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Quick Actions</CardTitle>
-          <CardDescription>Common employee tasks</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-            <Button 
-              onClick={() => setCurrentView('tasks')}
-              className="h-20 flex flex-col items-center justify-center"
-            >
-              <span className="text-lg mb-1">📋</span>
-              <span>My Tasks</span>
-            </Button>
-            <Button 
-              onClick={() => setCurrentView('profile')}
-              variant="outline"
-              className="h-20 flex flex-col items-center justify-center"
-            >
-              <span className="text-lg mb-1">👤</span>
-              <span>Profile</span>
-            </Button>
-            <Button 
-              onClick={() => setCurrentView('payslips')}
-              variant="outline"
-              className="h-20 flex flex-col items-center justify-center"
-            >
-              <span className="text-lg mb-1">💰</span>
-              <span>Payslips</span>
-            </Button>
-            <Button 
-              onClick={() => setCurrentView('documents')}
-              variant="outline"
-              className="h-20 flex flex-col items-center justify-center"
-            >
-              <span className="text-lg mb-1">📄</span>
-              <span>Documents</span>
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
-    </div>
-  );
+  const handleNavigate = (view: string) => {
+    // Map the navigation views to match the component structure
+    const viewMapping: { [key: string]: string } = {
+      'task': 'task-submission',
+      'leave': 'leave-request',
+      'advance': 'advance-request',
+      'support': 'support',
+      'performance': 'monthly-performance',
+      'asset': 'asset-request'
+    };
+    
+    setCurrentView(viewMapping[view] || view);
+  };
 
   const renderCurrentView = () => {
     switch (currentView) {
       case 'dashboard':
-        return renderDashboardOverview();
+        return (
+          <DashboardContent
+            user={user!}
+            isCheckedIn={isCheckedIn}
+            currentAttendance={currentAttendance}
+            currentZone={currentZone}
+            assignedZones={assignedZones}
+            monthlyStats={monthlyStats}
+            onCheckIn={handleCheckIn}
+            onCheckOut={handleCheckOut}
+            onNavigate={handleNavigate}
+          />
+        );
       case 'tasks':
         return (
           <TasksList 
@@ -224,7 +217,19 @@ const Dashboard = () => {
       case 'asset-request':
         return <AssetRequestView onBack={handleBack} />;
       default:
-        return renderDashboardOverview();
+        return (
+          <DashboardContent
+            user={user!}
+            isCheckedIn={isCheckedIn}
+            currentAttendance={currentAttendance}
+            currentZone={currentZone}
+            assignedZones={assignedZones}
+            monthlyStats={monthlyStats}
+            onCheckIn={handleCheckIn}
+            onCheckOut={handleCheckOut}
+            onNavigate={handleNavigate}
+          />
+        );
     }
   };
 
@@ -264,9 +269,13 @@ const Dashboard = () => {
                       <h1 className="text-xl lg:text-2xl font-bold text-gray-900">
                         {getViewTitle()}
                       </h1>
-                      <p className="text-sm text-gray-600">
-                        Welcome back, {user?.name} ({user?.role})
-                      </p>
+                      <div className="flex flex-col text-sm text-gray-600">
+                        <span>Welcome back, {user?.name} ({user?.role})</span>
+                        <span>Department: {user?.department}</span>
+                        {teamInfo && (
+                          <span>Team: {teamInfo.name} ({teamInfo.category})</span>
+                        )}
+                      </div>
                     </div>
                   </div>
                 </div>

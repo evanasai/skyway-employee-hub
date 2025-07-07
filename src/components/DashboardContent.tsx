@@ -32,38 +32,36 @@ const DashboardContent: React.FC<DashboardContentProps> = ({
   onNavigate
 }) => {
   return (
-    <div className="flex-1 p-4 bg-gradient-to-br from-blue-50 to-indigo-100">
-      <div className="max-w-4xl mx-auto space-y-6">
-        {/* Header */}
-        <EmployeeDashboardHeader 
-          user={user} 
-          isCheckedIn={isCheckedIn} 
-          currentAttendance={currentAttendance}
-          currentZone={currentZone}
-        />
+    <div className="space-y-6">
+      {/* Header with Welcome, Time, and Status */}
+      <EmployeeDashboardHeader 
+        user={user} 
+        isCheckedIn={isCheckedIn} 
+        currentAttendance={currentAttendance}
+        currentZone={currentZone}
+      />
 
-        {/* Check-in/Check-out Button */}
-        <CheckInButton
-          isCheckedIn={isCheckedIn}
-          onCheckIn={onCheckIn}
-          onCheckOut={onCheckOut}
-        />
+      {/* Check-in/Check-out Button */}
+      <CheckInButton
+        isCheckedIn={isCheckedIn}
+        onCheckIn={onCheckIn}
+        onCheckOut={onCheckOut}
+      />
 
-        {/* Assigned Zones */}
-        <AssignedZones zones={assignedZones} />
+      {/* Assigned Zones */}
+      <AssignedZones zones={assignedZones} />
 
-        {/* Monthly Stats */}
-        <MonthlyStatsCard 
-          monthlyStats={monthlyStats} 
-          isCheckedIn={isCheckedIn} 
-        />
+      {/* Monthly Stats */}
+      <MonthlyStatsCard 
+        monthlyStats={monthlyStats} 
+        isCheckedIn={isCheckedIn} 
+      />
 
-        {/* Quick Actions */}
-        <QuickActions onNavigate={onNavigate} />
+      {/* Quick Actions */}
+      <QuickActions onNavigate={onNavigate} />
 
-        {/* Contact Information */}
-        <ContactCard />
-      </div>
+      {/* Contact Information */}
+      <ContactCard />
     </div>
   );
 };
