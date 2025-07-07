@@ -34,12 +34,56 @@ interface KYCDetails {
   created_at: string;
 }
 
+interface PersonalDetails {
+  full_name: string;
+  father_name: string;
+  mother_name: string;
+  date_of_birth: string;
+  gender: string;
+  marital_status: string;
+  nationality: string;
+  religion: string;
+  blood_group: string;
+  emergency_contact_name: string;
+  emergency_contact_phone: string;
+  emergency_contact_relation: string;
+  permanent_address: string;
+  current_address: string;
+  aadhar_number: string;
+  pan_number: string;
+  passport_number: string;
+  driving_license: string;
+  bank_account_number: string;
+  ifsc_code: string;
+  bank_name: string;
+}
+
+interface BiometricData {
+  fingerprint_data: string;
+  face_recognition_data: string;
+  iris_scan_data: string;
+  voice_print_data: string;
+}
+
+interface DocumentUrls {
+  photo: string;
+  aadhar_front: string;
+  aadhar_back: string;
+  pan_card: string;
+  passport: string;
+  driving_license: string;
+  bank_passbook: string;
+  educational_certificates: string;
+  experience_certificates: string;
+}
+
 const KYCManagement = () => {
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [selectedEmployee, setSelectedEmployee] = useState<string>('');
   const [kycDetails, setKycDetails] = useState<KYCDetails | null>(null);
   const [isEditing, setIsEditing] = useState(false);
-  const [personalDetails, setPersonalDetails] = useState({
+  
+  const defaultPersonalDetails: PersonalDetails = {
     full_name: '',
     father_name: '',
     mother_name: '',
@@ -61,16 +105,16 @@ const KYCManagement = () => {
     bank_account_number: '',
     ifsc_code: '',
     bank_name: ''
-  });
-  
-  const [biometricData, setBiometricData] = useState({
+  };
+
+  const defaultBiometricData: BiometricData = {
     fingerprint_data: '',
     face_recognition_data: '',
     iris_scan_data: '',
     voice_print_data: ''
-  });
+  };
 
-  const [documentUrls, setDocumentUrls] = useState({
+  const defaultDocumentUrls: DocumentUrls = {
     photo: '',
     aadhar_front: '',
     aadhar_back: '',
@@ -80,7 +124,11 @@ const KYCManagement = () => {
     bank_passbook: '',
     educational_certificates: '',
     experience_certificates: ''
-  });
+  };
+
+  const [personalDetails, setPersonalDetails] = useState<PersonalDetails>(defaultPersonalDetails);
+  const [biometricData, setBiometricData] = useState<BiometricData>(defaultBiometricData);
+  const [documentUrls, setDocumentUrls] = useState<DocumentUrls>(defaultDocumentUrls);
 
   useEffect(() => {
     fetchEmployees();
@@ -107,6 +155,13 @@ const KYCManagement = () => {
     }
   };
 
+  const safeJsonToObject = <T,>(jsonData: any, defaultValue: T): T => {
+    if (!jsonData || typeof jsonData !== 'object') {
+      return defaultValue;
+    }
+    return { ...defaultValue, ...jsonData } as T;
+  };
+
   const fetchKYCDetails = async () => {
     try {
       const { data, error } = await supabase
@@ -121,51 +176,14 @@ const KYCManagement = () => {
 
       if (data) {
         setKycDetails(data);
-        setPersonalDetails(data.personal_details || {});
-        setBiometricData(data.biometric_data || {});
-        setDocumentUrls(data.document_urls || {});
+        setPersonalDetails(safeJsonToObject(data.personal_details, defaultPersonalDetails));
+        setBiometricData(safeJsonToObject(data.biometric_data, defaultBiometricData));
+        setDocumentUrls(safeJsonToObject(data.document_urls, defaultDocumentUrls));
       } else {
         setKycDetails(null);
-        setPersonalDetails({
-          full_name: '',
-          father_name: '',
-          mother_name: '',
-          date_of_birth: '',
-          gender: '',
-          marital_status: '',
-          nationality: '',
-          religion: '',
-          blood_group: '',
-          emergency_contact_name: '',
-          emergency_contact_phone: '',
-          emergency_contact_relation: '',
-          permanent_address: '',
-          current_address: '',
-          aadhar_number: '',
-          pan_number: '',
-          passport_number: '',
-          driving_license: '',
-          bank_account_number: '',
-          ifsc_code: '',
-          bank_name: ''
-        });
-        setBiometricData({
-          fingerprint_data: '',
-          face_recognition_data: '',
-          iris_scan_data: '',
-          voice_print_data: ''
-        });
-        setDocumentUrls({
-          photo: '',
-          aadhar_front: '',
-          aadhar_back: '',
-          pan_card: '',
-          passport: '',
-          driving_license: '',
-          bank_passbook: '',
-          educational_certificates: '',
-          experience_certificates: ''
-        });
+        setPersonalDetails(defaultPersonalDetails);
+        setBiometricData(defaultBiometricData);
+        setDocumentUrls(defaultDocumentUrls);
       }
     } catch (error) {
       console.error('Error fetching KYC details:', error);
