@@ -6,15 +6,9 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { Trash2, Edit, Plus, Save, X, MapPin, Users, UserCheck, FileText } from 'lucide-react';
-import { Zone, ZoneFromDB, parseCoordinates } from '@/types/zone';
-import EmployeeZoneAssignment from './EmployeeZoneAssignment';
-import TeamManagement from './TeamManagement';
-import KYCManagement from './KYCManagement';
-import SupervisorAssignmentManagement from './SupervisorAssignmentManagement';
+import { Trash2, Edit, Plus, Save, X } from 'lucide-react';
 
 interface Employee {
   id: string;
@@ -27,16 +21,13 @@ interface Employee {
   role_level: number;
   assigned_supervisor?: string;
   kyc_status: string;
-  employee_type: string;
-  assigned_zones: string[];
   is_active: boolean;
   salary?: number;
+  joining_date?: string;
 }
 
 const EnhancedEmployeeManagement = () => {
-  const [currentView, setCurrentView] = useState('employees');
   const [employees, setEmployees] = useState<Employee[]>([]);
-  const [zones, setZones] = useState<Zone[]>([]);
   const [isCreating, setIsCreating] = useState(false);
   const [editingEmployee, setEditingEmployee] = useState<Employee | null>(null);
   const [formData, setFormData] = useState({
@@ -45,28 +36,31 @@ const EnhancedEmployeeManagement = () => {
     email: '',
     phone: '',
     role: 'employee',
-    department: '',
-    employee_type: 'field_worker',
-    assigned_zones: [] as string[],
+    department: 'field_operations',
     password: '',
     salary: ''
   });
 
-  const employeeTypes = [
-    { value: 'field_worker', label: 'Field Worker' },
-    { value: 'supervisor', label: 'Supervisor' },
-    { value: 'manager', label: 'Manager' },
-    { value: 'technician', label: 'Technician' },
+  const departments = [
+    { value: 'field_operations', label: 'Field Operations' },
+    { value: 'technical_support', label: 'Technical Support' },
+    { value: 'customer_service', label: 'Customer Service' },
+    { value: 'maintenance', label: 'Maintenance' },
     { value: 'security', label: 'Security' },
-    { value: 'maintenance', label: 'Maintenance' }
+    { value: 'management', label: 'Management' }
+  ];
+
+  const roles = [
+    { value: 'employee', label: 'Employee', level: 1 },
+    { value: 'supervisor', label: 'Supervisor', level: 2 },
+    { value: 'sub_admin', label: 'Sub Admin', level: 3 },
+    { value: 'admin', label: 'Admin', level: 4 },
+    { value: 'super_admin', label: 'Super Admin', level: 5 }
   ];
 
   useEffect(() => {
-    if (currentView === 'employees') {
-      fetchEmployees();
-      fetchZones();
-    }
-  }, [currentView]);
+    fetchEmployees();
+  }, []);
 
   const fetchEmployees = async () => {
     try {
@@ -76,15 +70,7 @@ const EnhancedEmployeeManagement = () => {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      
-      // Transform data to include employee_type and assigned_zones
-      const transformedData = (data || []).map(emp => ({
-        ...emp,
-        employee_type: emp.department || 'field_worker',
-        assigned_zones: []
-      }));
-      
-      setEmployees(transformedData);
+      setEmployees(data || []);
     } catch (error) {
       console.error('Error fetching employees:', error);
       toast({
@@ -92,28 +78,6 @@ const EnhancedEmployeeManagement = () => {
         description: "Failed to fetch employees",
         variant: "destructive"
       });
-    }
-  };
-
-  const fetchZones = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('zones')
-        .select('*')
-        .eq('is_active', true)
-        .order('name');
-
-      if (error) throw error;
-      
-      // Transform ZoneFromDB[] to Zone[] by parsing coordinates
-      const transformedZones: Zone[] = (data || []).map((zone: ZoneFromDB) => ({
-        ...zone,
-        coordinates: parseCoordinates(zone.coordinates)
-      }));
-      
-      setZones(transformedZones);
-    } catch (error) {
-      console.error('Error fetching zones:', error);
     }
   };
 
@@ -128,6 +92,8 @@ const EnhancedEmployeeManagement = () => {
     }
 
     try {
+      const selectedRole = roles.find(r => r.value === formData.role);
+      
       const { error } = await supabase
         .from('employees')
         .insert({
@@ -136,8 +102,8 @@ const EnhancedEmployeeManagement = () => {
           email: formData.email,
           phone: formData.phone,
           role: formData.role,
-          department: formData.employee_type,
-          role_level: getRoleLevel(formData.role),
+          department: formData.department,
+          role_level: selectedRole?.level || 1,
           password: formData.password ? parseInt(formData.password) : null,
           salary: formData.salary ? parseFloat(formData.salary) : null
         });
@@ -149,7 +115,7 @@ const EnhancedEmployeeManagement = () => {
       
       toast({
         title: "Employee Created",
-        description: `New ${formData.employee_type} has been added successfully`,
+        description: `New employee has been added successfully`,
       });
     } catch (error) {
       console.error('Error creating employee:', error);
@@ -165,13 +131,15 @@ const EnhancedEmployeeManagement = () => {
     if (!editingEmployee) return;
 
     try {
+      const selectedRole = roles.find(r => r.value === formData.role);
+      
       const updateData: any = {
         name: formData.name,
         email: formData.email,
         phone: formData.phone,
         role: formData.role,
-        department: formData.employee_type,
-        role_level: getRoleLevel(formData.role),
+        department: formData.department,
+        role_level: selectedRole?.level || 1,
         updated_at: new Date().toISOString()
       };
 
@@ -231,27 +199,16 @@ const EnhancedEmployeeManagement = () => {
     }
   };
 
-  const getRoleLevel = (role: string) => {
-    switch (role) {
-      case 'super_admin': return 5;
-      case 'admin': return 4;
-      case 'sub_admin': return 3;
-      case 'supervisor': return 2;
-      case 'employee': return 1;
-      default: return 1;
-    }
-  };
-
   const getKYCStatusBadge = (status: string) => {
     switch (status) {
-      case 'completed':
-        return <Badge className="bg-green-100 text-green-800">Completed</Badge>;
-      case 'in_progress':
-        return <Badge className="bg-yellow-100 text-yellow-800">In Progress</Badge>;
+      case 'verified':
+        return <Badge className="bg-green-100 text-green-800">Verified</Badge>;
+      case 'pending':
+        return <Badge className="bg-yellow-100 text-yellow-800">Pending</Badge>;
       case 'rejected':
         return <Badge className="bg-red-100 text-red-800">Rejected</Badge>;
       default:
-        return <Badge variant="outline">Pending</Badge>;
+        return <Badge variant="outline">Not Started</Badge>;
     }
   };
 
@@ -264,8 +221,6 @@ const EnhancedEmployeeManagement = () => {
       phone: employee.phone,
       role: employee.role,
       department: employee.department,
-      employee_type: employee.employee_type || employee.department,
-      assigned_zones: employee.assigned_zones || [],
       password: '',
       salary: employee.salary?.toString() || ''
     });
@@ -281,99 +236,19 @@ const EnhancedEmployeeManagement = () => {
       email: '',
       phone: '',
       role: 'employee',
-      department: '',
-      employee_type: 'field_worker',
-      assigned_zones: [],
+      department: 'field_operations',
       password: '',
       salary: ''
     });
   };
 
-  const renderNavigation = () => (
-    <div className="flex space-x-2 mb-6">
-      <Button
-        variant={currentView === 'employees' ? 'default' : 'outline'}
-        onClick={() => setCurrentView('employees')}
-      >
-        <Users className="h-4 w-4 mr-2" />
-        Employees
-      </Button>
-      <Button
-        variant={currentView === 'zones' ? 'default' : 'outline'}
-        onClick={() => setCurrentView('zones')}
-      >
-        <MapPin className="h-4 w-4 mr-2" />
-        Zone Assignment
-      </Button>
-      <Button
-        variant={currentView === 'teams' ? 'default' : 'outline'}
-        onClick={() => setCurrentView('teams')}
-      >
-        <Users className="h-4 w-4 mr-2" />
-        Team Management
-      </Button>
-      <Button
-        variant={currentView === 'supervisors' ? 'default' : 'outline'}
-        onClick={() => setCurrentView('supervisors')}
-      >
-        <UserCheck className="h-4 w-4 mr-2" />
-        Supervisor Assignment
-      </Button>
-      <Button
-        variant={currentView === 'kyc' ? 'default' : 'outline'}
-        onClick={() => setCurrentView('kyc')}
-      >
-        <FileText className="h-4 w-4 mr-2" />
-        KYC Management
-      </Button>
-    </div>
-  );
-
-  if (currentView === 'zones') {
-    return (
-      <div>
-        {renderNavigation()}
-        <EmployeeZoneAssignment onBack={() => setCurrentView('employees')} />
-      </div>
-    );
-  }
-
-  if (currentView === 'teams') {
-    return (
-      <div>
-        {renderNavigation()}
-        <TeamManagement />
-      </div>
-    );
-  }
-
-  if (currentView === 'supervisors') {
-    return (
-      <div>
-        {renderNavigation()}
-        <SupervisorAssignmentManagement />
-      </div>
-    );
-  }
-
-  if (currentView === 'kyc') {
-    return (
-      <div>
-        {renderNavigation()}
-        <KYCManagement />
-      </div>
-    );
-  }
-
   return (
     <div className="space-y-6">
-      {renderNavigation()}
-      
       <Card>
         <CardHeader>
           <CardTitle>Employee Management</CardTitle>
           <CardDescription>
-            Manage employee accounts, assign roles, and track KYC status
+            Manage employee accounts by department. Employees are assigned to departments and can be part of multiple teams within those departments.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
@@ -391,7 +266,7 @@ const EnhancedEmployeeManagement = () => {
                   />
                 </div>
                 <div>
-                  <Label htmlFor="name">Name</Label>
+                  <Label htmlFor="name">Full Name</Label>
                   <Input
                     id="name"
                     value={formData.name}
@@ -425,41 +300,41 @@ const EnhancedEmployeeManagement = () => {
                       <SelectValue placeholder="Select role" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="employee">Employee</SelectItem>
-                      <SelectItem value="supervisor">Supervisor</SelectItem>
-                      <SelectItem value="sub_admin">Sub Admin</SelectItem>
-                      <SelectItem value="admin">Admin</SelectItem>
-                      <SelectItem value="super_admin">Super Admin</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <Label htmlFor="employee_type">Employee Type</Label>
-                  <Select value={formData.employee_type} onValueChange={(value) => setFormData({...formData, employee_type: value})}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select employee type" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {employeeTypes.map((type) => (
-                        <SelectItem key={type.value} value={type.value}>
-                          {type.label}
+                      {roles.map((role) => (
+                        <SelectItem key={role.value} value={role.value}>
+                          {role.label} (Level {role.level})
                         </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
                 </div>
                 <div>
-                  <Label htmlFor="password">Password</Label>
+                  <Label htmlFor="department">Department</Label>
+                  <Select value={formData.department} onValueChange={(value) => setFormData({...formData, department: value})}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select department" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {departments.map((dept) => (
+                        <SelectItem key={dept.value} value={dept.value}>
+                          {dept.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label htmlFor="password">Login PIN</Label>
                   <Input
                     id="password"
                     type="password"
                     value={formData.password}
                     onChange={(e) => setFormData({...formData, password: e.target.value})}
-                    placeholder="Enter numeric password"
+                    placeholder="Enter 4-digit PIN"
                   />
                 </div>
                 <div>
-                  <Label htmlFor="salary">Salary</Label>
+                  <Label htmlFor="salary">Monthly Salary</Label>
                   <Input
                     id="salary"
                     type="number"
@@ -491,7 +366,7 @@ const EnhancedEmployeeManagement = () => {
           )}
 
           <div className="space-y-4">
-            <h3 className="text-lg font-semibold">Employees ({employees.length})</h3>
+            <h3 className="text-lg font-semibold">All Employees ({employees.length})</h3>
             {employees.length === 0 ? (
               <p className="text-gray-500">No employees found</p>
             ) : (
@@ -502,7 +377,7 @@ const EnhancedEmployeeManagement = () => {
                       <div>
                         <h4 className="font-medium">{employee.name}</h4>
                         <p className="text-sm text-gray-600">
-                          ID: {employee.employee_id} • {employee.role} • Level {employee.role_level}
+                          ID: {employee.employee_id} • {employee.role} • {employee.department}
                         </p>
                         <p className="text-sm text-gray-600">
                           {employee.email} • {employee.phone}
@@ -518,14 +393,9 @@ const EnhancedEmployeeManagement = () => {
                           )}
                         </div>
                         <div className="flex items-center space-x-2 mt-1">
-                          <span className="text-sm text-gray-600">KYC:</span>
+                          <span className="text-sm text-gray-600">Verification:</span>
                           {getKYCStatusBadge(employee.kyc_status)}
                         </div>
-                        {employee.assigned_zones && employee.assigned_zones.length > 0 && (
-                          <p className="text-sm text-blue-600">
-                            Zones: {employee.assigned_zones.length} assigned
-                          </p>
-                        )}
                       </div>
                       <div className="flex space-x-2">
                         <Button

@@ -17,7 +17,8 @@ import {
   Calendar,
   UsersRound,
   UserCog,
-  Shield
+  Shield,
+  Building
 } from 'lucide-react';
 
 interface AdminSidebarProps {
@@ -29,14 +30,13 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({ currentView, onNavigate }) 
   const menuItems = [
     { id: 'dashboard', label: 'Dashboard', icon: BarChart3 },
     { id: 'employees', label: 'Employee Management', icon: Users },
-    { id: 'enhanced-employees', label: 'Enhanced Employees', icon: UserCheck },
-    { id: 'tasks', label: 'Task Management', icon: ClipboardList },
-    { id: 'enhanced-tasks', label: 'Enhanced Tasks', icon: Calendar },
     { id: 'zones', label: 'Zone Management', icon: MapPin },
     { id: 'team-management', label: 'Team Management', icon: UsersRound },
     { id: 'supervisor-assignment', label: 'Supervisor Assignment', icon: UserCog },
-    { id: 'kyc-management', label: 'KYC Management', icon: Shield },
-    { id: 'inventory', label: 'Inventory Management', icon: Package },
+    { id: 'kyc-management', label: 'Employee Verification', icon: Shield },
+    { id: 'tasks', label: 'Task Management', icon: ClipboardList },
+    { id: 'enhanced-tasks', label: 'Department Tasks', icon: Calendar },
+    { id: 'inventory', label: 'Asset Management', icon: Package },
     { id: 'payroll', label: 'Payroll Management', icon: DollarSign },
     { id: 'reports', label: 'Reports & Analytics', icon: FileText },
     { id: 'settings', label: 'Settings', icon: Settings },
