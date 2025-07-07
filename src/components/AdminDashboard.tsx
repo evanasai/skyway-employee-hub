@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { LogOut } from 'lucide-react';
@@ -97,15 +98,20 @@ const AdminDashboard = () => {
           <div className="flex flex-col h-full w-full">
             <div className="bg-white border-b border-gray-200 px-4 lg:px-6 py-4 w-full">
               <div className="flex items-center justify-between w-full max-w-full">
-                <div className="flex items-center space-x-2">
+                <div className="flex items-center space-x-4">
                   <SidebarTrigger className="-ml-1" />
-                  <div>
-                    <h1 className="text-xl lg:text-2xl font-bold text-gray-900">
-                      {getViewTitle()}
-                    </h1>
-                    <p className="text-sm text-gray-600">
-                      Welcome back, {user?.name} ({user?.role})
-                    </p>
+                  <div className="flex items-center space-x-3">
+                    <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
+                      <span className="text-white font-bold text-sm">SW</span>
+                    </div>
+                    <div>
+                      <h1 className="text-xl lg:text-2xl font-bold text-gray-900">
+                        {getViewTitle()}
+                      </h1>
+                      <p className="text-sm text-gray-600">
+                        Welcome back, {user?.name} ({user?.role})
+                      </p>
+                    </div>
                   </div>
                 </div>
                 <div className="flex items-center space-x-2 lg:space-x-4">

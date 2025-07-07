@@ -38,7 +38,7 @@ const KYCManagementView = () => {
         .from('kyc_details')
         .select(`
           *,
-          employee:employees!inner(name, employee_id, email)
+          employee:employees!kyc_details_employee_id_fkey(name, employee_id, email)
         `)
         .order('created_at', { ascending: false });
 
