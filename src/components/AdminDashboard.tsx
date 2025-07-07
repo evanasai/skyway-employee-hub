@@ -23,7 +23,7 @@ const AdminDashboard = () => {
 
   const renderDashboardOverview = () => (
     <div className="space-y-6">
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Employees</CardTitle>
@@ -71,7 +71,7 @@ const AdminDashboard = () => {
           <CardDescription>Common administrative tasks</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
             <Button 
               onClick={() => setCurrentView('enhanced-employees')}
               className="h-20 flex flex-col items-center justify-center"
@@ -94,6 +94,14 @@ const AdminDashboard = () => {
             >
               <span className="text-lg mb-1">💰</span>
               <span>Process Payroll</span>
+            </Button>
+            <Button 
+              onClick={() => setCurrentView('zones')}
+              variant="outline"
+              className="h-20 flex flex-col items-center justify-center"
+            >
+              <span className="text-lg mb-1">🗺️</span>
+              <span>Zone Management</span>
             </Button>
           </div>
         </CardContent>
@@ -118,6 +126,10 @@ const AdminDashboard = () => {
               <span>Last Backup</span>
               <span className="text-gray-600">2 hours ago</span>
             </div>
+            <div className="flex items-center justify-between">
+              <span>Active Users</span>
+              <span className="text-blue-600 font-medium">{user?.name} ({user?.role})</span>
+            </div>
           </div>
         </CardContent>
       </Card>
@@ -126,17 +138,17 @@ const AdminDashboard = () => {
 
   return (
     <SidebarProvider>
-      <div className="flex h-screen bg-gray-50">
+      <div className="flex min-h-screen w-full bg-gray-50">
         <AdminSidebar currentView={currentView} onNavigate={setCurrentView} />
         
-        <SidebarInset className="flex-1">
-          <div className="flex flex-col h-full">
-            <div className="bg-white border-b border-gray-200 px-6 py-4">
-              <div className="flex items-center justify-between">
+        <SidebarInset className="flex-1 w-full">
+          <div className="flex flex-col h-full w-full">
+            <div className="bg-white border-b border-gray-200 px-4 lg:px-6 py-4 w-full">
+              <div className="flex items-center justify-between w-full max-w-full">
                 <div className="flex items-center space-x-2">
                   <SidebarTrigger className="-ml-1" />
                   <div>
-                    <h1 className="text-2xl font-bold text-gray-900">
+                    <h1 className="text-xl lg:text-2xl font-bold text-gray-900">
                       {currentView === 'dashboard' && 'Dashboard Overview'}
                       {currentView === 'employees' && 'Employee Management'}
                       {currentView === 'enhanced-employees' && 'Enhanced Employee Management'}
@@ -153,7 +165,7 @@ const AdminDashboard = () => {
                     </p>
                   </div>
                 </div>
-                <div className="flex items-center space-x-4">
+                <div className="flex items-center space-x-2 lg:space-x-4">
                   <TestCredentialsButton />
                   <Button
                     onClick={logout}
@@ -161,14 +173,14 @@ const AdminDashboard = () => {
                     className="flex items-center space-x-2"
                   >
                     <LogOut className="h-4 w-4" />
-                    <span>Logout</span>
+                    <span className="hidden sm:inline">Logout</span>
                   </Button>
                 </div>
               </div>
             </div>
 
-            <div className="flex-1 overflow-x-hidden overflow-y-auto bg-gray-50">
-              <div className="container mx-auto px-6 py-8">
+            <div className="flex-1 overflow-x-hidden overflow-y-auto bg-gray-50 w-full">
+              <div className="w-full max-w-full px-4 lg:px-6 py-6 lg:py-8">
                 {currentView === 'dashboard' && renderDashboardOverview()}
                 {currentView === 'employees' && <EmployeeManagement />}
                 {currentView === 'enhanced-employees' && <EnhancedEmployeeManagement />}

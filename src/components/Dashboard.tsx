@@ -1,87 +1,159 @@
 
 import React, { useState } from 'react';
-import { useAuth } from '@/contexts/AuthContext';
-import { toast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
-import { SidebarProvider, SidebarInset, SidebarTrigger } from '@/components/ui/sidebar';
 import { LogOut } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
+import { SidebarProvider, SidebarInset, SidebarTrigger } from '@/components/ui/sidebar';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import EmployeeSidebar from './EmployeeSidebar';
-import AdminDashboard from './AdminDashboard';
-import DashboardViews from './DashboardViews';
 import DashboardContent from './DashboardContent';
-import { useAttendance } from '@/hooks/useAttendance';
-import { useMonthlyStats } from '@/hooks/useMonthlyStats';
-import { useIsMobile } from '@/hooks/use-mobile';
+import TasksList from './TasksList';
+import EmployeeProfile from './EmployeeProfile';
+import PayslipsView from './PayslipsView';
+import MyDocuments from './MyDocuments';
+import SupportView from './SupportView';
 
 const Dashboard = () => {
-  const { user, logout } = useAuth();
-  const [currentView, setCurrentView] = useState<string>('dashboard');
-  const isMobile = useIsMobile();
-  
-  // Custom hooks for data management
-  const { isCheckedIn, currentAttendance, currentZone, assignedZones, handleCheckIn, handleCheckOut } = useAttendance(user);
-  const { monthlyStats } = useMonthlyStats(user);
+  const { logout, user } = useAuth();
+  const [currentView, setCurrentView] = useState('dashboard');
 
-  const handleNavigate = (view: string) => {
-    if (view === 'task' && !isCheckedIn) {
-      toast({
-        title: "Check-in Required",
-        description: "Please check in first to submit tasks",
-        variant: "destructive"
-      });
-      return;
-    }
-    setCurrentView(view);
-  };
+  const renderDashboardOverview = () => (
+    <div className="space-y-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Tasks Today</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">5</div>
+            <p className="text-xs text-muted-foreground">3 completed</p>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Hours Worked</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">7.5</div>
+            <p className="text-xs text-muted-foreground">Today</p>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Performance</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">95%</div>
+            <p className="text-xs text-muted-foreground">This month</p>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Leave Balance</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">12</div>
+            <p className="text-xs text-muted-foreground">Days remaining</p>
+          </CardContent>
+        </Card>
+      </div>
 
-  const handleBackToDashboard = () => {
-    setCurrentView('dashboard');
-  };
+      <Card>
+        <CardHeader>
+          <CardTitle>Quick Actions</CardTitle>
+          <CardDescription>Common employee tasks</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+            <Button 
+              onClick={() => setCurrentView('tasks')}
+              className="h-20 flex flex-col items-center justify-center"
+            >
+              <span className="text-lg mb-1">📋</span>
+              <span>My Tasks</span>
+            </Button>
+            <Button 
+              onClick={() => setCurrentView('profile')}
+              variant="outline"
+              className="h-20 flex flex-col items-center justify-center"
+            >
+              <span className="text-lg mb-1">👤</span>
+              <span>Profile</span>
+            </Button>
+            <Button 
+              onClick={() => setCurrentView('payslips')}
+              variant="outline"
+              className="h-20 flex flex-col items-center justify-center"
+            >
+              <span className="text-lg mb-1">💰</span>
+              <span>Payslips</span>
+            </Button>
+            <Button 
+              onClick={() => setCurrentView('documents')}
+              variant="outline"
+              className="h-20 flex flex-col items-center justify-center"
+            >
+              <span className="text-lg mb-1">📄</span>
+              <span>Documents</span>
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
 
-  // Show admin dashboard for admin/super_admin roles
-  if (user?.role === 'admin' || user?.role === 'super_admin') {
-    return <AdminDashboard />;
-  }
-
-  // Show different views based on currentView
-  if (currentView !== 'dashboard') {
-    return <DashboardViews currentView={currentView} onBack={handleBackToDashboard} />;
-  }
-
-  // Main dashboard view
   return (
     <SidebarProvider>
-      <div className="flex min-h-screen w-full">
-        <EmployeeSidebar currentView={currentView} onNavigate={handleNavigate} />
+      <div className="flex min-h-screen w-full bg-gray-50">
+        <EmployeeSidebar currentView={currentView} onNavigate={setCurrentView} />
         
-        <SidebarInset className="flex-1">
-          <header className="flex h-16 shrink-0 items-center justify-between gap-2 border-b px-4">
-            <div className="flex items-center space-x-2">
-              <SidebarTrigger className="-ml-1" />
-              <span className="font-semibold">Employee Dashboard</span>
+        <SidebarInset className="flex-1 w-full">
+          <div className="flex flex-col h-full w-full">
+            <div className="bg-white border-b border-gray-200 px-4 lg:px-6 py-4 w-full">
+              <div className="flex items-center justify-between w-full max-w-full">
+                <div className="flex items-center space-x-2">
+                  <SidebarTrigger className="-ml-1" />
+                  <div>
+                    <h1 className="text-xl lg:text-2xl font-bold text-gray-900">
+                      {currentView === 'dashboard' && 'Employee Dashboard'}
+                      {currentView === 'tasks' && 'My Tasks'}
+                      {currentView === 'profile' && 'My Profile'}
+                      {currentView === 'payslips' && 'Payslips'}
+                      {currentView === 'documents' && 'My Documents'}
+                      {currentView === 'support' && 'Support'}
+                    </h1>
+                    <p className="text-sm text-gray-600">
+                      Welcome back, {user?.name} ({user?.role})
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center space-x-2 lg:space-x-4">
+                  <Button
+                    onClick={logout}
+                    variant="outline"
+                    className="flex items-center space-x-2"
+                  >
+                    <LogOut className="h-4 w-4" />
+                    <span className="hidden sm:inline">Logout</span>
+                  </Button>
+                </div>
+              </div>
             </div>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={logout}
-              className="flex items-center space-x-2"
-            >
-              <LogOut className="h-4 w-4" />
-              <span>Logout</span>
-            </Button>
-          </header>
-          
-          <DashboardContent
-            user={user!}
-            isCheckedIn={isCheckedIn}
-            currentAttendance={currentAttendance}
-            currentZone={currentZone}
-            assignedZones={assignedZones}
-            monthlyStats={monthlyStats}
-            onCheckIn={handleCheckIn}
-            onCheckOut={handleCheckOut}
-            onNavigate={handleNavigate}
-          />
+
+            <div className="flex-1 overflow-x-hidden overflow-y-auto bg-gray-50 w-full">
+              <div className="w-full max-w-full px-4 lg:px-6 py-6 lg:py-8">
+                {currentView === 'dashboard' && renderDashboardOverview()}
+                {currentView === 'tasks' && <TasksList />}
+                {currentView === 'profile' && <EmployeeProfile />}
+                {currentView === 'payslips' && <PayslipsView />}
+                {currentView === 'documents' && <MyDocuments />}
+                {currentView === 'support' && <SupportView />}
+              </div>
+            </div>
+          </div>
         </SidebarInset>
       </div>
     </SidebarProvider>

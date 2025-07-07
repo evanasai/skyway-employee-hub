@@ -8,6 +8,7 @@ interface AuthContextType {
   login: (employeeId: string, password: string) => Promise<boolean>;
   logout: () => void;
   isLoading: boolean;
+  refreshUser: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -40,6 +41,42 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setIsLoading(false);
   }, []);
 
+  const refreshUser = async () => {
+    if (!user) return;
+    
+    try {
+      const { data: employee, error } = await supabase
+        .from('employees')
+        .select('*')
+        .eq('employee_id', user.employeeId)
+        .single();
+
+      if (error || !employee) {
+        console.error('Error refreshing user data:', error);
+        return;
+      }
+
+      const updatedUser: User = {
+        id: employee.id,
+        employeeId: employee.employee_id,
+        name: employee.name,
+        email: employee.email,
+        role: employee.role as 'employee' | 'supervisor' | 'admin' | 'super_admin',
+        department: employee.department,
+        phone: employee.phone,
+        isActive: employee.is_active,
+        checkInStatus: user.checkInStatus || 'out',
+        lastLogin: user.lastLogin || new Date()
+      };
+
+      setUser(updatedUser);
+      localStorage.setItem('skyway_user', JSON.stringify(updatedUser));
+      console.log('User data refreshed:', updatedUser);
+    } catch (error) {
+      console.error('Error refreshing user:', error);
+    }
+  };
+
   const login = async (employeeId: string, password: string): Promise<boolean> => {
     setIsLoading(true);
     console.log('Attempting login for:', employeeId);
@@ -60,7 +97,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return false;
       }
 
-      // Check password - now using the numeric password field from the database
+      // Check if employee is active
+      if (!employee.is_active) {
+        console.log('Employee account is inactive');
+        setIsLoading(false);
+        return false;
+      }
+
+      // Check password - using the numeric password field from the database
       if (employee.password && parseInt(password) === employee.password) {
         const userWithLogin: User = {
           id: employee.id,
@@ -99,7 +143,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   return (
-    <AuthContext.Provider value={{ user, login, logout, isLoading }}>
+    <AuthContext.Provider value={{ user, login, logout, isLoading, refreshUser }}>
       {children}
     </AuthContext.Provider>
   );
