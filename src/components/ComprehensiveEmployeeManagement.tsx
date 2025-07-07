@@ -9,6 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
 import { Plus, Download, Upload, FileText, Save, X, Users, UserCheck } from 'lucide-react';
 import * as XLSX from 'xlsx';
 
@@ -111,13 +112,26 @@ const ComprehensiveEmployeeManagement = () => {
     { value: 'management', label: 'Management' }
   ];
 
-  const roles = [
-    { value: 'employee', label: 'Employee', level: 1 },
-    { value: 'supervisor', label: 'Supervisor', level: 2 },
-    { value: 'sub_admin', label: 'Sub Admin', level: 3 },
-    { value: 'admin', label: 'Admin', level: 4 },
-    { value: 'super_admin', label: 'Super Admin', level: 5 }
-  ];
+  // Get user role from auth context to determine available roles
+  const { user } = useAuth();
+  
+  const getRolesForUser = () => {
+    if (user?.role === 'super_admin') {
+      return [
+        { value: 'employee', label: 'Employee', level: 1 },
+        { value: 'supervisor', label: 'Supervisor', level: 2 },
+        { value: 'admin', label: 'Admin', level: 3 },
+        { value: 'super_admin', label: 'Super Admin', level: 4 }
+      ];
+    } else if (user?.role === 'admin') {
+      return [
+        { value: 'employee', label: 'Employee', level: 1 }
+      ];
+    }
+    return [];
+  };
+
+  const roles = getRolesForUser();
 
   useEffect(() => {
     fetchEmployees();

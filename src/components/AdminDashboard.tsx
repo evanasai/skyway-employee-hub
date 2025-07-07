@@ -18,6 +18,7 @@ import ReportsAnalyticsView from './ReportsAnalyticsView';
 import SettingsView from './SettingsView';
 import EnhancedTeamManagement from './EnhancedTeamManagement';
 import SupervisorAllocationManagement from './SupervisorAssignmentManagement';
+import SuperAdminDataManagement from './SuperAdminDataManagement';
 
 const AdminDashboard = () => {
   const { logout, user } = useAuth();
@@ -47,6 +48,8 @@ const AdminDashboard = () => {
         return <PayrollManagement />;
       case 'reports':
         return <ReportsAnalyticsView />;
+      case 'data-management':
+        return <SuperAdminDataManagement />;
       case 'settings':
         return <SettingsView />;
       default:
@@ -80,6 +83,10 @@ const AdminDashboard = () => {
         return 'Payroll Management';
       case 'reports':
         return 'Reports & Analytics';
+      case 'data-management':
+        return 'Data Management';
+      case 'settings':
+        return 'Settings';
       case 'settings':
         return 'Settings';
       default:

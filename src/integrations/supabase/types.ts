@@ -1339,27 +1339,36 @@ export type Database = {
       }
       zones: {
         Row: {
+          center_lat: number | null
+          center_lng: number | null
           coordinates: Json
           created_at: string
           id: string
           is_active: boolean
           name: string
+          radius: number | null
           updated_at: string
         }
         Insert: {
+          center_lat?: number | null
+          center_lng?: number | null
           coordinates: Json
           created_at?: string
           id?: string
           is_active?: boolean
           name: string
+          radius?: number | null
           updated_at?: string
         }
         Update: {
+          center_lat?: number | null
+          center_lng?: number | null
           coordinates?: Json
           created_at?: string
           id?: string
           is_active?: boolean
           name?: string
+          radius?: number | null
           updated_at?: string
         }
         Relationships: []

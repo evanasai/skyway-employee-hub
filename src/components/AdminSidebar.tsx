@@ -97,6 +97,12 @@ const AdminSidebar = ({ currentView, onNavigate }: AdminSidebarProps) => {
       category: 'analytics'
     },
     { 
+      id: 'data-management', 
+      label: 'Data Management', 
+      icon: Settings,
+      category: 'system'
+    },
+    { 
       id: 'settings', 
       label: 'Settings', 
       icon: Settings,
