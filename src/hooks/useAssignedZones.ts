@@ -5,11 +5,17 @@ import { User } from '@/types';
 
 export const useAssignedZones = (user: User | null) => {
   const [assignedZones, setAssignedZones] = useState<any[]>([]);
+  const [currentZone, setCurrentZone] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   const fetchAssignedZones = async () => {
-    if (!user) return;
+    if (!user) {
+      setIsLoading(false);
+      return;
+    }
 
     try {
+      setIsLoading(true);
       const { data: employee } = await supabase
         .from('employees')
         .select('*')
@@ -28,6 +34,8 @@ export const useAssignedZones = (user: User | null) => {
       }
     } catch (error) {
       console.error('Error fetching assigned zones:', error);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -37,5 +45,10 @@ export const useAssignedZones = (user: User | null) => {
     }
   }, [user]);
 
-  return { assignedZones, fetchAssignedZones };
+  return { 
+    assignedZones, 
+    currentZone,
+    isLoading,
+    fetchAssignedZones 
+  };
 };

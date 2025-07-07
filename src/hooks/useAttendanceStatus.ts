@@ -6,11 +6,16 @@ import { User } from '@/types';
 export const useAttendanceStatus = (user: User | null) => {
   const [isCheckedIn, setIsCheckedIn] = useState(false);
   const [currentAttendance, setCurrentAttendance] = useState<any>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   const checkAttendanceStatus = async () => {
-    if (!user) return;
+    if (!user) {
+      setIsLoading(false);
+      return;
+    }
 
     try {
+      setIsLoading(true);
       const { data: employee } = await supabase
         .from('employees')
         .select('*')
@@ -35,6 +40,8 @@ export const useAttendanceStatus = (user: User | null) => {
       }
     } catch (error) {
       console.log('No attendance record found for today');
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -49,6 +56,7 @@ export const useAttendanceStatus = (user: User | null) => {
     setIsCheckedIn,
     currentAttendance,
     setCurrentAttendance,
-    checkAttendanceStatus
+    checkAttendanceStatus,
+    isLoading
   };
 };

@@ -24,10 +24,10 @@ const Dashboard = () => {
   
   const { restoreState } = useStatePersistence('dashboard', dashboardState, 'Dashboard');
   
-  const { isCheckedIn, currentAttendance, handleCheckIn, handleCheckOut } = useCheckInOut();
-  const { attendanceStatus, isLoading: attendanceLoading } = useAttendanceStatus();
-  const { assignedZones, currentZone, isLoading: zonesLoading } = useAssignedZones();
-  const { monthlyStats, isLoading: statsLoading } = useMonthlyStats();
+  const { isCheckedIn, currentAttendance, currentZone, handleCheckIn, handleCheckOut } = useCheckInOut(user);
+  const { isLoading: attendanceLoading } = useAttendanceStatus(user);
+  const { assignedZones, isLoading: zonesLoading } = useAssignedZones(user);
+  const { monthlyStats, isLoading: statsLoading } = useMonthlyStats(user);
 
   // Restore state on mount if available
   useEffect(() => {
@@ -74,7 +74,6 @@ const Dashboard = () => {
       <DashboardViews
         currentView={currentView}
         onBack={canGoBack ? goBack : () => navigateTo('dashboard')}
-        user={user}
       />
     </ErrorBoundary>
   );

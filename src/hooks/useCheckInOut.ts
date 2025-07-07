@@ -1,16 +1,14 @@
 
+import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { User } from '@/types';
 import { useZoneValidation } from './useZoneValidation';
 
-export const useCheckInOut = (
-  user: User | null,
-  setIsCheckedIn: (value: boolean) => void,
-  setCurrentAttendance: (attendance: any) => void,
-  setCurrentZone: (zone: string | null) => void,
-  currentAttendance: any
-) => {
+export const useCheckInOut = (user: User | null) => {
+  const [isCheckedIn, setIsCheckedIn] = useState(false);
+  const [currentAttendance, setCurrentAttendance] = useState<any>(null);
+  const [currentZone, setCurrentZone] = useState<string | null>(null);
   const { checkZoneValidation } = useZoneValidation();
 
   const handleCheckIn = async (photoData?: string, location?: GeolocationPosition | null) => {
@@ -129,5 +127,11 @@ export const useCheckInOut = (
     }
   };
 
-  return { handleCheckIn, handleCheckOut };
+  return { 
+    isCheckedIn, 
+    currentAttendance, 
+    currentZone,
+    handleCheckIn, 
+    handleCheckOut 
+  };
 };
