@@ -6,7 +6,7 @@ export interface Employee {
   email: string;
   phone: string;
   department: string;
-  role: 'employee' | 'supervisor' | 'admin' | 'super_admin';
+  role: string; // Changed from union type to string to match database
   salary: number;
   joining_date: string;
   is_active: boolean;
@@ -26,7 +26,7 @@ export interface Task {
   id: string;
   name: string;
   description: string;
-  form_fields: any[];
+  form_fields: any; // Changed from any[] to any to match Supabase Json type
   is_active: boolean;
   created_at: string;
   updated_at: string;
@@ -45,7 +45,7 @@ export interface AdvanceRequest {
   employee_id: string;
   amount: number;
   reason: string;
-  status: 'pending' | 'approved' | 'rejected';
+  status: string; // Changed from union type to string to match database
   request_date: string;
   approved_by?: string;
   approved_date?: string;
@@ -64,7 +64,7 @@ export interface Attendance {
   location_lat?: number;
   location_lng?: number;
   location_address?: string;
-  status: 'checked_in' | 'checked_out';
+  status: string; // Changed from union type to string to match database
   created_at: string;
 }
 
@@ -112,15 +112,23 @@ export interface AssetRequest {
   asset_id: string;
   quantity: number;
   reason: string;
-  payment_type: 'one_time_deduction' | 'emi_plan';
+  payment_type: string; // Changed from union type to string to match database
   emi_months: number;
   monthly_emi: number;
   total_amount: number;
-  status: 'pending' | 'approved' | 'rejected';
+  status: string; // Changed from union type to string to match database
   request_date: string;
   approved_by?: string;
   approved_date?: string;
   created_at: string;
+  employees?: {
+    name: string;
+    employee_id: string;
+  } | null;
+  assets?: {
+    name: string;
+    category: string;
+  } | null;
 }
 
 export interface EmployeeDeduction {

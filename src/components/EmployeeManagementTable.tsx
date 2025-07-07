@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -24,7 +23,7 @@ const EmployeeManagementTable = () => {
     email: '',
     phone: '',
     department: '',
-    role: 'employee' as 'employee' | 'supervisor' | 'admin' | 'super_admin',
+    role: 'employee' as string,
     salary: 0,
     joining_date: '',
     assigned_zones: [] as string[]
@@ -44,7 +43,7 @@ const EmployeeManagementTable = () => {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setEmployees(data || []);
+      setEmployees(data as Employee[] || []);
     } catch (error) {
       console.error('Error fetching employees:', error);
       toast({
@@ -316,7 +315,7 @@ const EmployeeManagementTable = () => {
                 </div>
                 <div>
                   <Label htmlFor="role">Role</Label>
-                  <Select value={formData.role} onValueChange={(value: any) => setFormData({...formData, role: value})}>
+                  <Select value={formData.role} onValueChange={(value) => setFormData({...formData, role: value})}>
                     <SelectTrigger>
                       <SelectValue placeholder="Select role" />
                     </SelectTrigger>

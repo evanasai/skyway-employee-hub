@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -23,7 +22,7 @@ interface Task {
   id: string;
   name: string;
   description: string;
-  form_fields: any[];
+  form_fields: any; // Changed from any[] to any to match database Json type
   is_active: boolean;
   created_at: string;
 }
@@ -87,7 +86,12 @@ const SettingsManagement = () => {
       if (error && error.code !== 'PGRST116') {
         throw error;
       }
-      setTasks(data || []);
+      // Transform the data to match our interface
+      const transformedTasks = (data || []).map(task => ({
+        ...task,
+        form_fields: Array.isArray(task.form_fields) ? task.form_fields : []
+      }));
+      setTasks(transformedTasks);
     } catch (error) {
       console.error('Error fetching tasks:', error);
     }
@@ -346,7 +350,7 @@ const SettingsManagement = () => {
     setTaskFormData({
       name: task.name,
       description: task.description,
-      form_fields: task.form_fields || []
+      form_fields: Array.isArray(task.form_fields) ? task.form_fields : []
     });
     setIsCreatingTask(false);
   };

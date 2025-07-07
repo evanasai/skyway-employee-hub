@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -32,7 +31,7 @@ const AdvanceExpenseManagement = () => {
         .from('advance_requests')
         .select(`
           *,
-          employees (
+          employees!advance_requests_employee_id_fkey (
             name,
             employee_id
           )
@@ -40,7 +39,7 @@ const AdvanceExpenseManagement = () => {
         .order('request_date', { ascending: false });
 
       if (error) throw error;
-      setAdvanceRequests(data || []);
+      setAdvanceRequests(data as AdvanceRequest[] || []);
     } catch (error) {
       console.error('Error fetching advance requests:', error);
       toast({
@@ -57,7 +56,7 @@ const AdvanceExpenseManagement = () => {
         .from('task_submissions')
         .select(`
           *,
-          employees (
+          employees!task_submissions_employee_id_fkey (
             name,
             employee_id
           )
@@ -66,7 +65,7 @@ const AdvanceExpenseManagement = () => {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setTaskSubmissions(data || []);
+      setTaskSubmissions(data as TaskSubmission[] || []);
     } catch (error) {
       console.error('Error fetching task submissions:', error);
       toast({
@@ -83,11 +82,11 @@ const AdvanceExpenseManagement = () => {
         .from('asset_requests')
         .select(`
           *,
-          employees (
+          employees!asset_requests_employee_id_fkey (
             name,
             employee_id
           ),
-          assets (
+          assets!asset_requests_asset_id_fkey (
             name,
             category
           )
@@ -95,7 +94,7 @@ const AdvanceExpenseManagement = () => {
         .order('request_date', { ascending: false });
 
       if (error) throw error;
-      setAssetRequests(data || []);
+      setAssetRequests(data as AssetRequest[] || []);
     } catch (error) {
       console.error('Error fetching asset requests:', error);
       toast({
@@ -454,8 +453,8 @@ const AdvanceExpenseManagement = () => {
                       </TableCell>
                       <TableCell>
                         <div>
-                          <div className="font-medium">{(request as any).assets?.name}</div>
-                          <div className="text-sm text-gray-500">{(request as any).assets?.category}</div>
+                          <div className="font-medium">{request.assets?.name}</div>
+                          <div className="text-sm text-gray-500">{request.assets?.category}</div>
                         </div>
                       </TableCell>
                       <TableCell>{request.quantity}</TableCell>
