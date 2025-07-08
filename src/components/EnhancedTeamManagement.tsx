@@ -61,14 +61,15 @@ const EnhancedTeamManagement = () => {
     supervisor_id: ''
   });
 
-  const teamCategories = [
+  const [teamCategories, setTeamCategories] = useState([
     'Installation Team',
     'Maintenance Team',
     'Field Operations',
     'Security Team',
     'Technical Support',
     'Quality Assurance'
-  ];
+  ]);
+  const [newCategory, setNewCategory] = useState('');
 
   useEffect(() => {
     fetchTeams();
@@ -385,6 +386,43 @@ const EnhancedTeamManagement = () => {
     );
   };
 
+  const addNewCategory = () => {
+    if (newCategory.trim() && !teamCategories.includes(newCategory.trim())) {
+      setTeamCategories([...teamCategories, newCategory.trim()]);
+      setFormData({...formData, category: newCategory.trim()});
+      setNewCategory('');
+      toast({
+        title: "Category Added",
+        description: "New team category has been added successfully",
+      });
+    }
+  };
+
+  const removeCategory = (categoryToRemove: string) => {
+    const defaultCategories = [
+      'Installation Team',
+      'Maintenance Team', 
+      'Field Operations',
+      'Security Team',
+      'Technical Support',
+      'Quality Assurance'
+    ];
+    
+    if (!defaultCategories.includes(categoryToRemove)) {
+      setTeamCategories(teamCategories.filter(cat => cat !== categoryToRemove));
+      toast({
+        title: "Category Removed",
+        description: "Team category has been removed successfully",
+      });
+    } else {
+      toast({
+        title: "Cannot Remove",
+        description: "Default categories cannot be removed",
+        variant: "destructive"
+      });
+    }
+  };
+
   const supervisors = employees.filter(emp => 
     ['supervisor', 'admin', 'super_admin'].includes(emp.role)
   );
@@ -429,11 +467,37 @@ const EnhancedTeamManagement = () => {
                   <SelectContent>
                     {teamCategories.map((category) => (
                       <SelectItem key={category} value={category}>
-                        {category}
+                        <div className="flex items-center justify-between w-full">
+                          <span>{category}</span>
+                          {!['Installation Team', 'Maintenance Team', 'Field Operations', 'Security Team', 'Technical Support', 'Quality Assurance'].includes(category) && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                removeCategory(category);
+                              }}
+                              className="h-4 w-4 p-0 ml-2"
+                            >
+                              <X className="h-3 w-3" />
+                            </Button>
+                          )}
+                        </div>
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
+                <div className="flex mt-2 space-x-2">
+                  <Input
+                    placeholder="Add new category"
+                    value={newCategory}
+                    onChange={(e) => setNewCategory(e.target.value)}
+                    onKeyPress={(e) => e.key === 'Enter' && addNewCategory()}
+                  />
+                  <Button type="button" onClick={addNewCategory} size="sm">
+                    <Plus className="w-4 h-4" />
+                  </Button>
+                </div>
               </div>
               <div>
                 <Label htmlFor="department">Department</Label>
