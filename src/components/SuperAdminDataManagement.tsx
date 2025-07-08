@@ -7,12 +7,20 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { Plus, Trash2, Building, Package, ClipboardList } from 'lucide-react';
+import { Plus, Trash2, Building, Package, ClipboardList, Users } from 'lucide-react';
 
 const SuperAdminDataManagement = () => {
   const [departments, setDepartments] = useState<any[]>([]);
   const [assets, setAssets] = useState<any[]>([]);
   const [tasks, setTasks] = useState<any[]>([]);
+  const [teamCategories, setTeamCategories] = useState([
+    'Installation Team',
+    'Maintenance Team',
+    'Field Operations',
+    'Security Team',
+    'Technical Support',
+    'Quality Assurance'
+  ]);
   
   const [departmentForm, setDepartmentForm] = useState({ name: '' });
   const [assetForm, setAssetForm] = useState({ 
@@ -26,6 +34,7 @@ const SuperAdminDataManagement = () => {
     name: '', 
     description: '' 
   });
+  const [newCategory, setNewCategory] = useState('');
 
   useEffect(() => {
     fetchAll();
@@ -202,6 +211,48 @@ const SuperAdminDataManagement = () => {
     }
   };
 
+  const defaultCategories = [
+    'Installation Team',
+    'Maintenance Team', 
+    'Field Operations',
+    'Security Team',
+    'Technical Support',
+    'Quality Assurance'
+  ];
+
+  const addNewCategory = () => {
+    if (newCategory.trim() && !teamCategories.includes(newCategory.trim())) {
+      setTeamCategories([...teamCategories, newCategory.trim()]);
+      setNewCategory('');
+      toast({
+        title: "Category Added",
+        description: "New team category has been added successfully",
+      });
+    } else if (teamCategories.includes(newCategory.trim())) {
+      toast({
+        title: "Category Exists",
+        description: "This category already exists",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const removeCategory = (categoryToRemove: string) => {
+    if (!defaultCategories.includes(categoryToRemove)) {
+      setTeamCategories(teamCategories.filter(cat => cat !== categoryToRemove));
+      toast({
+        title: "Category Removed",
+        description: "Team category has been removed successfully",
+      });
+    } else {
+      toast({
+        title: "Cannot Remove",
+        description: "Default categories cannot be removed",
+        variant: "destructive"
+      });
+    }
+  };
+
   return (
     <div className="space-y-6">
       <Card>
@@ -213,7 +264,7 @@ const SuperAdminDataManagement = () => {
         </CardHeader>
         <CardContent>
           <Tabs defaultValue="departments">
-            <TabsList className="grid w-full grid-cols-3">
+            <TabsList className="grid w-full grid-cols-4">
               <TabsTrigger value="departments">
                 <Building className="h-4 w-4 mr-2" />
                 Departments
@@ -225,6 +276,10 @@ const SuperAdminDataManagement = () => {
               <TabsTrigger value="tasks">
                 <ClipboardList className="h-4 w-4 mr-2" />
                 Tasks
+              </TabsTrigger>
+              <TabsTrigger value="team-categories">
+                <Users className="h-4 w-4 mr-2" />
+                Team Categories
               </TabsTrigger>
             </TabsList>
 
@@ -390,6 +445,48 @@ const SuperAdminDataManagement = () => {
                     </Button>
                   </div>
                 ))}
+              </div>
+            </TabsContent>
+
+            <TabsContent value="team-categories" className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="category-name">Team Category Name</Label>
+                  <Input
+                    id="category-name"
+                    value={newCategory}
+                    onChange={(e) => setNewCategory(e.target.value)}
+                    placeholder="Enter team category name"
+                    onKeyPress={(e) => e.key === 'Enter' && addNewCategory()}
+                  />
+                </div>
+                <div className="flex items-end">
+                  <Button onClick={addNewCategory} disabled={!newCategory.trim()}>
+                    <Plus className="h-4 w-4 mr-2" />
+                    Add Category
+                  </Button>
+                </div>
+              </div>
+              
+              <div className="space-y-3">
+                <h4 className="font-medium">Current Categories ({teamCategories.length})</h4>
+                <div className="flex flex-wrap gap-2">
+                  {teamCategories.map((category) => (
+                    <Badge key={category} variant="outline" className="flex items-center gap-2 px-3 py-1">
+                      <span>{category}</span>
+                      {!defaultCategories.includes(category) && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => removeCategory(category)}
+                          className="h-4 w-4 p-0 hover:bg-red-100"
+                        >
+                          <Trash2 className="h-3 w-3" />
+                        </Button>
+                      )}
+                    </Badge>
+                  ))}
+                </div>
               </div>
             </TabsContent>
           </Tabs>
