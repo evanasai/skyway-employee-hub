@@ -15,8 +15,7 @@ interface Task {
   title: string;
   description: string;
   task_type: string;
-  assigned_to: string[];
-  due_date: string;
+  department_id: string;
   status: 'active' | 'inactive';
   created_at: string;
   required_fields: {
@@ -31,7 +30,7 @@ interface Task {
 const EnhancedTaskManagement = () => {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [taskSubmissions, setTaskSubmissions] = useState<TaskSubmission[]>([]);
-  const [employees, setEmployees] = useState<any[]>([]);
+  const [departments, setDepartments] = useState<any[]>([]);
   const [availableTasks, setAvailableTasks] = useState<any[]>([]);
   const [selectedTask, setSelectedTask] = useState<TaskSubmission | null>(null);
   const [filter, setFilter] = useState('all');
@@ -41,8 +40,7 @@ const EnhancedTaskManagement = () => {
     title: '',
     description: '',
     task_type: '',
-    assigned_to: [] as string[],
-    due_date: '',
+    department_id: '',
     required_fields: {
       location: false,
       photos: false,
@@ -55,7 +53,7 @@ const EnhancedTaskManagement = () => {
   useEffect(() => {
     fetchTasks();
     fetchTaskSubmissions();
-    fetchEmployees();
+    fetchDepartments();
     fetchAvailableTasks();
   }, []);
 
@@ -67,8 +65,7 @@ const EnhancedTaskManagement = () => {
         title: 'Daily Security Patrol',
         description: 'Complete security rounds of assigned zone',
         task_type: 'Security Check',
-        assigned_to: [],
-        due_date: new Date().toISOString(),
+        department_id: 'dept1',
         status: 'active',
         created_at: new Date().toISOString(),
         required_fields: {
@@ -84,8 +81,7 @@ const EnhancedTaskManagement = () => {
         title: 'Equipment Maintenance',
         description: 'Check and maintain equipment in good working condition',
         task_type: 'Maintenance',
-        assigned_to: [],
-        due_date: new Date().toISOString(),
+        department_id: 'dept2',
         status: 'active',
         created_at: new Date().toISOString(),
         required_fields: {
@@ -112,6 +108,21 @@ const EnhancedTaskManagement = () => {
       setAvailableTasks(data || []);
     } catch (error) {
       console.error('Error fetching available tasks:', error);
+    }
+  };
+
+  const fetchDepartments = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('departments')
+        .select('*')
+        .eq('is_active', true)
+        .order('name');
+
+      if (error) throw error;
+      setDepartments(data || []);
+    } catch (error) {
+      console.error('Error fetching departments:', error);
     }
   };
 
@@ -154,25 +165,11 @@ const EnhancedTaskManagement = () => {
     }
   };
 
-  const fetchEmployees = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('employees')
-        .select('*')
-        .eq('is_active', true);
-
-      if (error) throw error;
-      setEmployees(data || []);
-    } catch (error) {
-      console.error('Error fetching employees:', error);
-    }
-  };
-
   const createTask = async () => {
-    if (!taskForm.title || !taskForm.task_type) {
+    if (!taskForm.title || !taskForm.task_type || !taskForm.department_id) {
       toast({
         title: "Missing Information",
-        description: "Title and task type are required",
+        description: "Title, task type, and department are required",
         variant: "destructive"
       });
       return;
@@ -184,8 +181,7 @@ const EnhancedTaskManagement = () => {
       title: taskForm.title,
       description: taskForm.description,
       task_type: taskForm.task_type,
-      assigned_to: taskForm.assigned_to,
-      due_date: taskForm.due_date,
+      department_id: taskForm.department_id,
       status: 'active',
       created_at: new Date().toISOString(),
       required_fields: taskForm.required_fields
@@ -209,8 +205,7 @@ const EnhancedTaskManagement = () => {
       title: taskForm.title,
       description: taskForm.description,
       task_type: taskForm.task_type,
-      assigned_to: taskForm.assigned_to,
-      due_date: taskForm.due_date,
+      department_id: taskForm.department_id,
       required_fields: taskForm.required_fields
     };
 
@@ -239,8 +234,7 @@ const EnhancedTaskManagement = () => {
       title: task.title,
       description: task.description,
       task_type: task.task_type,
-      assigned_to: task.assigned_to,
-      due_date: task.due_date,
+      department_id: task.department_id,
       required_fields: task.required_fields
     });
     setIsCreatingTask(true);
@@ -253,8 +247,7 @@ const EnhancedTaskManagement = () => {
       title: '',
       description: '',
       task_type: '',
-      assigned_to: [],
-      due_date: '',
+      department_id: '',
       required_fields: {
         location: false,
         photos: false,
@@ -327,7 +320,7 @@ const EnhancedTaskManagement = () => {
             isCreating={isCreatingTask}
             taskForm={taskForm}
             setTaskForm={setTaskForm}
-            employees={employees}
+            departments={departments}
             availableTasks={availableTasks}
             onSave={editingTask ? updateTask : createTask}
             onCancel={resetTaskForm}

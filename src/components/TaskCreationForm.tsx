@@ -11,8 +11,7 @@ interface TaskFormData {
   title: string;
   description: string;
   task_type: string;
-  assigned_to: string[];
-  due_date: string;
+  department_id: string;
   required_fields: {
     location: boolean;
     photos: boolean;
@@ -26,7 +25,7 @@ interface TaskCreationFormProps {
   isCreating: boolean;
   taskForm: TaskFormData;
   setTaskForm: (form: TaskFormData) => void;
-  employees: any[];
+  departments: any[];
   availableTasks: any[];
   onSave: () => void;
   onCancel: () => void;
@@ -36,7 +35,7 @@ const TaskCreationForm: React.FC<TaskCreationFormProps> = ({
   isCreating,
   taskForm,
   setTaskForm,
-  employees,
+  departments,
   availableTasks,
   onSave,
   onCancel
@@ -72,14 +71,20 @@ const TaskCreationForm: React.FC<TaskCreationFormProps> = ({
           </Select>
         </div>
         <div>
-          <Label htmlFor="due_date">Due Date</Label>
-          <Input
-            id="due_date"
-            type="datetime-local"
-            value={taskForm.due_date}
-            onChange={(e) => setTaskForm({...taskForm, due_date: e.target.value})}
-          />
-        </div>
+          <Label htmlFor="department">Department</Label>
+          <Select value={taskForm.department_id} onValueChange={(value) => setTaskForm({...taskForm, department_id: value})}>
+            <SelectTrigger>
+              <SelectValue placeholder="Select department" />
+            </SelectTrigger>
+            <SelectContent>
+              {departments.map((dept) => (
+                <SelectItem key={dept.id} value={dept.id}>
+                  {dept.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+      </div>
       </div>
       <div>
         <Label htmlFor="task_description">Description</Label>
@@ -156,38 +161,6 @@ const TaskCreationForm: React.FC<TaskCreationFormProps> = ({
             <span className="text-sm">Additional Notes</span>
           </label>
         </div>
-      </div>
-
-      <div>
-        <Label>Assign to Specific Employees (Optional)</Label>
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-2 mt-2 max-h-32 overflow-y-auto">
-          {employees.map((employee) => (
-            <label key={employee.id} className="flex items-center space-x-2">
-              <input
-                type="checkbox"
-                checked={taskForm.assigned_to.includes(employee.id)}
-                onChange={(e) => {
-                  if (e.target.checked) {
-                    setTaskForm({
-                      ...taskForm,
-                      assigned_to: [...taskForm.assigned_to, employee.id]
-                    });
-                  } else {
-                    setTaskForm({
-                      ...taskForm,
-                      assigned_to: taskForm.assigned_to.filter(id => id !== employee.id)
-                    });
-                  }
-                }}
-                className="rounded"
-              />
-              <span className="text-sm">{employee.name}</span>
-            </label>
-          ))}
-        </div>
-        {employees.length === 0 && (
-          <p className="text-sm text-gray-500 mt-2">No employees found</p>
-        )}
       </div>
 
       <div className="flex space-x-2">

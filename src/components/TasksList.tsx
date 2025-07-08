@@ -10,8 +10,7 @@ interface Task {
   title: string;
   description: string;
   task_type: string;
-  assigned_to: string[];
-  due_date: string;
+  department_id: string;
   status: 'active' | 'inactive';
   created_at: string;
   required_fields: {
@@ -70,20 +69,10 @@ const TasksList: React.FC<TasksListProps> = ({ tasks, onEdit, onDelete }) => {
                       <strong>Description:</strong> {task.description}
                     </p>
                   )}
-                  {task.due_date && (
-                    <p className="text-sm text-gray-600 mb-1">
-                      <strong>Due:</strong> {new Date(task.due_date).toLocaleString()}
-                    </p>
-                  )}
                   <div className="flex items-center space-x-1 mb-2">
                     <span className="text-sm text-gray-600"><strong>Required Fields:</strong></span>
                     {getRequiredFieldsBadges(task.required_fields)}
                   </div>
-                  {task.assigned_to.length > 0 && (
-                    <p className="text-sm text-blue-600">
-                      Assigned to {task.assigned_to.length} specific employee(s)
-                    </p>
-                  )}
                 </div>
                 <div className="flex space-x-2">
                   <Button
