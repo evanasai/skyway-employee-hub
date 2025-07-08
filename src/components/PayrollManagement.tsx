@@ -42,8 +42,9 @@ const PayrollManagement = () => {
     try {
       const { data, error } = await supabase
         .from('employees')
-        .select('id, employee_id, name, department, salary')
-        .eq('is_active', true);
+        .select('id, employee_id, name, department, salary, role')
+        .eq('is_active', true)
+        .eq('role', 'employee'); // Only include employees in payroll
 
       if (error) throw error;
       setEmployees(data || []);

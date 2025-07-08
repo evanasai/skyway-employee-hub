@@ -43,6 +43,7 @@ const EmployeeZoneAssignment: React.FC<EmployeeZoneAssignmentProps> = ({ onBack 
         .from('employees')
         .select('*')
         .eq('is_active', true)
+        .eq('role', 'employee') // Only employees need zone assignments
         .order('name');
 
       if (error) throw error;

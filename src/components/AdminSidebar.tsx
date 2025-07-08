@@ -91,6 +91,18 @@ const AdminSidebar = ({ currentView, onNavigate }: AdminSidebarProps) => {
       category: 'finance'
     },
     { 
+      id: 'advance-management', 
+      label: 'Advance Management', 
+      icon: DollarSign,
+      category: 'finance'
+    },
+    { 
+      id: 'asset-management', 
+      label: 'Asset Requests', 
+      icon: Package,
+      category: 'finance'
+    },
+    { 
       id: 'reports', 
       label: 'Reports & Analytics', 
       icon: BarChart3,

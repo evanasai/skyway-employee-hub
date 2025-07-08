@@ -109,7 +109,8 @@ const ComprehensiveEmployeeManagement = () => {
     { value: 'customer_service', label: 'Customer Service' },
     { value: 'maintenance', label: 'Maintenance' },
     { value: 'security', label: 'Security' },
-    { value: 'management', label: 'Management' }
+    { value: 'management', label: 'Management' },
+    { value: 'administration', label: 'Administration' }
   ];
 
   // Get user role from auth context to determine available roles

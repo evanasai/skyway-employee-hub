@@ -19,6 +19,8 @@ import SettingsView from './SettingsView';
 import EnhancedTeamManagement from './EnhancedTeamManagement';
 import SupervisorAllocationManagement from './SupervisorAssignmentManagement';
 import SuperAdminDataManagement from './SuperAdminDataManagement';
+import AdvanceManagement from './AdvanceManagement';
+import AssetManagement from './AssetManagement';
 
 const AdminDashboard = () => {
   const { logout, user } = useAuth();
@@ -50,6 +52,10 @@ const AdminDashboard = () => {
         return <ReportsAnalyticsView />;
       case 'data-management':
         return <SuperAdminDataManagement />;
+      case 'advance-management':
+        return <AdvanceManagement />;
+      case 'asset-management':
+        return <AssetManagement />;
       case 'settings':
         return <SettingsView />;
       default:
@@ -85,8 +91,10 @@ const AdminDashboard = () => {
         return 'Reports & Analytics';
       case 'data-management':
         return 'Data Management';
-      case 'settings':
-        return 'Settings';
+      case 'advance-management':
+        return 'Advance Management';
+      case 'asset-management':
+        return 'Asset Management';
       case 'settings':
         return 'Settings';
       default:
