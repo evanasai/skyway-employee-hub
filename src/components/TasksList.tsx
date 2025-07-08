@@ -10,38 +10,39 @@ interface Task {
   title: string;
   description: string;
   task_type: string;
-  employee_type: string;
   assigned_to: string[];
-  priority: 'low' | 'medium' | 'high';
   due_date: string;
   status: 'active' | 'inactive';
   created_at: string;
+  required_fields: {
+    location: boolean;
+    photos: boolean;
+    comments: boolean;
+    start_end_time: boolean;
+    additional_notes: boolean;
+  };
 }
 
 interface TasksListProps {
   tasks: Task[];
   onEdit: (task: Task) => void;
   onDelete: (taskId: string) => void;
-  employeeTypes: { value: string; label: string }[];
 }
 
-const TasksList: React.FC<TasksListProps> = ({ tasks, onEdit, onDelete, employeeTypes }) => {
-  const getPriorityBadge = (priority: string) => {
-    switch (priority) {
-      case 'high':
-        return <Badge className="bg-red-100 text-red-800">High</Badge>;
-      case 'medium':
-        return <Badge className="bg-yellow-100 text-yellow-800">Medium</Badge>;
-      case 'low':
-        return <Badge className="bg-green-100 text-green-800">Low</Badge>;
-      default:
-        return <Badge className="bg-gray-100 text-gray-800">{priority}</Badge>;
-    }
-  };
-
-  const getEmployeeTypeLabel = (type: string) => {
-    const employeeType = employeeTypes.find(et => et.value === type);
-    return employeeType ? employeeType.label : type;
+const TasksList: React.FC<TasksListProps> = ({ tasks, onEdit, onDelete }) => {
+  const getRequiredFieldsBadges = (required_fields: any) => {
+    const requiredFields = [];
+    if (required_fields.location) requiredFields.push('Location');
+    if (required_fields.photos) requiredFields.push('Photos');
+    if (required_fields.comments) requiredFields.push('Comments');
+    if (required_fields.start_end_time) requiredFields.push('Time');
+    if (required_fields.additional_notes) requiredFields.push('Notes');
+    
+    return requiredFields.map(field => (
+      <Badge key={field} variant="outline" className="text-xs">
+        {field}
+      </Badge>
+    ));
   };
 
   return (
@@ -57,16 +58,12 @@ const TasksList: React.FC<TasksListProps> = ({ tasks, onEdit, onDelete, employee
                 <div className="flex-1">
                   <div className="flex items-center space-x-2 mb-2">
                     <h4 className="font-medium">{task.title}</h4>
-                    {getPriorityBadge(task.priority)}
                     <Badge variant={task.status === 'active' ? 'default' : 'secondary'}>
                       {task.status}
                     </Badge>
                   </div>
                   <p className="text-sm text-gray-600 mb-1">
                     <strong>Type:</strong> {task.task_type}
-                  </p>
-                  <p className="text-sm text-gray-600 mb-1">
-                    <strong>Target:</strong> {getEmployeeTypeLabel(task.employee_type)}
                   </p>
                   {task.description && (
                     <p className="text-sm text-gray-600 mb-1">
@@ -78,6 +75,10 @@ const TasksList: React.FC<TasksListProps> = ({ tasks, onEdit, onDelete, employee
                       <strong>Due:</strong> {new Date(task.due_date).toLocaleString()}
                     </p>
                   )}
+                  <div className="flex items-center space-x-1 mb-2">
+                    <span className="text-sm text-gray-600"><strong>Required Fields:</strong></span>
+                    {getRequiredFieldsBadges(task.required_fields)}
+                  </div>
                   {task.assigned_to.length > 0 && (
                     <p className="text-sm text-blue-600">
                       Assigned to {task.assigned_to.length} specific employee(s)

@@ -11,10 +11,15 @@ interface TaskFormData {
   title: string;
   description: string;
   task_type: string;
-  employee_type: string;
   assigned_to: string[];
-  priority: 'low' | 'medium' | 'high';
   due_date: string;
+  required_fields: {
+    location: boolean;
+    photos: boolean;
+    comments: boolean;
+    start_end_time: boolean;
+    additional_notes: boolean;
+  };
 }
 
 interface TaskCreationFormProps {
@@ -22,8 +27,7 @@ interface TaskCreationFormProps {
   taskForm: TaskFormData;
   setTaskForm: (form: TaskFormData) => void;
   employees: any[];
-  employeeTypes: { value: string; label: string }[];
-  taskTypes: string[];
+  availableTasks: any[];
   onSave: () => void;
   onCancel: () => void;
 }
@@ -33,16 +37,11 @@ const TaskCreationForm: React.FC<TaskCreationFormProps> = ({
   taskForm,
   setTaskForm,
   employees,
-  employeeTypes,
-  taskTypes,
+  availableTasks,
   onSave,
   onCancel
 }) => {
   if (!isCreating) return null;
-
-  const getEmployeesByType = (type: string) => {
-    return employees.filter(emp => emp.department === type || emp.employee_type === type);
-  };
 
   return (
     <div className="space-y-4 p-4 border rounded-lg bg-gray-50">
@@ -64,39 +63,11 @@ const TaskCreationForm: React.FC<TaskCreationFormProps> = ({
               <SelectValue placeholder="Select task type" />
             </SelectTrigger>
             <SelectContent>
-              {taskTypes.map((type) => (
-                <SelectItem key={type} value={type}>
-                  {type}
+              {availableTasks.map((task) => (
+                <SelectItem key={task.id} value={task.name}>
+                  {task.name}
                 </SelectItem>
               ))}
-            </SelectContent>
-          </Select>
-        </div>
-        <div>
-          <Label htmlFor="employee_type">Target Employee Type</Label>
-          <Select value={taskForm.employee_type} onValueChange={(value) => setTaskForm({...taskForm, employee_type: value, assigned_to: []})}>
-            <SelectTrigger>
-              <SelectValue placeholder="Select employee type" />
-            </SelectTrigger>
-            <SelectContent>
-              {employeeTypes.map((type) => (
-                <SelectItem key={type.value} value={type.value}>
-                  {type.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-        <div>
-          <Label htmlFor="priority">Priority</Label>
-          <Select value={taskForm.priority} onValueChange={(value) => setTaskForm({...taskForm, priority: value as any})}>
-            <SelectTrigger>
-              <SelectValue placeholder="Select priority" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="low">Low</SelectItem>
-              <SelectItem value="medium">Medium</SelectItem>
-              <SelectItem value="high">High</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -120,40 +91,104 @@ const TaskCreationForm: React.FC<TaskCreationFormProps> = ({
           rows={3}
         />
       </div>
-      
-      {taskForm.employee_type && (
-        <div>
-          <Label>Assign to Specific Employees (Optional)</Label>
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-2 mt-2 max-h-32 overflow-y-auto">
-            {getEmployeesByType(taskForm.employee_type).map((employee) => (
-              <label key={employee.id} className="flex items-center space-x-2">
-                <input
-                  type="checkbox"
-                  checked={taskForm.assigned_to.includes(employee.id)}
-                  onChange={(e) => {
-                    if (e.target.checked) {
-                      setTaskForm({
-                        ...taskForm,
-                        assigned_to: [...taskForm.assigned_to, employee.id]
-                      });
-                    } else {
-                      setTaskForm({
-                        ...taskForm,
-                        assigned_to: taskForm.assigned_to.filter(id => id !== employee.id)
-                      });
-                    }
-                  }}
-                  className="rounded"
-                />
-                <span className="text-sm">{employee.name}</span>
-              </label>
-            ))}
-          </div>
-          {getEmployeesByType(taskForm.employee_type).length === 0 && (
-            <p className="text-sm text-gray-500 mt-2">No employees found for this type</p>
-          )}
+
+      <div>
+        <Label>Required Information for Employee Reports</Label>
+        <div className="grid grid-cols-2 gap-3 mt-2">
+          <label className="flex items-center space-x-2">
+            <input
+              type="checkbox"
+              checked={taskForm.required_fields.location}
+              onChange={(e) => setTaskForm({
+                ...taskForm,
+                required_fields: { ...taskForm.required_fields, location: e.target.checked }
+              })}
+              className="rounded"
+            />
+            <span className="text-sm">Location/Address</span>
+          </label>
+          <label className="flex items-center space-x-2">
+            <input
+              type="checkbox"
+              checked={taskForm.required_fields.photos}
+              onChange={(e) => setTaskForm({
+                ...taskForm,
+                required_fields: { ...taskForm.required_fields, photos: e.target.checked }
+              })}
+              className="rounded"
+            />
+            <span className="text-sm">Before/After Photos</span>
+          </label>
+          <label className="flex items-center space-x-2">
+            <input
+              type="checkbox"
+              checked={taskForm.required_fields.comments}
+              onChange={(e) => setTaskForm({
+                ...taskForm,
+                required_fields: { ...taskForm.required_fields, comments: e.target.checked }
+              })}
+              className="rounded"
+            />
+            <span className="text-sm">Comments/Notes</span>
+          </label>
+          <label className="flex items-center space-x-2">
+            <input
+              type="checkbox"
+              checked={taskForm.required_fields.start_end_time}
+              onChange={(e) => setTaskForm({
+                ...taskForm,
+                required_fields: { ...taskForm.required_fields, start_end_time: e.target.checked }
+              })}
+              className="rounded"
+            />
+            <span className="text-sm">Start/End Time</span>
+          </label>
+          <label className="flex items-center space-x-2">
+            <input
+              type="checkbox"
+              checked={taskForm.required_fields.additional_notes}
+              onChange={(e) => setTaskForm({
+                ...taskForm,
+                required_fields: { ...taskForm.required_fields, additional_notes: e.target.checked }
+              })}
+              className="rounded"
+            />
+            <span className="text-sm">Additional Notes</span>
+          </label>
         </div>
-      )}
+      </div>
+
+      <div>
+        <Label>Assign to Specific Employees (Optional)</Label>
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-2 mt-2 max-h-32 overflow-y-auto">
+          {employees.map((employee) => (
+            <label key={employee.id} className="flex items-center space-x-2">
+              <input
+                type="checkbox"
+                checked={taskForm.assigned_to.includes(employee.id)}
+                onChange={(e) => {
+                  if (e.target.checked) {
+                    setTaskForm({
+                      ...taskForm,
+                      assigned_to: [...taskForm.assigned_to, employee.id]
+                    });
+                  } else {
+                    setTaskForm({
+                      ...taskForm,
+                      assigned_to: taskForm.assigned_to.filter(id => id !== employee.id)
+                    });
+                  }
+                }}
+                className="rounded"
+              />
+              <span className="text-sm">{employee.name}</span>
+            </label>
+          ))}
+        </div>
+        {employees.length === 0 && (
+          <p className="text-sm text-gray-500 mt-2">No employees found</p>
+        )}
+      </div>
 
       <div className="flex space-x-2">
         <Button onClick={onSave}>
