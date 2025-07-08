@@ -138,6 +138,8 @@ const EnhancedEmployeeManagement = () => {
             ...employeeDocuments,
             [documentType]: publicUrl
           }
+        }, {
+          onConflict: 'employee_id'
         });
 
       if (kycError) throw kycError;
