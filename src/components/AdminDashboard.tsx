@@ -7,7 +7,7 @@ import { SidebarProvider, SidebarInset, SidebarTrigger } from '@/components/ui/s
 import AdminSidebar from './AdminSidebar';
 import AdminDashboardOverview from './AdminDashboardOverview';
 import EmployeeManagement from './EmployeeManagement';
-import ComprehensiveEmployeeManagement from './ComprehensiveEmployeeManagement';
+import EnhancedEmployeeManagement from './EnhancedEmployeeManagement';
 import TaskManagement from './TaskManagement';
 import EnhancedTaskManagement from './EnhancedTaskManagement';
 import ZoneManagement from './ZoneManagement';
@@ -31,7 +31,7 @@ const AdminDashboard = () => {
       case 'dashboard':
         return <AdminDashboardOverview />;
       case 'employees':
-        return <ComprehensiveEmployeeManagement />;
+        return <EnhancedEmployeeManagement />;
       case 'tasks':
         return <TaskManagement />;
       case 'enhanced-tasks':
