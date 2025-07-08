@@ -8,7 +8,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge';
 import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { Trash2, Edit, Plus, Save, X } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Trash2, Edit, Plus, Save, X, Upload, Eye } from 'lucide-react';
 
 interface Employee {
   id: string;
@@ -26,29 +27,36 @@ interface Employee {
   joining_date?: string;
 }
 
+interface Department {
+  id: string;
+  name: string;
+  is_active: boolean;
+}
+
+interface DocumentUrls {
+  aadhaar?: string;
+  pan?: string;
+  application_form?: string;
+}
+
 const EnhancedEmployeeManagement = () => {
   const [employees, setEmployees] = useState<Employee[]>([]);
+  const [departments, setDepartments] = useState<Department[]>([]);
   const [isCreating, setIsCreating] = useState(false);
   const [editingEmployee, setEditingEmployee] = useState<Employee | null>(null);
+  const [viewingDocuments, setViewingDocuments] = useState<string | null>(null);
+  const [employeeDocuments, setEmployeeDocuments] = useState<DocumentUrls>({});
+  const [uploadingFiles, setUploadingFiles] = useState<{[key: string]: boolean}>({});
   const [formData, setFormData] = useState({
     employee_id: '',
     name: '',
     email: '',
     phone: '',
     role: 'employee',
-    department: 'field_operations',
+    department: '',
     password: '',
     salary: ''
   });
-
-  const departments = [
-    { value: 'field_operations', label: 'Field Operations' },
-    { value: 'technical_support', label: 'Technical Support' },
-    { value: 'customer_service', label: 'Customer Service' },
-    { value: 'maintenance', label: 'Maintenance' },
-    { value: 'security', label: 'Security' },
-    { value: 'management', label: 'Management' }
-  ];
 
   const roles = [
     { value: 'employee', label: 'Employee', level: 1 },
@@ -60,6 +68,7 @@ const EnhancedEmployeeManagement = () => {
 
   useEffect(() => {
     fetchEmployees();
+    fetchDepartments();
   }, []);
 
   const fetchEmployees = async () => {
@@ -78,6 +87,96 @@ const EnhancedEmployeeManagement = () => {
         description: "Failed to fetch employees",
         variant: "destructive"
       });
+    }
+  };
+
+  const fetchDepartments = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('departments')
+        .select('*')
+        .eq('is_active', true)
+        .order('name', { ascending: true });
+
+      if (error) throw error;
+      setDepartments(data || []);
+    } catch (error) {
+      console.error('Error fetching departments:', error);
+      toast({
+        title: "Error",
+        description: "Failed to fetch departments",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleFileUpload = async (file: File, documentType: string, employeeId: string) => {
+    if (!file) return;
+
+    setUploadingFiles(prev => ({ ...prev, [documentType]: true }));
+
+    try {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${employeeId}/${documentType}.${fileExt}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('employee-documents')
+        .upload(fileName, file, { upsert: true });
+
+      if (uploadError) throw uploadError;
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('employee-documents')
+        .getPublicUrl(fileName);
+
+      // Update KYC details with document URL
+      const { error: kycError } = await supabase
+        .from('kyc_details')
+        .upsert({
+          employee_id: employeeId,
+          document_urls: {
+            ...employeeDocuments,
+            [documentType]: publicUrl
+          }
+        });
+
+      if (kycError) throw kycError;
+
+      setEmployeeDocuments(prev => ({
+        ...prev,
+        [documentType]: publicUrl
+      }));
+
+      toast({
+        title: "Document Uploaded",
+        description: `${documentType} document uploaded successfully`,
+      });
+    } catch (error) {
+      console.error('Error uploading document:', error);
+      toast({
+        title: "Upload Error",
+        description: "Failed to upload document",
+        variant: "destructive"
+      });
+    } finally {
+      setUploadingFiles(prev => ({ ...prev, [documentType]: false }));
+    }
+  };
+
+  const fetchEmployeeDocuments = async (employeeId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('kyc_details')
+        .select('document_urls')
+        .eq('employee_id', employeeId)
+        .maybeSingle();
+
+      if (error) throw error;
+      
+      const docs = data?.document_urls as DocumentUrls || {};
+      setEmployeeDocuments(docs);
+    } catch (error) {
+      console.error('Error fetching employee documents:', error);
     }
   };
 
@@ -225,18 +324,21 @@ const EnhancedEmployeeManagement = () => {
       salary: employee.salary?.toString() || ''
     });
     setIsCreating(false);
+    fetchEmployeeDocuments(employee.id);
   };
 
   const resetForm = () => {
     setIsCreating(false);
     setEditingEmployee(null);
+    setViewingDocuments(null);
+    setEmployeeDocuments({});
     setFormData({
       employee_id: '',
       name: '',
       email: '',
       phone: '',
       role: 'employee',
-      department: 'field_operations',
+      department: '',
       password: '',
       salary: ''
     });
@@ -315,11 +417,17 @@ const EnhancedEmployeeManagement = () => {
                       <SelectValue placeholder="Select department" />
                     </SelectTrigger>
                     <SelectContent>
-                      {departments.map((dept) => (
-                        <SelectItem key={dept.value} value={dept.value}>
-                          {dept.label}
+                      {departments.length === 0 ? (
+                        <SelectItem value="" disabled>
+                          No departments available
                         </SelectItem>
-                      ))}
+                      ) : (
+                        departments.map((dept) => (
+                          <SelectItem key={dept.id} value={dept.name}>
+                            {dept.name}
+                          </SelectItem>
+                        ))
+                      )}
                     </SelectContent>
                   </Select>
                 </div>
@@ -344,6 +452,49 @@ const EnhancedEmployeeManagement = () => {
                   />
                 </div>
               </div>
+
+              {/* Document Upload Section */}
+              {editingEmployee && (
+                <div className="space-y-4 p-4 border rounded-lg bg-blue-50">
+                  <h4 className="font-medium">Document Management</h4>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    {[
+                      { key: 'aadhaar', label: 'Aadhaar Card' },
+                      { key: 'pan', label: 'PAN Card' },
+                      { key: 'application_form', label: 'Application Form' }
+                    ].map((doc) => (
+                      <div key={doc.key} className="space-y-2">
+                        <Label>{doc.label}</Label>
+                        <div className="flex space-x-2">
+                          <Input
+                            type="file"
+                            accept=".pdf,.jpg,.jpeg,.png"
+                            onChange={(e) => {
+                              const file = e.target.files?.[0];
+                              if (file && editingEmployee) {
+                                handleFileUpload(file, doc.key, editingEmployee.id);
+                              }
+                            }}
+                            disabled={uploadingFiles[doc.key]}
+                          />
+                          {employeeDocuments[doc.key as keyof DocumentUrls] && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => window.open(employeeDocuments[doc.key as keyof DocumentUrls], '_blank')}
+                            >
+                              <Eye className="h-4 w-4" />
+                            </Button>
+                          )}
+                        </div>
+                        {uploadingFiles[doc.key] && (
+                          <p className="text-sm text-blue-600">Uploading...</p>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
 
               <div className="flex space-x-2">
                 <Button onClick={editingEmployee ? updateEmployee : createEmployee}>
@@ -397,22 +548,32 @@ const EnhancedEmployeeManagement = () => {
                           {getKYCStatusBadge(employee.kyc_status)}
                         </div>
                       </div>
-                      <div className="flex space-x-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => startEditing(employee)}
-                        >
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="destructive"
-                          size="sm"
-                          onClick={() => deleteEmployee(employee.id)}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
+                       <div className="flex space-x-2">
+                         <Button
+                           variant="outline"
+                           size="sm"
+                           onClick={async () => {
+                             await fetchEmployeeDocuments(employee.id);
+                             setViewingDocuments(employee.id);
+                           }}
+                         >
+                           <Eye className="h-4 w-4" />
+                         </Button>
+                         <Button
+                           variant="outline"
+                           size="sm"
+                           onClick={() => startEditing(employee)}
+                         >
+                           <Edit className="h-4 w-4" />
+                         </Button>
+                         <Button
+                           variant="destructive"
+                           size="sm"
+                           onClick={() => deleteEmployee(employee.id)}
+                         >
+                           <Trash2 className="h-4 w-4" />
+                         </Button>
+                       </div>
                     </div>
                   </CardContent>
                 </Card>
@@ -421,6 +582,38 @@ const EnhancedEmployeeManagement = () => {
           </div>
         </CardContent>
       </Card>
+
+      {/* Document Viewing Dialog */}
+      <Dialog open={!!viewingDocuments} onOpenChange={() => setViewingDocuments(null)}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Employee Documents</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            {[
+              { key: 'aadhaar', label: 'Aadhaar Card' },
+              { key: 'pan', label: 'PAN Card' },
+              { key: 'application_form', label: 'Application Form' }
+            ].map((doc) => (
+              <div key={doc.key} className="flex items-center justify-between p-3 border rounded-lg">
+                <span className="font-medium">{doc.label}</span>
+                {employeeDocuments[doc.key as keyof DocumentUrls] ? (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => window.open(employeeDocuments[doc.key as keyof DocumentUrls], '_blank')}
+                  >
+                    <Eye className="h-4 w-4 mr-2" />
+                    View Document
+                  </Button>
+                ) : (
+                  <span className="text-sm text-gray-500">Not uploaded</span>
+                )}
+              </div>
+            ))}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
