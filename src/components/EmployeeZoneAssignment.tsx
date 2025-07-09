@@ -109,18 +109,26 @@ const EmployeeZoneAssignment: React.FC<EmployeeZoneAssignmentProps> = ({ onBack 
 
     setIsLoading(true);
     try {
-      // For now, we'll update the employee record with a JSON field for assigned zones
-      // In a production system, you'd want a separate junction table
-      const { error } = await supabase
-        .from('employees')
-        .update({
-          // We'll store zone assignments in the department field for now as JSON
-          // This is a temporary solution until we create a proper junction table
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', selectedEmployee.id);
+      // First, remove existing assignments for this employee
+      await supabase
+        .from('zone_assignments')
+        .delete()
+        .eq('employee_id', selectedEmployee.id);
 
-      if (error) throw error;
+      // Then, add new assignments
+      if (selectedZones.length > 0) {
+        const assignments = selectedZones.map(zoneId => ({
+          employee_id: selectedEmployee.id,
+          zone_id: zoneId,
+          assigned_at: new Date().toISOString()
+        }));
+
+        const { error } = await supabase
+          .from('zone_assignments')
+          .insert(assignments);
+
+        if (error) throw error;
+      }
 
       // Update local state
       setEmployees(prev => prev.map(emp => 

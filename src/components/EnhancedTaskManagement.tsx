@@ -58,42 +58,62 @@ const EnhancedTaskManagement = () => {
   }, []);
 
   const fetchTasks = async () => {
-    // Mock data for tasks since we don't have a tasks table yet
-    const mockTasks: Task[] = [
-      {
-        id: '1',
-        title: 'Daily Security Patrol',
-        description: 'Complete security rounds of assigned zone',
-        task_type: 'Security Check',
-        department_id: 'dept1',
-        status: 'active',
-        created_at: new Date().toISOString(),
-        required_fields: {
-          location: true,
-          photos: true,
+    try {
+      const { data, error } = await supabase
+        .from('task_definitions')
+        .select(`
+          *,
+          departments!task_definitions_department_id_fkey (
+            name
+          )
+        `)
+        .eq('is_active', true)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+
+      const transformedTasks: Task[] = (data || []).map(task => {
+        let requiredFields = {
+          location: false,
+          photos: false,
           comments: false,
-          start_end_time: true,
+          start_end_time: false,
           additional_notes: false
+        };
+
+        // Parse required_fields if it's a valid object
+        if (task.required_fields && typeof task.required_fields === 'object' && !Array.isArray(task.required_fields)) {
+          const fields = task.required_fields as Record<string, any>;
+          requiredFields = {
+            location: Boolean(fields.location),
+            photos: Boolean(fields.photos),
+            comments: Boolean(fields.comments),
+            start_end_time: Boolean(fields.start_end_time),
+            additional_notes: Boolean(fields.additional_notes)
+          };
         }
-      },
-      {
-        id: '2',
-        title: 'Equipment Maintenance',
-        description: 'Check and maintain equipment in good working condition',
-        task_type: 'Maintenance',
-        department_id: 'dept2',
-        status: 'active',
-        created_at: new Date().toISOString(),
-        required_fields: {
-          location: true,
-          photos: true,
-          comments: true,
-          start_end_time: true,
-          additional_notes: false
-        }
-      }
-    ];
-    setTasks(mockTasks);
+
+        return {
+          id: task.id,
+          title: task.title,
+          description: task.description || '',
+          task_type: task.task_type,
+          department_id: task.department_id,
+          status: 'active' as const,
+          created_at: task.created_at,
+          required_fields: requiredFields
+        };
+      });
+
+      setTasks(transformedTasks);
+    } catch (error) {
+      console.error('Error fetching tasks:', error);
+      toast({
+        title: "Error",
+        description: "Failed to fetch task definitions",
+        variant: "destructive"
+      });
+    }
   };
 
   const fetchAvailableTasks = async () => {
@@ -175,57 +195,97 @@ const EnhancedTaskManagement = () => {
       return;
     }
 
-    // Create new task (mock implementation)
-    const newTask: Task = {
-      id: Date.now().toString(),
-      title: taskForm.title,
-      description: taskForm.description,
-      task_type: taskForm.task_type,
-      department_id: taskForm.department_id,
-      status: 'active',
-      created_at: new Date().toISOString(),
-      required_fields: taskForm.required_fields
-    };
+    try {
+      const { error } = await supabase
+        .from('task_definitions')
+        .insert({
+          title: taskForm.title,
+          description: taskForm.description,
+          task_type: taskForm.task_type,
+          department_id: taskForm.department_id,
+          required_fields: taskForm.required_fields,
+          is_active: true
+        });
 
-    setTasks([newTask, ...tasks]);
+      if (error) throw error;
 
-    toast({
-      title: "Task Created",
-      description: `Task "${taskForm.title}" has been created successfully`,
-    });
+      await fetchTasks();
 
-    resetTaskForm();
+      toast({
+        title: "Task Created",
+        description: `Task "${taskForm.title}" has been created successfully`,
+      });
+
+      resetTaskForm();
+    } catch (error) {
+      console.error('Error creating task:', error);
+      toast({
+        title: "Error",
+        description: "Failed to create task",
+        variant: "destructive"
+      });
+    }
   };
 
   const updateTask = async () => {
     if (!editingTask) return;
 
-    const updatedTask: Task = {
-      ...editingTask,
-      title: taskForm.title,
-      description: taskForm.description,
-      task_type: taskForm.task_type,
-      department_id: taskForm.department_id,
-      required_fields: taskForm.required_fields
-    };
+    try {
+      const { error } = await supabase
+        .from('task_definitions')
+        .update({
+          title: taskForm.title,
+          description: taskForm.description,
+          task_type: taskForm.task_type,
+          department_id: taskForm.department_id,
+          required_fields: taskForm.required_fields,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', editingTask.id);
 
-    setTasks(tasks.map(task => task.id === editingTask.id ? updatedTask : task));
+      if (error) throw error;
 
-    toast({
-      title: "Task Updated",
-      description: `Task "${taskForm.title}" has been updated successfully`,
-    });
+      await fetchTasks();
 
-    resetTaskForm();
+      toast({
+        title: "Task Updated",
+        description: `Task "${taskForm.title}" has been updated successfully`,
+      });
+
+      resetTaskForm();
+    } catch (error) {
+      console.error('Error updating task:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update task",
+        variant: "destructive"
+      });
+    }
   };
 
   const deleteTask = async (taskId: string) => {
-    setTasks(tasks.filter(task => task.id !== taskId));
-    
-    toast({
-      title: "Task Deleted",
-      description: "Task has been deleted successfully",
-    });
+    try {
+      const { error } = await supabase
+        .from('task_definitions')
+        .update({ is_active: false })
+        .eq('id', taskId);
+
+      if (error) throw error;
+
+      await fetchTasks();
+      
+      toast({
+        title: "Task Deleted",
+        description: "Task has been deleted successfully",
+      });
+    } catch (error) {
+      console.error('Error deleting task:', error);
+      toast({
+        title: "Error",
+        description: "Failed to delete task",
+        variant: "destructive"
+      });
+    }
   };
 
   const startEditingTask = (task: Task) => {

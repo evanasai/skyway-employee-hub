@@ -512,6 +512,148 @@ export type Database = {
           },
         ]
       }
+      employee_profiles: {
+        Row: {
+          aadhar_number: string | null
+          aadhar_photo_back: string | null
+          aadhar_photo_front: string | null
+          account_number: string | null
+          address: string | null
+          bank_document_photo: string | null
+          bank_name: string | null
+          created_at: string | null
+          date_of_birth: string | null
+          emergency_contact_name: string | null
+          emergency_contact_phone: string | null
+          emergency_contact_relation: string | null
+          employee_id: string
+          father_name: string | null
+          gender: string | null
+          id: string
+          ifsc_code: string | null
+          mother_name: string | null
+          pan_number: string | null
+          pan_photo: string | null
+          pin_code: string | null
+          profile_photo: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          aadhar_number?: string | null
+          aadhar_photo_back?: string | null
+          aadhar_photo_front?: string | null
+          account_number?: string | null
+          address?: string | null
+          bank_document_photo?: string | null
+          bank_name?: string | null
+          created_at?: string | null
+          date_of_birth?: string | null
+          emergency_contact_name?: string | null
+          emergency_contact_phone?: string | null
+          emergency_contact_relation?: string | null
+          employee_id: string
+          father_name?: string | null
+          gender?: string | null
+          id?: string
+          ifsc_code?: string | null
+          mother_name?: string | null
+          pan_number?: string | null
+          pan_photo?: string | null
+          pin_code?: string | null
+          profile_photo?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          aadhar_number?: string | null
+          aadhar_photo_back?: string | null
+          aadhar_photo_front?: string | null
+          account_number?: string | null
+          address?: string | null
+          bank_document_photo?: string | null
+          bank_name?: string | null
+          created_at?: string | null
+          date_of_birth?: string | null
+          emergency_contact_name?: string | null
+          emergency_contact_phone?: string | null
+          emergency_contact_relation?: string | null
+          employee_id?: string
+          father_name?: string | null
+          gender?: string | null
+          id?: string
+          ifsc_code?: string | null
+          mother_name?: string | null
+          pan_number?: string | null
+          pan_photo?: string | null
+          pin_code?: string | null
+          profile_photo?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "employee_profiles_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: true
+            referencedRelation: "employee_department_tasks"
+            referencedColumns: ["employee_id"]
+          },
+          {
+            foreignKeyName: "employee_profiles_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: true
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      employee_task_status: {
+        Row: {
+          employee_id: string
+          id: string
+          started_at: string | null
+          task_status: string | null
+          task_submission_id: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          employee_id: string
+          id?: string
+          started_at?: string | null
+          task_status?: string | null
+          task_submission_id?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          employee_id?: string
+          id?: string
+          started_at?: string | null
+          task_status?: string | null
+          task_submission_id?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "employee_task_status_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: true
+            referencedRelation: "employee_department_tasks"
+            referencedColumns: ["employee_id"]
+          },
+          {
+            foreignKeyName: "employee_task_status_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: true
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "employee_task_status_task_submission_id_fkey"
+            columns: ["task_submission_id"]
+            isOneToOne: false
+            referencedRelation: "task_submissions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       employees: {
         Row: {
           assigned_supervisor: string | null
@@ -925,6 +1067,50 @@ export type Database = {
           },
         ]
       }
+      task_definitions: {
+        Row: {
+          created_at: string | null
+          department_id: string
+          description: string | null
+          id: string
+          is_active: boolean | null
+          required_fields: Json | null
+          task_type: string
+          title: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          department_id: string
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          required_fields?: Json | null
+          task_type: string
+          title: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          department_id?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          required_fields?: Json | null
+          task_type?: string
+          title?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "task_definitions_department_id_fkey"
+            columns: ["department_id"]
+            isOneToOne: false
+            referencedRelation: "departments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       task_submissions: {
         Row: {
           comments: string | null
@@ -1269,28 +1455,28 @@ export type Database = {
           assigned_at: string | null
           assigned_by: string | null
           department_id: string | null
-          employee_id: string | null
+          employee_id: string
           id: string
           is_active: boolean | null
-          zone_id: string | null
+          zone_id: string
         }
         Insert: {
           assigned_at?: string | null
           assigned_by?: string | null
           department_id?: string | null
-          employee_id?: string | null
+          employee_id: string
           id?: string
           is_active?: boolean | null
-          zone_id?: string | null
+          zone_id: string
         }
         Update: {
           assigned_at?: string | null
           assigned_by?: string | null
           department_id?: string | null
-          employee_id?: string | null
+          employee_id?: string
           id?: string
           is_active?: boolean | null
-          zone_id?: string | null
+          zone_id?: string
         }
         Relationships: [
           {

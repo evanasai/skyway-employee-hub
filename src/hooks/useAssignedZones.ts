@@ -23,14 +23,17 @@ export const useAssignedZones = (user: User | null) => {
         .single();
 
       if (employee) {
-        // For now, fetch all active zones as assigned zones
-        // In future, this should be based on actual zone assignments
-        const { data: zones } = await supabase
-          .from('zones')
-          .select('*')
+        // Fetch zones assigned to this employee
+        const { data: zoneAssignments } = await supabase
+          .from('zone_assignments')
+          .select(`
+            zones (*)
+          `)
+          .eq('employee_id', employee.id)
           .eq('is_active', true);
 
-        setAssignedZones(zones || []);
+        const zones = zoneAssignments?.map(assignment => assignment.zones).filter(Boolean) || [];
+        setAssignedZones(zones);
       }
     } catch (error) {
       console.error('Error fetching assigned zones:', error);

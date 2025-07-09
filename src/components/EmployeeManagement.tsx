@@ -2,12 +2,10 @@
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { Trash2, Edit, Plus, Save, X } from 'lucide-react';
+import { Trash2, Edit, Plus } from 'lucide-react';
+import ComprehensiveEmployeeForm from './ComprehensiveEmployeeForm';
 
 interface Employee {
   id: string;
@@ -25,16 +23,6 @@ const EmployeeManagement = () => {
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [isCreating, setIsCreating] = useState(false);
   const [editingEmployee, setEditingEmployee] = useState<Employee | null>(null);
-  const [formData, setFormData] = useState({
-    employee_id: '',
-    name: '',
-    email: '',
-    phone: '',
-    role: 'employee',
-    department: '',
-    password: '',
-    salary: ''
-  });
 
   useEffect(() => {
     fetchEmployees();
@@ -59,7 +47,7 @@ const EmployeeManagement = () => {
     }
   };
 
-  const createEmployee = async () => {
+  const createEmployee = async (formData: any) => {
     if (!formData.name || !formData.email || !formData.employee_id) {
       toast({
         title: "Missing Information",
@@ -70,7 +58,8 @@ const EmployeeManagement = () => {
     }
 
     try {
-      const { error } = await supabase
+      // Create employee record
+      const { data: employeeData, error: employeeError } = await supabase
         .from('employees')
         .insert({
           employee_id: formData.employee_id,
@@ -81,16 +70,46 @@ const EmployeeManagement = () => {
           department: formData.department,
           password: formData.password ? parseInt(formData.password) : null,
           salary: formData.salary ? parseFloat(formData.salary) : null
+        })
+        .select()
+        .single();
+
+      if (employeeError) throw employeeError;
+
+      // Create employee profile with additional details
+      const { error: profileError } = await supabase
+        .from('employee_profiles')
+        .insert({
+          employee_id: employeeData.id,
+          date_of_birth: formData.date_of_birth || null,
+          gender: formData.gender || null,
+          father_name: formData.father_name || null,
+          mother_name: formData.mother_name || null,
+          address: formData.address || null,
+          pin_code: formData.pin_code || null,
+          emergency_contact_name: formData.emergency_contact_name || null,
+          emergency_contact_phone: formData.emergency_contact_phone || null,
+          emergency_contact_relation: formData.emergency_contact_relation || null,
+          aadhar_number: formData.aadhar_number || null,
+          aadhar_photo_front: formData.aadhar_photo_front || null,
+          aadhar_photo_back: formData.aadhar_photo_back || null,
+          pan_number: formData.pan_number || null,
+          pan_photo: formData.pan_photo || null,
+          bank_name: formData.bank_name || null,
+          account_number: formData.account_number || null,
+          ifsc_code: formData.ifsc_code || null,
+          bank_document_photo: formData.bank_document_photo || null,
+          profile_photo: formData.profile_photo || null
         });
 
-      if (error) throw error;
+      if (profileError) throw profileError;
 
       resetForm();
       fetchEmployees();
       
       toast({
         title: "Employee Created",
-        description: "New employee has been added successfully",
+        description: "New employee has been added successfully with all details",
       });
     } catch (error) {
       console.error('Error creating employee:', error);
@@ -102,7 +121,7 @@ const EmployeeManagement = () => {
     }
   };
 
-  const updateEmployee = async () => {
+  const updateEmployee = async (formData: any) => {
     if (!editingEmployee) return;
 
     try {
@@ -129,6 +148,35 @@ const EmployeeManagement = () => {
         .eq('id', editingEmployee.id);
 
       if (error) throw error;
+
+      // Update employee profile
+      const { error: profileError } = await supabase
+        .from('employee_profiles')
+        .upsert({
+          employee_id: editingEmployee.id,
+          date_of_birth: formData.date_of_birth || null,
+          gender: formData.gender || null,
+          father_name: formData.father_name || null,
+          mother_name: formData.mother_name || null,
+          address: formData.address || null,
+          pin_code: formData.pin_code || null,
+          emergency_contact_name: formData.emergency_contact_name || null,
+          emergency_contact_phone: formData.emergency_contact_phone || null,
+          emergency_contact_relation: formData.emergency_contact_relation || null,
+          aadhar_number: formData.aadhar_number || null,
+          aadhar_photo_front: formData.aadhar_photo_front || null,
+          aadhar_photo_back: formData.aadhar_photo_back || null,
+          pan_number: formData.pan_number || null,
+          pan_photo: formData.pan_photo || null,
+          bank_name: formData.bank_name || null,
+          account_number: formData.account_number || null,
+          ifsc_code: formData.ifsc_code || null,
+          bank_document_photo: formData.bank_document_photo || null,
+          profile_photo: formData.profile_photo || null,
+          updated_at: new Date().toISOString()
+        });
+
+      if (profileError) console.error('Profile update error:', profileError);
 
       resetForm();
       fetchEmployees();
@@ -173,32 +221,12 @@ const EmployeeManagement = () => {
 
   const startEditing = (employee: Employee) => {
     setEditingEmployee(employee);
-    setFormData({
-      employee_id: employee.employee_id,
-      name: employee.name,
-      email: employee.email,
-      phone: employee.phone,
-      role: employee.role,
-      department: employee.department,
-      password: '',
-      salary: employee.salary?.toString() || ''
-    });
-    setIsCreating(false);
+    setIsCreating(true);
   };
 
   const resetForm = () => {
     setIsCreating(false);
     setEditingEmployee(null);
-    setFormData({
-      employee_id: '',
-      name: '',
-      email: '',
-      phone: '',
-      role: 'employee',
-      department: '',
-      password: '',
-      salary: ''
-    });
   };
 
   return (
@@ -211,103 +239,13 @@ const EmployeeManagement = () => {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
-          {(isCreating || editingEmployee) && (
-            <div className="space-y-4 p-4 border rounded-lg bg-gray-50">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="employee_id">Employee ID</Label>
-                  <Input
-                    id="employee_id"
-                    value={formData.employee_id}
-                    onChange={(e) => setFormData({...formData, employee_id: e.target.value})}
-                    placeholder="Enter employee ID"
-                    disabled={!!editingEmployee}
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="name">Name</Label>
-                  <Input
-                    id="name"
-                    value={formData.name}
-                    onChange={(e) => setFormData({...formData, name: e.target.value})}
-                    placeholder="Enter full name"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="email">Email</Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    value={formData.email}
-                    onChange={(e) => setFormData({...formData, email: e.target.value})}
-                    placeholder="Enter email address"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="phone">Phone</Label>
-                  <Input
-                    id="phone"
-                    value={formData.phone}
-                    onChange={(e) => setFormData({...formData, phone: e.target.value})}
-                    placeholder="Enter phone number"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="role">Role</Label>
-                  <Select value={formData.role} onValueChange={(value) => setFormData({...formData, role: value})}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select role" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="employee">Employee</SelectItem>
-                      <SelectItem value="supervisor">Supervisor</SelectItem>
-                      <SelectItem value="admin">Admin</SelectItem>
-                      <SelectItem value="super_admin">Super Admin</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <Label htmlFor="department">Department</Label>
-                  <Input
-                    id="department"
-                    value={formData.department}
-                    onChange={(e) => setFormData({...formData, department: e.target.value})}
-                    placeholder="Enter department"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="password">Password</Label>
-                  <Input
-                    id="password"
-                    type="password"
-                    value={formData.password}
-                    onChange={(e) => setFormData({...formData, password: e.target.value})}
-                    placeholder="Enter numeric password"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="salary">Salary</Label>
-                  <Input
-                    id="salary"
-                    type="number"
-                    value={formData.salary}
-                    onChange={(e) => setFormData({...formData, salary: e.target.value})}
-                    placeholder="Enter salary amount"
-                  />
-                </div>
-              </div>
-
-              <div className="flex space-x-2">
-                <Button onClick={editingEmployee ? updateEmployee : createEmployee}>
-                  <Save className="h-4 w-4 mr-2" />
-                  {editingEmployee ? 'Update Employee' : 'Create Employee'}
-                </Button>
-                <Button variant="outline" onClick={resetForm}>
-                  <X className="h-4 w-4 mr-2" />
-                  Cancel
-                </Button>
-              </div>
-            </div>
+          {isCreating && (
+            <ComprehensiveEmployeeForm
+              isCreating={isCreating}
+              editingEmployee={editingEmployee}
+              onSave={editingEmployee ? updateEmployee : createEmployee}
+              onCancel={resetForm}
+            />
           )}
 
           {!isCreating && !editingEmployee && (
