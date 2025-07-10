@@ -2,6 +2,7 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
+import TaskStatusGuard from './TaskStatusGuard';
 import {
   Sidebar,
   SidebarContent,
@@ -30,7 +31,7 @@ interface EmployeeSidebarProps {
 }
 
 const EmployeeSidebar = ({ currentView, onNavigate }: EmployeeSidebarProps) => {
-  const { logout } = useAuth();
+  const { user, logout } = useAuth();
 
   const menuItems = [
     {
@@ -86,46 +87,48 @@ const EmployeeSidebar = ({ currentView, onNavigate }: EmployeeSidebarProps) => {
   ];
 
   return (
-    <Sidebar className="w-64 bg-white border-r border-gray-200">
-      <SidebarHeader>
-        <div className="flex items-center space-x-2 p-4">
-          <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
-            <span className="text-white font-bold text-sm">SW</span>
+    <TaskStatusGuard user={user} onLogout={logout}>
+      <Sidebar className="w-64 bg-white border-r border-gray-200">
+        <SidebarHeader>
+          <div className="flex items-center space-x-2 p-4">
+            <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
+              <span className="text-white font-bold text-sm">SW</span>
+            </div>
+            <span className="font-semibold">Skyway Networks</span>
           </div>
-          <span className="font-semibold">Skyway Networks</span>
-        </div>
-      </SidebarHeader>
-      
-      <SidebarContent>
-        <SidebarMenu>
-          {menuItems.map((item) => {
-            const Icon = item.icon;
-            return (
-              <SidebarMenuItem key={item.view}>
-                <SidebarMenuButton
-                  onClick={() => onNavigate(item.view)}
-                  isActive={currentView === item.view}
-                  className="w-full justify-start hover:bg-gray-100"
-                >
-                  <Icon className="h-5 w-5 mr-3" />
-                  {item.title}
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-            );
-          })}
-          
-          <SidebarMenuItem>
-            <SidebarMenuButton
-              onClick={logout}
-              className="w-full justify-start text-red-600 hover:text-red-700 hover:bg-red-50"
-            >
-              <LogOut className="h-5 w-5 mr-3" />
-              Logout
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-        </SidebarMenu>
-      </SidebarContent>
-    </Sidebar>
+        </SidebarHeader>
+        
+        <SidebarContent>
+          <SidebarMenu>
+            {menuItems.map((item) => {
+              const Icon = item.icon;
+              return (
+                <SidebarMenuItem key={item.view}>
+                  <SidebarMenuButton
+                    onClick={() => onNavigate(item.view)}
+                    isActive={currentView === item.view}
+                    className="w-full justify-start hover:bg-gray-100"
+                  >
+                    <Icon className="h-5 w-5 mr-3" />
+                    {item.title}
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              );
+            })}
+            
+            <SidebarMenuItem>
+              <SidebarMenuButton
+                onClick={logout}
+                className="w-full justify-start text-red-600 hover:text-red-700 hover:bg-red-50"
+              >
+                <LogOut className="h-5 w-5 mr-3" />
+                Logout
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          </SidebarMenu>
+        </SidebarContent>
+      </Sidebar>
+    </TaskStatusGuard>
   );
 };
 

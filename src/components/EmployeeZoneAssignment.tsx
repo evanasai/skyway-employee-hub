@@ -48,10 +48,18 @@ const EmployeeZoneAssignment: React.FC<EmployeeZoneAssignmentProps> = ({ onBack 
 
       if (error) throw error;
       
-      // For now, we'll simulate assigned zones since we don't have the relationship table yet
-      const employeesWithZones = (data || []).map(emp => ({
-        ...emp,
-        assigned_zones: [] // This will be populated when we have the relationship table
+      // Fetch existing zone assignments for each employee
+      const employeesWithZones = await Promise.all((data || []).map(async (emp) => {
+        const { data: assignments } = await supabase
+          .from('zone_assignments')
+          .select('zone_id')
+          .eq('employee_id', emp.id)
+          .eq('is_active', true);
+        
+        return {
+          ...emp,
+          assigned_zones: assignments?.map(a => a.zone_id) || []
+        };
       }));
       
       setEmployees(employeesWithZones);
@@ -91,9 +99,22 @@ const EmployeeZoneAssignment: React.FC<EmployeeZoneAssignmentProps> = ({ onBack 
     }
   };
 
-  const handleEmployeeSelect = (employee: Employee) => {
+  const handleEmployeeSelect = async (employee: Employee) => {
     setSelectedEmployee(employee);
-    setSelectedZones(employee.assigned_zones || []);
+    
+    // Fetch current zone assignments for this employee
+    try {
+      const { data: assignments } = await supabase
+        .from('zone_assignments')
+        .select('zone_id')
+        .eq('employee_id', employee.id)
+        .eq('is_active', true);
+      
+      setSelectedZones(assignments?.map(a => a.zone_id) || []);
+    } catch (error) {
+      console.error('Error fetching employee zones:', error);
+      setSelectedZones([]);
+    }
   };
 
   const handleZoneToggle = (zoneId: string, checked: boolean) => {

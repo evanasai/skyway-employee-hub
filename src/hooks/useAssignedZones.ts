@@ -23,20 +23,32 @@ export const useAssignedZones = (user: User | null) => {
         .single();
 
       if (employee) {
-        // Fetch zones assigned to this employee
-        const { data: zoneAssignments } = await supabase
+        // Fetch zones assigned to this employee with proper join
+        const { data: zoneAssignments, error } = await supabase
           .from('zone_assignments')
           .select(`
-            zones (*)
+            zones!zone_assignments_zone_id_fkey (
+              id,
+              name,
+              coordinates,
+              is_active
+            )
           `)
           .eq('employee_id', employee.id)
           .eq('is_active', true);
+
+        if (error) {
+          console.error('Zone assignment fetch error:', error);
+          setAssignedZones([]);
+          return;
+        }
 
         const zones = zoneAssignments?.map(assignment => assignment.zones).filter(Boolean) || [];
         setAssignedZones(zones);
       }
     } catch (error) {
       console.error('Error fetching assigned zones:', error);
+      setAssignedZones([]);
     } finally {
       setIsLoading(false);
     }

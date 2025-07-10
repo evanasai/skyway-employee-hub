@@ -12,6 +12,7 @@ import { supabase } from '@/integrations/supabase/client';
 import ErrorBoundary from './ErrorBoundary';
 import LoadingState from './LoadingState';
 import { useStatePersistence } from '@/hooks/useStatePersistence';
+import { useTaskStatus } from '@/hooks/useTaskStatus';
 
 const PREDEFINED_TASK_TYPES = [
   'Fiber Splicing',
@@ -28,6 +29,7 @@ const PREDEFINED_TASK_TYPES = [
 
 const TaskSubmissionForm = () => {
   const { user } = useAuth();
+  const { updateTaskStatus, isTaskActive } = useTaskStatus(user);
   const [taskType, setTaskType] = useState('');
   const [customTaskType, setCustomTaskType] = useState('');
   const [taskDescription, setTaskDescription] = useState('');
@@ -40,6 +42,7 @@ const TaskSubmissionForm = () => {
   const [startTime, setStartTime] = useState<Date | null>(null);
   const [isCheckedIn, setIsCheckedIn] = useState(false);
   const [checkingAttendance, setCheckingAttendance] = useState(true);
+  const [activeTaskSubmissionId, setActiveTaskSubmissionId] = useState<string | null>(null);
 
   // State persistence for form data
   const formState = {
@@ -158,7 +161,7 @@ const TaskSubmissionForm = () => {
     }
   };
 
-  const handleStartTask = () => {
+  const handleStartTask = async () => {
     if (!isCheckedIn) {
       toast({
         title: "Check-in Required",
@@ -177,12 +180,53 @@ const TaskSubmissionForm = () => {
       return;
     }
 
-    setTaskStatus('in_progress');
-    setStartTime(new Date());
-    toast({
-      title: "Task Started",
-      description: "Task has been started. Complete your work and upload post-work photo.",
-    });
+    try {
+      // Create initial task submission record
+      const { data: employee } = await supabase
+        .from('employees')
+        .select('id')
+        .eq('employee_id', user?.employeeId)
+        .single();
+
+      if (!employee) throw new Error('Employee record not found');
+
+      const { data: taskSubmission, error } = await supabase
+        .from('task_submissions')
+        .insert({
+          employee_id: employee.id,
+          task_type: taskType === 'Other' ? customTaskType : taskType,
+          task_description: taskDescription,
+          location_lat: location?.lat,
+          location_lng: location?.lng,
+          location_address: location?.address,
+          start_time: new Date().toISOString(),
+          pre_work_photo: preWorkPhoto ? URL.createObjectURL(preWorkPhoto) : null,
+          status: 'in_progress'
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      // Update task status to prevent logout
+      await updateTaskStatus('task_started', taskSubmission.id);
+      
+      setActiveTaskSubmissionId(taskSubmission.id);
+      setTaskStatus('in_progress');
+      setStartTime(new Date());
+      
+      toast({
+        title: "Task Started",
+        description: "Task has been started. Complete your work and upload post-work photo.",
+      });
+    } catch (error) {
+      console.error('Error starting task:', error);
+      toast({
+        title: "Error",
+        description: "Failed to start task. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleSubmitTask = async () => {
@@ -195,10 +239,10 @@ const TaskSubmissionForm = () => {
       return;
     }
 
-    if (!postWorkPhoto) {
+    if (!postWorkPhoto || !activeTaskSubmissionId) {
       toast({
-        title: "Missing Post-Work Photo",
-        description: "Please upload a photo after completing the work.",
+        title: "Missing Information",
+        description: "Please upload a post-work photo and ensure task is properly started.",
         variant: "destructive",
       });
       return;
@@ -207,37 +251,21 @@ const TaskSubmissionForm = () => {
     setIsSubmitting(true);
 
     try {
-      // Get employee record
-      const { data: employee } = await supabase
-        .from('employees')
-        .select('id')
-        .eq('employee_id', user?.employeeId)
-        .single();
-
-      if (!employee) {
-        throw new Error('Employee record not found');
-      }
-
-      const taskSubmission = {
-        employee_id: employee.id,
-        task_type: taskType === 'Other' ? customTaskType : taskType,
-        task_description: taskDescription,
-        location_lat: location?.lat,
-        location_lng: location?.lng,
-        location_address: location?.address,
-        start_time: startTime?.toISOString(),
-        end_time: new Date().toISOString(),
-        pre_work_photo: preWorkPhoto ? URL.createObjectURL(preWorkPhoto) : null,
-        post_work_photo: URL.createObjectURL(postWorkPhoto),
-        comments,
-        status: 'submitted'
-      };
-
+      // Update the existing task submission record
       const { error } = await supabase
         .from('task_submissions')
-        .insert([taskSubmission]);
+        .update({
+          end_time: new Date().toISOString(),
+          post_work_photo: URL.createObjectURL(postWorkPhoto),
+          comments,
+          status: 'submitted'
+        })
+        .eq('id', activeTaskSubmissionId);
 
       if (error) throw error;
+
+      // Update task status to completed
+      await updateTaskStatus('task_completed');
 
       toast({
         title: "Task Submitted Successfully",
@@ -253,6 +281,7 @@ const TaskSubmissionForm = () => {
       setComments('');
       setTaskStatus('not_started');
       setStartTime(null);
+      setActiveTaskSubmissionId(null);
 
       // Clear persisted state
       localStorage.removeItem('state_backup_task-form');

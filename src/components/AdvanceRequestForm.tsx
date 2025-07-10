@@ -7,6 +7,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { ArrowLeft } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from '@/hooks/use-toast';
 
 interface AdvanceRequestFormProps {
   onBack: () => void;
@@ -19,17 +21,56 @@ const AdvanceRequestForm = ({ onBack }: AdvanceRequestFormProps) => {
     reason: ''
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('Advance request submitted:', {
-      ...formData,
-      amount: Number(formData.amount),
-      employeeId: user?.id,
-      requestDate: new Date(),
-      status: 'pending'
-    });
-    alert('Advance request submitted successfully!');
-    onBack();
+    
+    if (!user) {
+      toast({
+        title: "Error",
+        description: "User not found",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    try {
+      // Get employee record
+      const { data: employee } = await supabase
+        .from('employees')
+        .select('id')
+        .eq('employee_id', user.employeeId)
+        .single();
+
+      if (!employee) {
+        throw new Error('Employee record not found');
+      }
+
+      const { error } = await supabase
+        .from('advance_requests')
+        .insert({
+          employee_id: employee.id,
+          amount: parseFloat(formData.amount),
+          reason: formData.reason,
+          status: 'pending',
+          supervisor_status: 'pending'
+        });
+
+      if (error) throw error;
+
+      toast({
+        title: "Request Submitted",
+        description: "Your advance request has been submitted successfully",
+      });
+      
+      onBack();
+    } catch (error) {
+      console.error('Error submitting advance request:', error);
+      toast({
+        title: "Error",
+        description: "Failed to submit advance request",
+        variant: "destructive"
+      });
+    }
   };
 
   return (
