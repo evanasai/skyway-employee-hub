@@ -17,6 +17,7 @@ const AdvanceManagement = () => {
 
   const fetchAdvanceRequests = async () => {
     try {
+      console.log('Fetching advance requests...');
       const { data, error } = await supabase
         .from('advance_requests')
         .select(`
@@ -28,6 +29,7 @@ const AdvanceManagement = () => {
         `)
         .order('request_date', { ascending: false });
 
+      console.log('Advance requests query result:', { data, error });
       if (error) throw error;
       setAdvanceRequests(data as AdvanceRequest[] || []);
     } catch (error) {

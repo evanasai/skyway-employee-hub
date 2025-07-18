@@ -17,6 +17,7 @@ const AssetManagement = () => {
 
   const fetchAssetRequests = async () => {
     try {
+      console.log('Fetching asset requests...');
       const { data, error } = await supabase
         .from('asset_requests')
         .select(`
@@ -32,6 +33,7 @@ const AssetManagement = () => {
         `)
         .order('request_date', { ascending: false });
 
+      console.log('Asset requests query result:', { data, error });
       if (error) throw error;
       setAssetRequests(data as AssetRequest[] || []);
     } catch (error) {
