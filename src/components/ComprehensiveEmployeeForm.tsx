@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -8,6 +8,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Separator } from '@/components/ui/separator';
 import { Upload, Save, X } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
 
 interface EmployeeFormData {
   // Basic Info
@@ -76,7 +77,7 @@ const ComprehensiveEmployeeForm: React.FC<ComprehensiveEmployeeFormProps> = ({
     password: '',
     salary: editingEmployee?.salary?.toString() || '',
     
-    // Personal Details
+    // Personal Details - Initialize with empty values for new employees
     date_of_birth: '',
     gender: '',
     father_name: '',
@@ -107,6 +108,50 @@ const ComprehensiveEmployeeForm: React.FC<ComprehensiveEmployeeFormProps> = ({
     // Profile Photo
     profile_photo: ''
   });
+
+  // Fetch existing profile data for editing
+  useEffect(() => {
+    if (editingEmployee && editingEmployee.id) {
+      fetchEmployeeProfile(editingEmployee.id);
+    }
+  }, [editingEmployee]);
+
+  const fetchEmployeeProfile = async (employeeId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('employee_profiles')
+        .select('*')
+        .eq('employee_id', employeeId)
+        .single();
+
+      if (data && !error) {
+        setFormData(prev => ({
+          ...prev,
+          date_of_birth: data.date_of_birth || '',
+          gender: data.gender || '',
+          father_name: data.father_name || '',
+          mother_name: data.mother_name || '',
+          address: data.address || '',
+          pin_code: data.pin_code || '',
+          emergency_contact_name: data.emergency_contact_name || '',
+          emergency_contact_phone: data.emergency_contact_phone || '',
+          emergency_contact_relation: data.emergency_contact_relation || '',
+          aadhar_number: data.aadhar_number || '',
+          aadhar_photo_front: data.aadhar_photo_front || '',
+          aadhar_photo_back: data.aadhar_photo_back || '',
+          pan_number: data.pan_number || '',
+          pan_photo: data.pan_photo || '',
+          bank_name: data.bank_name || '',
+          account_number: data.account_number || '',
+          ifsc_code: data.ifsc_code || '',
+          bank_document_photo: data.bank_document_photo || '',
+          profile_photo: data.profile_photo || ''
+        }));
+      }
+    } catch (error) {
+      console.error('Error fetching employee profile:', error);
+    }
+  };
 
   if (!isCreating && !editingEmployee) return null;
 
