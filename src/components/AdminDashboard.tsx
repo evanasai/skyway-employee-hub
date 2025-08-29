@@ -21,6 +21,7 @@ import SupervisorAllocationManagement from './SupervisorAssignmentManagement';
 import SuperAdminDataManagement from './SuperAdminDataManagement';
 import AdvanceManagement from './AdvanceManagement';
 import AssetManagement from './AssetManagement';
+import AttendanceSummaryView from './AttendanceSummaryView';
 
 const AdminDashboard = () => {
   const { logout, user } = useAuth();
@@ -30,6 +31,8 @@ const AdminDashboard = () => {
     switch (currentView) {
       case 'dashboard':
         return <AdminDashboardOverview />;
+      case 'attendance-summary':
+        return <AttendanceSummaryView />;
       case 'employees':
         return <EnhancedEmployeeManagement />;
       case 'tasks':
@@ -67,6 +70,8 @@ const AdminDashboard = () => {
     switch (currentView) {
       case 'dashboard':
         return 'Admin Dashboard';
+      case 'attendance-summary':
+        return 'Attendance Summary';
       case 'employees':
         return 'Employee Management';
       case 'tasks':

@@ -15,7 +15,8 @@ import {
   Shield,
   Building,
   UserCog,
-  ClipboardCheck
+  ClipboardCheck,
+  Clock
 } from 'lucide-react';
 import {
   Sidebar,
@@ -40,6 +41,12 @@ const AdminSidebar = ({ currentView, onNavigate }: AdminSidebarProps) => {
       id: 'dashboard', 
       label: 'Dashboard', 
       icon: LayoutDashboard,
+      category: 'main'
+    },
+    { 
+      id: 'attendance-summary', 
+      label: 'Attendance Summary', 
+      icon: Clock,
       category: 'main'
     },
     { 
