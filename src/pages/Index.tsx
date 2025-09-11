@@ -30,6 +30,12 @@ const Index = () => {
     return <Navigate to="/login" replace />;
   }
 
+  // Additional security check - only allow access if user is authenticated and has valid session
+  if (!user.id || !user.employeeId) {
+    console.log('Invalid user session, redirecting to login');
+    return <Navigate to="/login" replace />;
+  }
+
   console.log('Current user:', user);
 
   // Route to appropriate dashboard based on user role

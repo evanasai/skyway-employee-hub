@@ -25,6 +25,13 @@ const SupervisorPage = () => {
 
   // Strict role check - only supervisor allowed (no access to sensitive records)
   if (user.role !== 'supervisor') {
+    console.log('Unauthorized access attempt - supervisor required, got:', user.role);
+    return <Navigate to="/login" replace />;
+  }
+
+  // Additional security: Validate user session integrity
+  if (!user.id || !user.employeeId || !user.isActive) {
+    console.log('Invalid user session detected');
     return <Navigate to="/login" replace />;
   }
 

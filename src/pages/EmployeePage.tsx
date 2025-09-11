@@ -25,6 +25,13 @@ const EmployeePage = () => {
 
   // Strict role check - only employee allowed (no access to sensitive records)
   if (user.role !== 'employee') {
+    console.log('Unauthorized access attempt - employee required, got:', user.role);
+    return <Navigate to="/login" replace />;
+  }
+
+  // Additional security: Validate user session integrity
+  if (!user.id || !user.employeeId || !user.isActive) {
+    console.log('Invalid user session detected');
     return <Navigate to="/login" replace />;
   }
 

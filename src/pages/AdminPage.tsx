@@ -25,6 +25,13 @@ const AdminPage = () => {
 
   // Strict role check - only admin and super_admin allowed
   if (user.role !== 'admin' && user.role !== 'super_admin') {
+    console.log('Unauthorized access attempt - admin/super_admin required, got:', user.role);
+    return <Navigate to="/login" replace />;
+  }
+
+  // Additional security: Validate user session integrity
+  if (!user.id || !user.employeeId || !user.isActive) {
+    console.log('Invalid user session detected');
     return <Navigate to="/login" replace />;
   }
 
