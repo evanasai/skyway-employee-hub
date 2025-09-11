@@ -1,10 +1,8 @@
 
 import React, { useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
+import { Navigate } from 'react-router-dom';
 import LoginForm from '@/components/LoginForm';
-import Dashboard from '@/components/Dashboard';
-import AdminDashboard from '@/components/AdminDashboard';
-import SupervisorDashboard from '@/components/SupervisorDashboard';
 
 const Index = () => {
   const { user, isLoading, refreshUser } = useAuth();
@@ -38,13 +36,14 @@ const Index = () => {
   // Route to appropriate dashboard based on user role
   switch (user.role) {
     case 'super_admin':
+      return <Navigate to="/superadmin" replace />;
     case 'admin':
-      return <AdminDashboard />;
+      return <Navigate to="/admin" replace />;
     case 'supervisor':
-      return <SupervisorDashboard />;
+      return <Navigate to="/supervisor" replace />;
     case 'employee':
     default:
-      return <Dashboard />;
+      return <Navigate to="/employee" replace />;
   }
 };
 

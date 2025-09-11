@@ -8,6 +8,10 @@ import { AuthProvider } from "@/contexts/AuthContext";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
+import AdminPage from "./pages/AdminPage";
+import SupervisorPage from "./pages/SupervisorPage";
+import SuperAdminPage from "./pages/SuperAdminPage";
+import EmployeePage from "./pages/EmployeePage";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -40,6 +44,10 @@ const App = () => (
               <ErrorBoundary componentName="Router">
                 <Routes>
                   <Route path="/" element={<Index />} />
+                  <Route path="/admin" element={<AdminPage />} />
+                  <Route path="/supervisor" element={<SupervisorPage />} />
+                  <Route path="/superadmin" element={<SuperAdminPage />} />
+                  <Route path="/employee" element={<EmployeePage />} />
                   <Route path="*" element={<NotFound />} />
                 </Routes>
               </ErrorBoundary>
