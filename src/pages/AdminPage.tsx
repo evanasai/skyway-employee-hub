@@ -1,10 +1,11 @@
 import React, { useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { Navigate } from 'react-router-dom';
+import { Navigate, useLocation } from 'react-router-dom';
 import AdminDashboard from '@/components/AdminDashboard';
 
 const AdminPage = () => {
   const { user, isLoading } = useAuth();
+  const location = useLocation();
 
   if (isLoading) {
     return (
@@ -17,12 +18,14 @@ const AdminPage = () => {
     );
   }
 
+  // Mandatory authentication - redirect to login if no user
   if (!user) {
-    return <Navigate to="/" replace />;
+    return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
+  // Strict role check - only admin and super_admin allowed
   if (user.role !== 'admin' && user.role !== 'super_admin') {
-    return <Navigate to="/" replace />;
+    return <Navigate to="/login" replace />;
   }
 
   return <AdminDashboard />;

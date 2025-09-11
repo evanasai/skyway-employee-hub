@@ -1,9 +1,16 @@
 import React from 'react';
-import { useAuth } from '@/contexts/AuthContext';
 import { Navigate, useLocation } from 'react-router-dom';
-import AdminDashboard from '@/components/AdminDashboard';
+import { useAuth } from '@/contexts/AuthContext';
 
-const SuperAdminPage = () => {
+interface ProtectedRouteProps {
+  children: React.ReactNode;
+  allowedRoles?: ('admin' | 'super_admin' | 'supervisor' | 'employee')[];
+}
+
+const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ 
+  children, 
+  allowedRoles = ['admin', 'super_admin'] 
+}) => {
   const { user, isLoading } = useAuth();
   const location = useLocation();
 
@@ -18,17 +25,17 @@ const SuperAdminPage = () => {
     );
   }
 
-  // Mandatory authentication - redirect to login if no user
+  // Mandatory authentication
   if (!user) {
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
-  // Strict role check - only super_admin allowed
-  if (user.role !== 'super_admin') {
+  // Role-based access control
+  if (!allowedRoles.includes(user.role)) {
     return <Navigate to="/login" replace />;
   }
 
-  return <AdminDashboard />;
+  return <>{children}</>;
 };
 
-export default SuperAdminPage;
+export default ProtectedRoute;

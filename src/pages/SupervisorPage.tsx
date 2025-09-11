@@ -1,10 +1,11 @@
 import React from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { Navigate } from 'react-router-dom';
+import { Navigate, useLocation } from 'react-router-dom';
 import SupervisorDashboard from '@/components/SupervisorDashboard';
 
 const SupervisorPage = () => {
   const { user, isLoading } = useAuth();
+  const location = useLocation();
 
   if (isLoading) {
     return (
@@ -17,12 +18,14 @@ const SupervisorPage = () => {
     );
   }
 
+  // Mandatory authentication - redirect to login if no user
   if (!user) {
-    return <Navigate to="/" replace />;
+    return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
+  // Strict role check - only supervisor allowed (no access to sensitive records)
   if (user.role !== 'supervisor') {
-    return <Navigate to="/" replace />;
+    return <Navigate to="/login" replace />;
   }
 
   return <SupervisorDashboard />;
