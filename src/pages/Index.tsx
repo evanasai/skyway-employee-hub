@@ -2,7 +2,6 @@
 import React, { useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Navigate } from 'react-router-dom';
-import LoginForm from '@/components/LoginForm';
 
 const Index = () => {
   const { user, isLoading, refreshUser } = useAuth();
@@ -26,9 +25,9 @@ const Index = () => {
     );
   }
 
-  // Show login form if no user
+  // Redirect to login if no user
   if (!user) {
-    return <LoginForm />;
+    return <Navigate to="/login" replace />;
   }
 
   console.log('Current user:', user);

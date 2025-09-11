@@ -38,6 +38,7 @@ const LoginForm = () => {
         title: "Welcome to Skyway Networks",
         description: "Login successful!",
       });
+      // Redirect will be handled automatically by routing
     }
   };
 
