@@ -1584,8 +1584,16 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: string
       }
+      get_employee_id_from_auth: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
       is_admin_or_super_admin: {
         Args: Record<PropertyKey, never>
+        Returns: boolean
+      }
+      is_own_employee_record: {
+        Args: { employee_uuid: string }
         Returns: boolean
       }
     }

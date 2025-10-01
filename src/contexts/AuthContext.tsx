@@ -1,12 +1,13 @@
-
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import type { User as SupabaseUser } from '@supabase/supabase-js';
 import { User } from '@/types';
 
 interface AuthContextType {
   user: User | null;
-  login: (employeeId: string, password: string) => Promise<boolean>;
-  logout: () => void;
+  supabaseUser: SupabaseUser | null;
+  login: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
+  logout: () => Promise<void>;
   isLoading: boolean;
   refreshUser: () => Promise<void>;
 }
@@ -23,40 +24,23 @@ export const useAuth = () => {
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
+  const [supabaseUser, setSupabaseUser] = useState<SupabaseUser | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  useEffect(() => {
-    // Check for saved user session
-    const savedUser = localStorage.getItem('skyway_user');
-    if (savedUser) {
-      try {
-        const parsedUser = JSON.parse(savedUser);
-        setUser(parsedUser);
-        console.log('Loaded saved user:', parsedUser);
-      } catch (error) {
-        console.error('Error parsing saved user:', error);
-        localStorage.removeItem('skyway_user');
-      }
-    }
-    setIsLoading(false);
-  }, []);
-
-  const refreshUser = async () => {
-    if (!user) return;
-    
+  const loadUserData = async (authUser: SupabaseUser) => {
     try {
       const { data: employee, error } = await supabase
         .from('employees')
         .select('*')
-        .eq('employee_id', user.employeeId)
+        .eq('id', authUser.id)
         .single();
 
       if (error || !employee) {
-        console.error('Error refreshing user data:', error);
+        console.error('Error loading employee data:', error);
         return;
       }
 
-      const updatedUser: User = {
+      const userData: User = {
         id: employee.id,
         employeeId: employee.employee_id,
         name: employee.name,
@@ -65,85 +49,86 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         department: employee.department,
         phone: employee.phone,
         isActive: employee.is_active,
-        checkInStatus: user.checkInStatus || 'out',
-        lastLogin: user.lastLogin || new Date()
+        checkInStatus: 'out',
+        lastLogin: new Date()
       };
 
-      setUser(updatedUser);
-      localStorage.setItem('skyway_user', JSON.stringify(updatedUser));
-      console.log('User data refreshed:', updatedUser);
+      setUser(userData);
     } catch (error) {
-      console.error('Error refreshing user:', error);
+      console.error('Error loading user data:', error);
     }
   };
 
-  const login = async (employeeId: string, password: string): Promise<boolean> => {
+  useEffect(() => {
+    // Set up auth state listener
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        setSupabaseUser(session?.user ?? null);
+        
+        if (session?.user) {
+          setTimeout(() => {
+            loadUserData(session.user);
+          }, 0);
+        } else {
+          setUser(null);
+        }
+        
+        setIsLoading(false);
+      }
+    );
+
+    // Check for existing session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSupabaseUser(session?.user ?? null);
+      if (session?.user) {
+        loadUserData(session.user);
+      }
+      setIsLoading(false);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  const refreshUser = async () => {
+    if (!supabaseUser) return;
+    await loadUserData(supabaseUser);
+  };
+
+  const login = async (email: string, password: string): Promise<{ success: boolean; error?: string }> => {
     setIsLoading(true);
-    console.log('Attempting login for:', employeeId);
     
     try {
-      // Query the employees table directly for authentication
-      const { data: employee, error } = await supabase
-        .from('employees')
-        .select('*')
-        .eq('employee_id', employeeId)
-        .single();
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
 
-      console.log('Employee query result:', { employee, error });
-
-      if (error || !employee) {
-        console.log('No employee found or error:', error);
+      if (error) {
         setIsLoading(false);
-        return false;
+        return { success: false, error: error.message };
       }
 
-      // Check if employee is active
-      if (!employee.is_active) {
-        console.log('Employee account is inactive');
-        setIsLoading(false);
-        return false;
+      if (data.user) {
+        await loadUserData(data.user);
       }
 
-      // Check password - using the numeric password field from the database
-      if (employee.password && parseInt(password) === employee.password) {
-        const userWithLogin: User = {
-          id: employee.id,
-          employeeId: employee.employee_id,
-          name: employee.name,
-          email: employee.email,
-          role: employee.role as 'employee' | 'supervisor' | 'admin' | 'super_admin',
-          department: employee.department,
-          phone: employee.phone,
-          isActive: employee.is_active,
-          checkInStatus: 'out' as 'in' | 'out' | 'idle',
-          lastLogin: new Date()
-        };
-        
-        console.log('Login successful for user:', userWithLogin);
-        setUser(userWithLogin);
-        localStorage.setItem('skyway_user', JSON.stringify(userWithLogin));
-        setIsLoading(false);
-        return true;
-      }
-      
-      console.log('Password mismatch');
       setIsLoading(false);
-      return false;
+      return { success: true };
     } catch (error) {
       console.error('Login error:', error);
       setIsLoading(false);
-      return false;
+      return { success: false, error: 'An unexpected error occurred' };
     }
   };
 
-  const logout = () => {
-    console.log('Logging out user');
+  const logout = async () => {
+    await supabase.auth.signOut();
     setUser(null);
-    localStorage.removeItem('skyway_user');
+    setSupabaseUser(null);
   };
 
   return (
-    <AuthContext.Provider value={{ user, login, logout, isLoading, refreshUser }}>
+    <AuthContext.Provider value={{ user, supabaseUser, login, logout, isLoading, refreshUser }}>
       {children}
     </AuthContext.Provider>
   );

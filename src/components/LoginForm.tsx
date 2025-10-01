@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -6,31 +5,36 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from '@/hooks/use-toast';
-import { Loader2, User, Lock } from 'lucide-react';
+import { Loader2, Mail, Lock } from 'lucide-react';
+import { loginSchema } from '@/lib/validations';
 
 const LoginForm = () => {
-  const [employeeId, setEmployeeId] = useState('');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const { login, isLoading } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!employeeId || !password) {
+    // Validate input
+    const validation = loginSchema.safeParse({ email, password });
+    
+    if (!validation.success) {
+      const firstError = validation.error.issues[0];
       toast({
-        title: "Error",
-        description: "Please enter both Employee ID and Password",
+        title: "Validation Error",
+        description: firstError.message,
         variant: "destructive",
       });
       return;
     }
 
-    const success = await login(employeeId, password);
+    const result = await login(email, password);
     
-    if (!success) {
+    if (!result.success) {
       toast({
         title: "Login Failed",
-        description: "Invalid Employee ID or Password",
+        description: result.error || "Invalid email or password",
         variant: "destructive",
       });
     } else {
@@ -38,7 +42,6 @@ const LoginForm = () => {
         title: "Welcome to Skyway Networks",
         description: "Login successful!",
       });
-      // Redirect will be handled automatically by routing
     }
   };
 
@@ -61,18 +64,19 @@ const LoginForm = () => {
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-6">
               <div className="space-y-2">
-                <Label htmlFor="employeeId" className="text-primary font-medium">
-                  Employee ID
+                <Label htmlFor="email" className="text-primary font-medium">
+                  Email Address
                 </Label>
                 <div className="relative">
-                  <User className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                  <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                   <Input
-                    id="employeeId"
-                    type="text"
-                    placeholder="Enter your Employee ID"
-                    value={employeeId}
-                    onChange={(e) => setEmployeeId(e.target.value)}
+                    id="email"
+                    type="email"
+                    placeholder="Enter your email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
                     className="pl-10 h-12 border-2 focus:border-accent"
+                    autoComplete="email"
                   />
                 </div>
               </div>
@@ -86,10 +90,11 @@ const LoginForm = () => {
                   <Input
                     id="password"
                     type="password"
-                    placeholder="Enter your Password"
+                    placeholder="Enter your password"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     className="pl-10 h-12 border-2 focus:border-accent"
+                    autoComplete="current-password"
                   />
                 </div>
               </div>

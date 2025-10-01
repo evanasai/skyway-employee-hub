@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -9,7 +8,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge';
 import { toast } from '@/hooks/use-toast';
 import { Settings as SettingsIcon, Save, RefreshCw, Shield, Bell, Database } from 'lucide-react';
-import { createActualCredentials } from '@/utils/createActualCredentials';
 
 interface SystemSettings {
   companyName: string;
@@ -57,33 +55,6 @@ const Settings = () => {
       });
     } finally {
       setSaving(false);
-    }
-  };
-
-  const handleCreateCredentials = async () => {
-    setIsLoading(true);
-    try {
-      const success = await createActualCredentials();
-      if (success) {
-        toast({
-          title: "Credentials Created",
-          description: "Employee credentials have been created successfully",
-        });
-      } else {
-        toast({
-          title: "Error",
-          description: "Failed to create credentials",
-          variant: "destructive"
-        });
-      }
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to create credentials",
-        variant: "destructive"
-      });
-    } finally {
-      setIsLoading(false);
     }
   };
 
@@ -218,30 +189,6 @@ const Settings = () => {
                   onChange={(e) => handleSettingChange('maxFileSize', parseInt(e.target.value))}
                 />
               </div>
-            </div>
-            
-            <div className="border-t pt-4">
-              <h4 className="font-medium mb-2">Initialize System Data</h4>
-              <p className="text-sm text-gray-600 mb-4">
-                Create initial employee credentials and system data
-              </p>
-              <Button 
-                onClick={handleCreateCredentials}
-                disabled={isLoading}
-                className="flex items-center space-x-2"
-              >
-                {isLoading ? (
-                  <>
-                    <RefreshCw className="h-4 w-4 animate-spin" />
-                    <span>Creating...</span>
-                  </>
-                ) : (
-                  <>
-                    <Database className="h-4 w-4" />
-                    <span>Create Employee Credentials</span>
-                  </>
-                )}
-              </Button>
             </div>
           </div>
 
