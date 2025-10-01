@@ -397,62 +397,200 @@ const ComprehensiveEmployeeManagement = () => {
     }
   };
 
-  const exportToExcel = () => {
-    const exportData = employees.map(emp => ({
-      'Employee ID': emp.employee_id,
-      'Name': emp.name,
-      'Email': emp.email,
-      'Phone': emp.phone,
-      'Role': emp.role,
-      'Department': emp.department,
-      'Salary': emp.salary,
-      'Joining Date': emp.joining_date,
-      'KYC Status': emp.kyc_status,
-      'Status': emp.is_active ? 'Active' : 'Inactive'
-    }));
+  const exportToExcel = async () => {
+    try {
+      // Fetch complete employee data with profiles
+      const { data: employeesData, error } = await supabase
+        .from('employees')
+        .select(`
+          *,
+          employee_profiles(*)
+        `)
+        .order('employee_id');
 
-    const ws = XLSX.utils.json_to_sheet(exportData);
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, 'Employees');
-    XLSX.writeFile(wb, 'employees_export.xlsx');
-    
-    toast({
-      title: "Export Successful",
-      description: "Employee data has been exported to Excel",
-    });
+      if (error) throw error;
+
+      const exportData = (employeesData || []).map((emp: any) => ({
+        'Employee ID': emp.employee_id,
+        'Name': emp.name,
+        'Email': emp.email,
+        'Phone': emp.phone,
+        'Date of Birth': emp.employee_profiles?.date_of_birth || '',
+        'Age': emp.employee_profiles?.date_of_birth ? calculateAge(emp.employee_profiles.date_of_birth) : '',
+        'Gender': emp.employee_profiles?.gender || '',
+        'Father Name': emp.employee_profiles?.father_name || '',
+        'Mother Name': emp.employee_profiles?.mother_name || '',
+        'Role': emp.role,
+        'Department': emp.department,
+        'Salary': emp.salary || '',
+        'Joining Date': emp.joining_date || '',
+        'Aadhar Number': emp.employee_profiles?.aadhar_number || '',
+        'PAN Number': emp.employee_profiles?.pan_number || '',
+        'Bank Name': emp.employee_profiles?.bank_name || '',
+        'Account Number': emp.employee_profiles?.account_number || '',
+        'IFSC Code': emp.employee_profiles?.ifsc_code || '',
+        'Address': emp.employee_profiles?.address || '',
+        'Pin Code': emp.employee_profiles?.pin_code || '',
+        'Emergency Contact': emp.employee_profiles?.emergency_contact_name || '',
+        'Emergency Phone': emp.employee_profiles?.emergency_contact_phone || '',
+        'KYC Status': emp.kyc_status,
+        'Status': emp.is_active ? 'Active' : 'Inactive'
+      }));
+
+      const ws = XLSX.utils.json_to_sheet(exportData);
+      
+      // Set column widths
+      const columnWidths = [
+        { wch: 12 }, // Employee ID
+        { wch: 20 }, // Name
+        { wch: 25 }, // Email
+        { wch: 12 }, // Phone
+        { wch: 12 }, // DOB
+        { wch: 6 },  // Age
+        { wch: 8 },  // Gender
+        { wch: 20 }, // Father Name
+        { wch: 20 }, // Mother Name
+        { wch: 12 }, // Role
+        { wch: 18 }, // Department
+        { wch: 10 }, // Salary
+        { wch: 12 }, // Joining Date
+        { wch: 15 }, // Aadhar
+        { wch: 12 }, // PAN
+        { wch: 20 }, // Bank Name
+        { wch: 18 }, // Account Number
+        { wch: 12 }, // IFSC
+        { wch: 30 }, // Address
+        { wch: 8 },  // Pin Code
+        { wch: 20 }, // Emergency Contact
+        { wch: 12 }, // Emergency Phone
+        { wch: 12 }, // KYC Status
+        { wch: 10 }  // Status
+      ];
+      ws['!cols'] = columnWidths;
+
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, 'Employees');
+      
+      const fileName = `employees_complete_${new Date().toISOString().split('T')[0]}.xlsx`;
+      XLSX.writeFile(wb, fileName);
+      
+      toast({
+        title: "Export Successful",
+        description: `${exportData.length} employees exported to ${fileName}`,
+      });
+    } catch (error) {
+      console.error('Error exporting employees:', error);
+      toast({
+        title: "Export Failed",
+        description: "Failed to export employee data",
+        variant: "destructive"
+      });
+    }
   };
 
   const downloadTemplate = () => {
-    const templateData = [{
-      'Name': 'John Doe',
-      'Email': 'john.doe@example.com',
-      'Phone': '9876543210',
-      'Date of Birth': '1990-01-01',
-      'Father Name': 'Father Name',
-      'Mother Name': 'Mother Name',
-      'Gender': 'male',
-      'Aadhar Number': '123456789012',
-      'PAN Number': 'ABCDE1234F',
-      'Driving License': 'DL1234567890',
-      'Bank Account': '1234567890',
-      'IFSC Code': 'ABCD0123456',
-      'Bank Name': 'State Bank of India',
-      'Permanent Address': 'Permanent Address',
-      'Current Address': 'Current Address',
-      'Role': 'employee',
-      'Department': 'field_operations',
-      'Salary': '25000',
-      'Password': '1234'
-    }];
+    // Create instructions sheet
+    const instructions = [
+      { 'Instructions for Employee Upload': 'Please fill in the following information:' },
+      { 'Instructions for Employee Upload': '' },
+      { 'Instructions for Employee Upload': '1. Name: Full name of the employee (Required)' },
+      { 'Instructions for Employee Upload': '2. Email: Valid email address (Required)' },
+      { 'Instructions for Employee Upload': '3. Phone: 10-digit mobile number without +91 (Required)' },
+      { 'Instructions for Employee Upload': '4. Date of Birth: Format YYYY-MM-DD, must be 18+ years (Required)' },
+      { 'Instructions for Employee Upload': '5. Gender: male/female/other' },
+      { 'Instructions for Employee Upload': '6. Aadhar: 12-digit number' },
+      { 'Instructions for Employee Upload': '7. PAN: Format ABCDE1234F (5 letters, 4 numbers, 1 letter)' },
+      { 'Instructions for Employee Upload': '8. Role: employee/supervisor/admin' },
+      { 'Instructions for Employee Upload': '9. Department: field_operations, technical_support, customer_service, maintenance, security, management, administration' },
+      { 'Instructions for Employee Upload': '10. Salary: Numeric value only' },
+      { 'Instructions for Employee Upload': '11. Password: 4-digit numeric PIN for login' },
+      { 'Instructions for Employee Upload': '' },
+      { 'Instructions for Employee Upload': 'Note: Employee ID will be auto-generated. Fields marked Required are mandatory.' }
+    ];
 
-    const ws = XLSX.utils.json_to_sheet(templateData);
+    const templateData = [
+      {
+        'Name': 'John Doe',
+        'Email': 'john.doe@example.com',
+        'Phone': '9876543210',
+        'Date of Birth': '1990-01-01',
+        'Father Name': 'James Doe',
+        'Mother Name': 'Jane Doe',
+        'Gender': 'male',
+        'Aadhar Number': '123456789012',
+        'PAN Number': 'ABCDE1234F',
+        'Driving License': 'DL1234567890',
+        'Bank Account': '12345678901234',
+        'IFSC Code': 'SBIN0001234',
+        'Bank Name': 'State Bank of India',
+        'Permanent Address': '123 Main Street, City, State - 123456',
+        'Current Address': '123 Main Street, City, State - 123456',
+        'Role': 'employee',
+        'Department': 'field_operations',
+        'Salary': '25000',
+        'Password': '1234'
+      },
+      {
+        'Name': 'Jane Smith',
+        'Email': 'jane.smith@example.com',
+        'Phone': '9876543211',
+        'Date of Birth': '1992-05-15',
+        'Father Name': 'Robert Smith',
+        'Mother Name': 'Mary Smith',
+        'Gender': 'female',
+        'Aadhar Number': '234567890123',
+        'PAN Number': 'BCDEF2345G',
+        'Driving License': 'DL2345678901',
+        'Bank Account': '23456789012345',
+        'IFSC Code': 'ICIC0001234',
+        'Bank Name': 'ICICI Bank',
+        'Permanent Address': '456 Park Avenue, City, State - 234567',
+        'Current Address': '456 Park Avenue, City, State - 234567',
+        'Role': 'supervisor',
+        'Department': 'technical_support',
+        'Salary': '35000',
+        'Password': '5678'
+      }
+    ];
+
     const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, 'Employee Template');
-    XLSX.writeFile(wb, 'employee_template.xlsx');
+    
+    // Add instructions sheet
+    const instructionsWs = XLSX.utils.json_to_sheet(instructions);
+    instructionsWs['!cols'] = [{ wch: 100 }];
+    XLSX.utils.book_append_sheet(wb, instructionsWs, 'Instructions');
+    
+    // Add template sheet with examples
+    const templateWs = XLSX.utils.json_to_sheet(templateData);
+    const columnWidths = [
+      { wch: 20 }, // Name
+      { wch: 25 }, // Email
+      { wch: 12 }, // Phone
+      { wch: 12 }, // DOB
+      { wch: 20 }, // Father Name
+      { wch: 20 }, // Mother Name
+      { wch: 10 }, // Gender
+      { wch: 15 }, // Aadhar
+      { wch: 12 }, // PAN
+      { wch: 18 }, // Driving License
+      { wch: 18 }, // Bank Account
+      { wch: 12 }, // IFSC
+      { wch: 20 }, // Bank Name
+      { wch: 40 }, // Permanent Address
+      { wch: 40 }, // Current Address
+      { wch: 12 }, // Role
+      { wch: 18 }, // Department
+      { wch: 10 }, // Salary
+      { wch: 10 }  // Password
+    ];
+    templateWs['!cols'] = columnWidths;
+    XLSX.utils.book_append_sheet(wb, templateWs, 'Employee Template');
+    
+    XLSX.writeFile(wb, 'employee_upload_template.xlsx');
     
     toast({
       title: "Template Downloaded",
-      description: "Employee template has been downloaded",
+      description: "Employee upload template with instructions has been downloaded",
     });
   };
 

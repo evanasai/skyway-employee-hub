@@ -197,27 +197,80 @@ const AttendanceSummaryView = () => {
   };
 
   const exportToExcel = () => {
-    const exportData = filteredRecords.map(record => ({
-      'Employee ID': record.employee_emp_id,
-      'Employee Name': record.employee_name,
-      'Department': record.department,
-      'Check In Time': record.check_in_time ? format(new Date(record.check_in_time), 'yyyy-MM-dd HH:mm:ss') : 'N/A',
-      'Check Out Time': record.check_out_time ? format(new Date(record.check_out_time), 'yyyy-MM-dd HH:mm:ss') : 'N/A',
-      'Duration (Minutes)': record.duration_minutes,
-      'Status': record.status,
-      'Location': record.location_address || 'N/A'
-    }));
+    const exportData = filteredRecords.map(record => {
+      const checkInDate = record.check_in_time ? new Date(record.check_in_time) : null;
+      const checkOutDate = record.check_out_time ? new Date(record.check_out_time) : null;
+      const hours = Math.floor(record.duration_minutes / 60);
+      const minutes = record.duration_minutes % 60;
 
-    const ws = XLSX.utils.json_to_sheet(exportData);
+      return {
+        'Employee ID': record.employee_emp_id,
+        'Employee Name': record.employee_name,
+        'Department': record.department,
+        'Date': checkInDate ? format(checkInDate, 'yyyy-MM-dd') : 'N/A',
+        'Check In Time': checkInDate ? format(checkInDate, 'HH:mm:ss') : 'N/A',
+        'Check Out Time': checkOutDate ? format(checkOutDate, 'HH:mm:ss') : 'Still Active',
+        'Total Hours': hours > 0 || minutes > 0 ? `${hours}h ${minutes}m` : 'N/A',
+        'Duration (Minutes)': record.duration_minutes,
+        'Status': record.status === 'checked_in' ? 'Active' : record.status === 'on_break' ? 'On Break' : 'Offline',
+        'Location Address': record.location_address || 'N/A',
+        'Latitude': record.location_lat || '',
+        'Longitude': record.location_lng || ''
+      };
+    });
+
+    // Calculate summary statistics
+    const totalRecords = filteredRecords.length;
+    const activeCount = filteredRecords.filter(r => r.status === 'checked_in').length;
+    const onBreakCount = filteredRecords.filter(r => r.status === 'on_break').length;
+    const offlineCount = filteredRecords.filter(r => r.status === 'checked_out').length;
+    const avgDuration = totalRecords > 0 
+      ? Math.round(filteredRecords.reduce((sum, r) => sum + r.duration_minutes, 0) / totalRecords)
+      : 0;
+
+    // Create summary data
+    const summaryData = [
+      { 'Summary': 'Report Period', 'Value': `${format(startDate, 'MMM dd, yyyy')} to ${format(endDate, 'MMM dd, yyyy')}` },
+      { 'Summary': 'Total Records', 'Value': totalRecords },
+      { 'Summary': 'Currently Active', 'Value': activeCount },
+      { 'Summary': 'On Break', 'Value': onBreakCount },
+      { 'Summary': 'Offline', 'Value': offlineCount },
+      { 'Summary': 'Average Duration', 'Value': `${Math.floor(avgDuration / 60)}h ${avgDuration % 60}m` },
+      { 'Summary': '', 'Value': '' }
+    ];
+
     const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, 'Attendance Summary');
     
-    const fileName = `attendance_summary_${format(startDate, 'yyyy-MM-dd')}_to_${format(endDate, 'yyyy-MM-dd')}.xlsx`;
+    // Add summary sheet
+    const summaryWs = XLSX.utils.json_to_sheet(summaryData);
+    summaryWs['!cols'] = [{ wch: 20 }, { wch: 40 }];
+    XLSX.utils.book_append_sheet(wb, summaryWs, 'Summary');
+    
+    // Add detailed attendance sheet
+    const detailWs = XLSX.utils.json_to_sheet(exportData);
+    const columnWidths = [
+      { wch: 12 }, // Employee ID
+      { wch: 20 }, // Employee Name
+      { wch: 18 }, // Department
+      { wch: 12 }, // Date
+      { wch: 12 }, // Check In
+      { wch: 12 }, // Check Out
+      { wch: 12 }, // Total Hours
+      { wch: 10 }, // Duration Minutes
+      { wch: 12 }, // Status
+      { wch: 40 }, // Location Address
+      { wch: 12 }, // Latitude
+      { wch: 12 }  // Longitude
+    ];
+    detailWs['!cols'] = columnWidths;
+    XLSX.utils.book_append_sheet(wb, detailWs, 'Attendance Details');
+    
+    const fileName = `attendance_report_${format(startDate, 'yyyy-MM-dd')}_to_${format(endDate, 'yyyy-MM-dd')}.xlsx`;
     XLSX.writeFile(wb, fileName);
 
     toast({
       title: "Export Successful",
-      description: `Attendance data exported as ${fileName}`,
+      description: `${totalRecords} attendance records exported with summary`,
     });
   };
 
